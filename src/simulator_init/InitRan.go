@@ -73,7 +73,6 @@ func RanStart(ran *simulator_context.RanContext) {
 	fmt.Sscanf(amfAddr[1], "%d", &amfPort)
 	fmt.Sscanf(ranAddr[1], "%d", &ranPort)
 
-	fmt.Println(amfIp, ran.RanUri)
 	// RAN connect to AMF
 	conn, err := ConntectToAmf(amfIp, ranIp, amfPort, ranPort)
 	check(err)
@@ -90,12 +89,11 @@ func StartHandle(ran *simulator_context.RanContext) {
 		if err != nil {
 			logger.NgapLog.Debugf("Error %v", err)
 			delete(simulator_context.Simulator_Self().RanPool, ran.RanUri)
-			simulator_message.SimChannel <- simulator_message.NGAPMessage{NgapAddr: ran.RanUri, Value: nil}
 			break
 		} else if info == nil || info.PPID != NGAP_PPID {
 			logger.NgapLog.Warnf("Recv SCTP PPID != 60")
 			continue
 		}
-		simulator_message.SimChannel <- simulator_message.NGAPMessage{NgapAddr: ran.RanUri, Value: buffer[:n]}
+		simulator_message.SendMessage(simulator_message.NGAPMessage{NgapAddr: ran.RanUri, Value: buffer[:n]})
 	}
 }

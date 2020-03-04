@@ -4,10 +4,17 @@ import (
 	"radio_simulator/lib/openapi/models"
 )
 
+var TestAmDataTable = make(map[string]models.AccessAndMobilitySubscriptionData)
+var TestSmfSelDataTable = make(map[string]models.SmfSelectionSubscriptionData)
+var TestAmPolicyDataTable = make(map[string]models.AmPolicyData)
+
 type Config struct {
-	RanInfo []RanContext `yaml:"ranInfo"`
-	TcpUri  string       `yaml:"tcpUri"`
-	Logger  Logger       `yaml:"logger"`
+	DBName     string       `yaml:"dbName"`
+	DBUrl      string       `yaml:"dbUrl"`
+	RanInfo    []RanContext `yaml:"ranInfo"`
+	TcpUri     string       `yaml:"tcpUri"`
+	UeInfoFile []string     `yaml:"ueInfoFile"`
+	Logger     Logger       `yaml:"logger"`
 }
 
 type RanContext struct {

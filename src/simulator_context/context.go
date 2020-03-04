@@ -1,18 +1,34 @@
 package simulator_context
 
 import (
+	"context"
 	"encoding/hex"
+	"net"
 	"radio_simulator/lib/ngap/ngapType"
+	"radio_simulator/lib/openapi/models"
 )
 
 var simContext = Simulator{}
 
 func init() {
 	Simulator_Self().RanPool = make(map[string]*RanContext)
+	Simulator_Self().UeContextPool = make(map[string]UeDBInfo)
 }
 
 type Simulator struct {
-	RanPool map[string]*RanContext // RanUri -> RAN_CONTEXT
+	RanPool       map[string]*RanContext // RanUri -> RAN_CONTEXT
+	UeContextPool map[string]UeDBInfo    // Supi -> UeTestInfo
+	TcpServer     net.Listener
+	TcpConn       net.Conn
+	Ctx           context.Context
+}
+
+type UeDBInfo struct {
+	AmDate     models.AccessAndMobilitySubscriptionData
+	SmfSelData models.SmfSelectionSubscriptionData
+	AmPolicy   models.AmPolicyData
+	AuthsSubs  models.AuthenticationSubscription
+	PlmnId     string
 }
 
 func (s *Simulator) AddRanContext(AmfUri, ranUri, ranName string, plmnId ngapType.PLMNIdentity, GnbId string, gnbIdLength int) *RanContext {

@@ -4,6 +4,10 @@ import (
 	"flag"
 	"github.com/sirupsen/logrus"
 	"net"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"radio_simulator/lib/MongoDBLibrary"
 	"radio_simulator/lib/path_util"
 	"radio_simulator/src/factory"
 	"radio_simulator/src/logger"
@@ -11,9 +15,12 @@ import (
 	"radio_simulator/src/simulator_handler"
 	"radio_simulator/src/simulator_init"
 	"radio_simulator/src/simulator_util"
+	"syscall"
 )
 
 var config string
+
+var self *simulator_context.Simulator = simulator_context.Simulator_Self()
 
 func Initailize() {
 	flag.StringVar(&config, "simcfg", path_util.ModulePath("radio_simulator/config/rancfg.conf"), "ran simulator config file")
@@ -29,31 +36,53 @@ func Initailize() {
 	}
 	logger.SetReportCaller(config.Logger.ReportCaller)
 
+	MongoDBLibrary.SetMongoDB(config.DBName, config.DBUrl)
 }
 
-func main() {
-	Initailize()
-	self := simulator_context.Simulator_Self()
-	simulator_util.ParseRanContext()
+func Terminate() {
+	logger.InitLog.Infof("Terminating Simulator...")
+
+	// TODO: Send UE Deregistration to AMF
+	logger.InitLog.Infof("Clear UE DB...")
+
+	simulator_util.ClearDB()
+
+	logger.InitLog.Infof("Close SCTP Connection...")
+
 	for _, ran := range self.RanPool {
-		simulator_init.RanStart(ran)
+		logger.InitLog.Infof("Ran[%s] Connection Close", ran.RanUri)
+		ran.SctpConn.Close()
 	}
-	go simulator_handler.Handle()
+
+	logger.InitLog.Infof("Close TCP Connection...")
+	if self.TcpConn != nil {
+		self.TcpConn.Close()
+	}
+	if self.TcpServer != nil {
+		self.TcpServer.Close()
+	}
+
+	logger.InitLog.Infof("Simulator terminated")
+
+}
+
+func startTcpServer() {
+	var err error
 	srvAddr := factory.SimConfig.TcpUri
-	listener, err := net.Listen("tcp", srvAddr)
+	self.TcpServer, err = net.Listen("tcp", srvAddr)
 	if err != nil {
 		logger.SimulatorLog.Error(err.Error())
 	}
-	defer listener.Close()
+	defer self.TcpServer.Close()
 	logger.SimulatorLog.Infof("TCP server start and listening on %s.", srvAddr)
 
 	for {
-		conn, err := listener.Accept()
+		self.TcpConn, err = self.TcpServer.Accept()
 		if err != nil {
-			logger.SimulatorLog.Errorf("Some connection error: %s", err)
+			logger.InitLog.Infof("TCP server closed")
+			return
 		}
-
-		go handleConnection(conn)
+		handleConnection(self.TcpConn)
 	}
 }
 
@@ -81,4 +110,33 @@ func handleConnection(conn net.Conn) {
 	}
 	// Close the connection when you're done with it.
 	conn.Close()
+}
+
+func main() {
+	Initailize()
+	simulator_util.ParseRanContext()
+
+	path, err := filepath.Abs(filepath.Dir(config))
+	if err != nil {
+		logger.SimulatorLog.Errorf(err.Error())
+	}
+	simulator_util.ParseUeData(path+"/", factory.SimConfig.UeInfoFile)
+	simulator_util.InitUeToDB()
+
+	for _, ran := range self.RanPool {
+		simulator_init.RanStart(ran)
+	}
+
+	go simulator_handler.Handle()
+
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-signalChannel
+		Terminate()
+		os.Exit(0)
+	}()
+	// TCP server for cli test UE
+	startTcpServer()
+	simulator_util.ClearDB()
 }

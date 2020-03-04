@@ -10,6 +10,7 @@ import (
 
 var log *logrus.Logger
 var SimulatorLog *logrus.Entry
+var UtilLog *logrus.Entry
 var InitLog *logrus.Entry
 var NgapLog *logrus.Entry
 var HandlerLog *logrus.Entry
@@ -42,7 +43,8 @@ func init() {
 	SimulatorLog = log.WithFields(logrus.Fields{"SimulatorLog": "SimulatorLog"})
 	NgapLog = log.WithFields(logrus.Fields{"SimulatorLog": "NgapLog"})
 	HandlerLog = log.WithFields(logrus.Fields{"SimulatorLog": "HandlerLog"})
-	InitLog = log.WithFields(logrus.Fields{"SimulatorLog": "HandlerLog"})
+	InitLog = log.WithFields(logrus.Fields{"SimulatorLog": "InitLog"})
+	UtilLog = log.WithFields(logrus.Fields{"SimulatorLog": "UtilLog"})
 }
 
 func SetLogLevel(level logrus.Level) {

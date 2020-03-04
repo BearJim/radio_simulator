@@ -5,6 +5,7 @@ go 1.12
 require (
 	git.cs.nctu.edu.tw/calee/sctp v1.0.0
 	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
