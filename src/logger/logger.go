@@ -14,6 +14,7 @@ var UtilLog *logrus.Entry
 var InitLog *logrus.Entry
 var NgapLog *logrus.Entry
 var HandlerLog *logrus.Entry
+var NasLog *logrus.Entry
 
 func init() {
 	log = logrus.New()
@@ -45,6 +46,7 @@ func init() {
 	HandlerLog = log.WithFields(logrus.Fields{"SimulatorLog": "HandlerLog"})
 	InitLog = log.WithFields(logrus.Fields{"SimulatorLog": "InitLog"})
 	UtilLog = log.WithFields(logrus.Fields{"SimulatorLog": "UtilLog"})
+	NasLog = log.WithFields(logrus.Fields{"SimulatorLog": "NasLog"})
 }
 
 func SetLogLevel(level logrus.Level) {

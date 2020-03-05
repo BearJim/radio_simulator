@@ -86,8 +86,8 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// New UE
-// 	ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
-// 	// ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA0, test.ALG_INTEGRITY_128_NIA0)
+// 	ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
+// 	// ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA0, test.ALG_INTEGRITY_128_NIA0)
 // 	ue.AmfUeNgapId = 1
 // 	ue.AuthenticationSubs = getAuthSubscription()
 // 	// insert UE data to MongoDB
@@ -282,7 +282,7 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// New UE
-// 	ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
+// 	ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
 // 	ue.AmfUeNgapId = 1
 // 	ue.AuthenticationSubs = getAuthSubscription()
 // 	// insert UE data to MongoDB
@@ -439,7 +439,7 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// New UE
-// 	ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
+// 	ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
 // 	ue.AmfUeNgapId = 1
 // 	ue.AuthenticationSubs = getAuthSubscription()
 // 	// insert UE data to MongoDB
@@ -637,7 +637,7 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// New UE
-// 	ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
+// 	ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
 // 	ue.AmfUeNgapId = 1
 // 	ue.AuthenticationSubs = getAuthSubscription()
 // 	// insert UE data to MongoDB
@@ -838,7 +838,7 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// New UE
-// 	ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
+// 	ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
 // 	ue.AmfUeNgapId = 1
 // 	ue.AuthenticationSubs = getAuthSubscription()
 // 	// insert UE data to MongoDB
@@ -1006,7 +1006,7 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// New UE
-// 	ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
+// 	ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
 // 	ue.AmfUeNgapId = 1
 // 	ue.AuthenticationSubs = getAuthSubscription()
 // 	// insert UE data to MongoDB
@@ -1252,7 +1252,7 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// New UE
-// 	ue := test.NewRanUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
+// 	ue := test.NewUeContext("imsi-2089300007487", 1, test.ALG_CIPHERING_128_NEA2, test.ALG_INTEGRITY_128_NIA2)
 // 	ue.AmfUeNgapId = 1
 // 	ue.AuthenticationSubs = getAuthSubscription()
 // 	// insert UE data to MongoDB
@@ -1429,7 +1429,7 @@ package simulator_util
 // 	assert.Nil(t, err)
 
 // 	// Target RAN create New UE
-// 	targetUe := deepcopy.Copy(ue).(*test.RanUeContext)
+// 	targetUe := deepcopy.Copy(ue).(*test.UeContext)
 // 	targetUe.AmfUeNgapId = 2
 
 // 	// Target RAN send ngap Handover Request Acknowledge Msg

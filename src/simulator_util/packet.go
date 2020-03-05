@@ -26,15 +26,15 @@ import (
 // 	return ngap.Encoder(pdu)
 // }
 
-func GetInitialUEMessage(ranUeNgapID int64, nasPdu []byte, fiveGSTmsi string) ([]byte, error) {
-	message := simulator_ngap.BuildInitialUEMessage(ranUeNgapID, nasPdu, fiveGSTmsi)
-	return ngap.Encoder(message)
-}
+// func GetInitialUEMessage(ranUeNgapID int64, nasPdu []byte, fiveGSTmsi string) ([]byte, error) {
+// 	message := simulator_ngap.BuildInitialUEMessage(ranUeNgapID, nasPdu, fiveGSTmsi)
+// 	return ngap.Encoder(message)
+// }
 
-func GetUplinkNASTransport(amfUeNgapID, ranUeNgapID int64, nasPdu []byte) ([]byte, error) {
-	message := simulator_ngap.BuildUplinkNasTransport(amfUeNgapID, ranUeNgapID, nasPdu)
-	return ngap.Encoder(message)
-}
+// func GetUplinkNASTransport(amfUeNgapID, ranUeNgapID int64, nasPdu []byte) ([]byte, error) {
+// 	message := simulator_ngap.BuildUplinkNasTransport(amfUeNgapID, ranUeNgapID, nasPdu)
+// 	return ngap.Encoder(message)
+// }
 
 func GetInitialContextSetupResponse(amfUeNgapID int64, ranUeNgapID int64) ([]byte, error) {
 	message := simulator_ngap.BuildInitialContextSetupResponseForRegistraionTest(amfUeNgapID, ranUeNgapID)
@@ -51,7 +51,7 @@ func GetPDUSessionResourceSetupResponse(amfUeNgapID int64, ranUeNgapID int64, ip
 	message := simulator_ngap.BuildPDUSessionResourceSetupResponseForRegistrationTest(amfUeNgapID, ranUeNgapID, ipv4)
 	return ngap.Encoder(message)
 }
-func EncodeNasPduWithSecurity(ue *simulator_context.RanUeContext, pdu []byte) ([]byte, error) {
+func EncodeNasPduWithSecurity(ue *simulator_context.UeContext, pdu []byte) ([]byte, error) {
 	m := nas.NewMessage()
 	err := m.PlainNasDecode(&pdu)
 	if err != nil {

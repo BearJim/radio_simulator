@@ -1,4 +1,4 @@
-package nasTestpacket
+package nas_packet
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ const (
 	PDUSesAuthCmp    string = "PDU Session Authentication Complete"
 )
 
-func GetRegistrationRequest(registrationType uint8, mobileIdentity nasType.MobileIdentity5GS, requestedNSSAI *nasType.RequestedNSSAI, uplinkDataStatus *nasType.UplinkDataStatus) (nasPdu []byte) {
+func GetRegistrationRequest(registrationType uint8, mobileIdentity nasType.MobileIdentity5GS, capBuffer []uint8, requestedNSSAI *nasType.RequestedNSSAI, uplinkDataStatus *nasType.UplinkDataStatus) (nasPdu []byte) {
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeRegistrationRequest)
@@ -36,10 +36,12 @@ func GetRegistrationRequest(registrationType uint8, mobileIdentity nasType.Mobil
 	registrationRequest.NgksiAndRegistrationType5GS.SetRegistrationType5GS(registrationType)
 	registrationRequest.MobileIdentity5GS = mobileIdentity
 
-	registrationRequest.UESecurityCapability = &nasType.UESecurityCapability{
-		Iei:    nasMessage.RegistrationRequestUESecurityCapabilityType,
-		Len:    8,
-		Buffer: []uint8{0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00},
+	if capBuffer != nil {
+		registrationRequest.UESecurityCapability = &nasType.UESecurityCapability{
+			Iei:    nasMessage.RegistrationRequestUESecurityCapabilityType,
+			Len:    8,
+			Buffer: capBuffer,
+		}
 	}
 	registrationRequest.RequestedNSSAI = requestedNSSAI
 	registrationRequest.UplinkDataStatus = uplinkDataStatus

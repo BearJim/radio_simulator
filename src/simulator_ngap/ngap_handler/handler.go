@@ -1,136 +1,173 @@
 package ngap_handler
 
 import (
-	"github.com/sirupsen/logrus"
-	"radio_simulator/lib/ngap"
+	"radio_simulator/lib/aper"
 	"radio_simulator/lib/ngap/ngapType"
-	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
+	"radio_simulator/src/simulator_nas"
+	"radio_simulator/src/simulator_ngap"
 )
 
-var NgapLog *logrus.Entry
+func HandleDownlinkNASTransport(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
+	var aMFUENGAPID *ngapType.AMFUENGAPID
+	var rANUENGAPID *ngapType.RANUENGAPID
+	var oldAMF *ngapType.AMFName
+	var rANPagingPriority *ngapType.RANPagingPriority
+	var nASPDU *ngapType.NASPDU
+	var mobilityRestrictionList *ngapType.MobilityRestrictionList
+	var indexToRFSP *ngapType.IndexToRFSP
+	var uEAggregateMaximumBitRate *ngapType.UEAggregateMaximumBitRate
+	var allowedNSSAI *ngapType.AllowedNSSAI
 
-func init() {
-	NgapLog = logger.NgapLog
+	var iesCriticalityDiagnostics ngapType.CriticalityDiagnosticsIEList
+
+	if ran == nil {
+		ngapLog.Error("RAN Context is nil")
+		return
+	}
+
+	if message == nil {
+		ngapLog.Error("NGAP Message is nil")
+		return
+	}
+
+	initiatingMessage := message.InitiatingMessage
+	if initiatingMessage == nil {
+		ngapLog.Error("InitiatingMessage is nil")
+		return
+	}
+
+	downlinkNASTransport := initiatingMessage.Value.DownlinkNASTransport
+	if downlinkNASTransport == nil {
+		ngapLog.Error("downlinkNASTransport is nil")
+		return
+	}
+
+	for _, ie := range downlinkNASTransport.ProtocolIEs.List {
+		switch ie.Id.Value {
+		case ngapType.ProtocolIEIDAMFUENGAPID:
+			ngapLog.Traceln("[NGAP] Decode IE AMFUENGAPID")
+			aMFUENGAPID = ie.Value.AMFUENGAPID
+			if aMFUENGAPID == nil {
+				ngapLog.Error("AMFUENGAPID is nil")
+				item := buildCriticalityDiagnosticsIEItem(ngapType.CriticalityPresentReject, ie.Id.Value, ngapType.TypeOfErrorPresentMissing)
+				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
+			}
+		case ngapType.ProtocolIEIDRANUENGAPID:
+			ngapLog.Traceln("[NGAP] Decode IE RANUENGAPID")
+			rANUENGAPID = ie.Value.RANUENGAPID
+			if rANUENGAPID == nil {
+				ngapLog.Error("RANUENGAPID is nil")
+				item := buildCriticalityDiagnosticsIEItem(ngapType.CriticalityPresentReject, ie.Id.Value, ngapType.TypeOfErrorPresentMissing)
+				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
+			}
+		case ngapType.ProtocolIEIDOldAMF:
+			ngapLog.Traceln("[NGAP] Decode IE OldAMF")
+			oldAMF = ie.Value.OldAMF
+		case ngapType.ProtocolIEIDRANPagingPriority:
+			ngapLog.Traceln("[NGAP] Decode IE RANPagingPriority")
+			rANPagingPriority = ie.Value.RANPagingPriority
+		case ngapType.ProtocolIEIDNASPDU:
+			ngapLog.Traceln("[NGAP] Decode IE NASPDU")
+			nASPDU = ie.Value.NASPDU
+			if nASPDU == nil {
+				ngapLog.Error("NASPDU is nil")
+				item := buildCriticalityDiagnosticsIEItem(ngapType.CriticalityPresentReject, ie.Id.Value, ngapType.TypeOfErrorPresentMissing)
+				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
+			}
+		case ngapType.ProtocolIEIDMobilityRestrictionList:
+			ngapLog.Traceln("[NGAP] Decode IE MobilityRestrictionList")
+			mobilityRestrictionList = ie.Value.MobilityRestrictionList
+		case ngapType.ProtocolIEIDIndexToRFSP:
+			ngapLog.Traceln("[NGAP] Decode IE IndexToRFSP")
+			indexToRFSP = ie.Value.IndexToRFSP
+		case ngapType.ProtocolIEIDUEAggregateMaximumBitRate:
+			ngapLog.Traceln("[NGAP] Decode IE UEAggregateMaximumBitRate")
+			uEAggregateMaximumBitRate = ie.Value.UEAggregateMaximumBitRate
+		case ngapType.ProtocolIEIDAllowedNSSAI:
+			ngapLog.Traceln("[NGAP] Decode IE AllowedNSSAI")
+			allowedNSSAI = ie.Value.AllowedNSSAI
+		}
+	}
+
+	if len(iesCriticalityDiagnostics.List) > 0 {
+		procudureCode := ngapType.ProcedureCodeDownlinkNASTransport
+		trigger := ngapType.TriggeringMessagePresentInitiatingMessage
+		criticality := ngapType.CriticalityPresentIgnore
+		criticalityDiagnostics := buildCriticalityDiagnostics(&procudureCode, &trigger, &criticality, &iesCriticalityDiagnostics)
+		simulator_ngap.SendErrorIndication(ran, nil, nil, nil, &criticalityDiagnostics)
+		return
+	}
+
+	var ue *simulator_context.UeContext
+	if rANUENGAPID != nil {
+		ue = ran.FindUeByRanUeNgapID(rANUENGAPID.Value)
+		if ue == nil {
+			ngapLog.Warnf("No UE Context[RanUeNgapID:%d]\n", rANUENGAPID.Value)
+			return
+		}
+	}
+
+	if aMFUENGAPID != nil {
+		if ue.AmfUeNgapId == simulator_context.NgapIdUnspecified {
+			ngapLog.Tracef("Create new logical UE-associated NG-connection")
+			ue.AmfUeNgapId = aMFUENGAPID.Value
+			// n3iwfUe.SCTPAddr = amf.SCTPAddr
+		} else {
+			if ue.AmfUeNgapId != aMFUENGAPID.Value {
+				ngapLog.Warn("AMFUENGAPID unmatched")
+				return
+			}
+		}
+	}
+
+	if nASPDU != nil {
+		simulator_nas.HandleNAS(nASPDU)
+		// TODO: Send NAS PDU to UE
+	}
 }
 
-func Dispatch(addr string, msg []byte) {
-	_, ok := simulator_context.Simulator_Self().RanPool[addr]
-	if !ok {
-		NgapLog.Errorf("Cannot find the coressponding RAN Context\n")
-		return
-	}
-	pdu, err := ngap.Decoder(msg)
-	if err != nil {
-		NgapLog.Errorf("NGAP decode error : %s\n", err)
-		return
-	}
-	switch pdu.Present {
-	case ngapType.NGAPPDUPresentInitiatingMessage:
-		initiatingMessage := pdu.InitiatingMessage
-		if initiatingMessage == nil {
-			NgapLog.Errorln("Initiating Message is nil")
-			return
-		}
-		switch initiatingMessage.ProcedureCode.Value {
-		// case ngapType.ProcedureCodeNGSetup:
-		// 	ngap_handler.HandleNGSetupRequest(ran, pdu)
-		// case ngapType.ProcedureCodeInitialUEMessage:
-		// 	ngap_handler.HandleInitialUEMessage(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkNASTransport:
-		// 	ngap_handler.HandleUplinkNasTransport(ran, pdu)
-		// case ngapType.ProcedureCodeNGReset:
-		// 	ngap_handler.HandleNGReset(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverCancel:
-		// 	ngap_handler.HandleHandoverCancel(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextReleaseRequest:
-		// 	ngap_handler.HandleUEContextReleaseRequest(ran, pdu)
-		// case ngapType.ProcedureCodeNASNonDeliveryIndication:
-		// 	ngap_handler.HandleNasNonDeliveryIndication(ran, pdu)
-		// case ngapType.ProcedureCodeLocationReportingFailureIndication:
-		// 	ngap_handler.HandleLocationReportingFailureIndication(ran, pdu)
-		// case ngapType.ProcedureCodeErrorIndication:
-		// 	ngap_handler.HandleErrorIndication(ran, pdu)
-		// case ngapType.ProcedureCodeUERadioCapabilityInfoIndication:
-		// 	ngap_handler.HandleUERadioCapabilityInfoIndication(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverNotification:
-		// 	ngap_handler.HandleHandoverNotify(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverPreparation:
-		// 	ngap_handler.HandleHandoverRequired(ran, pdu)
-		// case ngapType.ProcedureCodeRANConfigurationUpdate:
-		// 	ngap_handler.HandleRanConfigurationUpdate(ran, pdu)
-		// case ngapType.ProcedureCodeRRCInactiveTransitionReport:
-		// 	ngap_handler.HandleRRCInactiveTransitionReport(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceNotify:
-		// 	ngap_handler.HandlePDUSessionResourceNotify(ran, pdu)
-		// case ngapType.ProcedureCodePathSwitchRequest:
-		// 	ngap_handler.HandlePathSwitchRequest(ran, pdu)
-		// case ngapType.ProcedureCodeLocationReport:
-		// 	ngap_handler.HandleLocationReport(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkUEAssociatedNRPPaTransport:
-		// 	ngap_handler.HandleUplinkUEAssociatedNRPPATransport(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkRANConfigurationTransfer:
-		// 	ngap_handler.HandleUplinkRanConfigurationTransfer(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceModifyIndication:
-		// 	ngap_handler.HandlePDUSessionResourceModifyIndication(ran, pdu)
-		// case ngapType.ProcedureCodeCellTrafficTrace:
-		// 	ngap_handler.HandleCellTrafficTrace(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkRANStatusTransfer:
-		// 	ngap_handler.HandleUplinkRanStatusTransfer(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkNonUEAssociatedNRPPaTransport:
-		// 	ngap_handler.HandleUplinkNonUEAssociatedNRPPATransport(ran, pdu)
-		default:
-			NgapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, initiatingMessage.ProcedureCode.Value)
-		}
-	case ngapType.NGAPPDUPresentSuccessfulOutcome:
-		successfulOutcome := pdu.SuccessfulOutcome
-		if successfulOutcome == nil {
-			NgapLog.Errorln("successful Outcome is nil")
-			return
-		}
-		switch successfulOutcome.ProcedureCode.Value {
-		// case ngapType.ProcedureCodeNGReset:
-		// 	ngap_handler.HandleNGResetAcknowledge(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextRelease:
-		// 	ngap_handler.HandleUEContextReleaseComplete(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceRelease:
-		// 	ngap_handler.HandlePDUSessionResourceReleaseResponse(ran, pdu)
-		// case ngapType.ProcedureCodeUERadioCapabilityCheck:
-		// 	ngap_handler.HandleUERadioCapabilityCheckResponse(ran, pdu)
-		// case ngapType.ProcedureCodeAMFConfigurationUpdate:
-		// 	ngap_handler.HandleAMFconfigurationUpdateAcknowledge(ran, pdu)
-		// case ngapType.ProcedureCodeInitialContextSetup:
-		// 	ngap_handler.HandleInitialContextSetupResponse(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextModification:
-		// 	ngap_handler.HandleUEContextModificationResponse(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceSetup:
-		// 	ngap_handler.HandlePDUSessionResourceSetupResponse(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceModify:
-		// 	ngap_handler.HandlePDUSessionResourceModifyResponse(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverResourceAllocation:
-		// 	ngap_handler.HandleHandoverRequestAcknowledge(ran, pdu)
-		default:
-			NgapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, successfulOutcome.ProcedureCode.Value)
-		}
-	case ngapType.NGAPPDUPresentUnsuccessfulOutcome:
-		unsuccessfulOutcome := pdu.UnsuccessfulOutcome
-		if unsuccessfulOutcome == nil {
-			NgapLog.Errorln("unsuccessful Outcome is nil")
-			return
-		}
-		switch unsuccessfulOutcome.ProcedureCode.Value {
-		// case ngapType.ProcedureCodeAMFConfigurationUpdate:
-		// 	ngap_handler.HandleAMFconfigurationUpdateFailure(ran, pdu)
-		// case ngapType.ProcedureCodeInitialContextSetup:
-		// 	ngap_handler.HandleInitialContextSetupFailure(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextModification:
-		// 	ngap_handler.HandleUEContextModificationFailure(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverResourceAllocation:
-		// 	ngap_handler.HandleHandoverFailure(ran, pdu)
-		default:
-			NgapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, unsuccessfulOutcome.ProcedureCode.Value)
-		}
+func buildCriticalityDiagnostics(
+	procedureCode *int64,
+	triggeringMessage *aper.Enumerated,
+	procedureCriticality *aper.Enumerated,
+	iesCriticalityDiagnostics *ngapType.CriticalityDiagnosticsIEList) (criticalityDiagnostics ngapType.CriticalityDiagnostics) {
 
+	if procedureCode != nil {
+		criticalityDiagnostics.ProcedureCode = new(ngapType.ProcedureCode)
+		criticalityDiagnostics.ProcedureCode.Value = *procedureCode
 	}
 
+	if triggeringMessage != nil {
+		criticalityDiagnostics.TriggeringMessage = new(ngapType.TriggeringMessage)
+		criticalityDiagnostics.TriggeringMessage.Value = *triggeringMessage
+	}
+
+	if procedureCriticality != nil {
+		criticalityDiagnostics.ProcedureCriticality = new(ngapType.Criticality)
+		criticalityDiagnostics.ProcedureCriticality.Value = *procedureCriticality
+	}
+
+	if iesCriticalityDiagnostics != nil {
+		criticalityDiagnostics.IEsCriticalityDiagnostics = iesCriticalityDiagnostics
+	}
+
+	return criticalityDiagnostics
+}
+
+func buildCriticalityDiagnosticsIEItem(ieCriticality aper.Enumerated, ieID int64, typeOfErr aper.Enumerated) (item ngapType.CriticalityDiagnosticsIEItem) {
+
+	item = ngapType.CriticalityDiagnosticsIEItem{
+		IECriticality: ngapType.Criticality{
+			Value: ieCriticality,
+		},
+		IEID: ngapType.ProtocolIEID{
+			Value: ieID,
+		},
+		TypeOfError: ngapType.TypeOfError{
+			Value: typeOfErr,
+		},
+	}
+
+	return item
 }

@@ -29,6 +29,7 @@ func ParseRanContext() {
 				plmnList = append(plmnList, plmnItem)
 			}
 			tac := TACConfigToHexString(supportItem.Tac)
+			ran.DefaultTAC = tac
 			ran.SupportTAList[tac] = plmnList
 		}
 	}
@@ -38,17 +39,22 @@ func ParseUeData(configDirPath string, fileList []string) {
 	self := simulator_context.Simulator_Self()
 	for _, ueInfoFile := range fileList {
 		fileName := configDirPath + ueInfoFile
-		config := ue_factory.InitUeConfigFactory(fileName)
-		ueInfo := simulator_context.UeDBInfo{}
-		ueInfo.AmDate = models.AccessAndMobilitySubscriptionData{
-			Gpsis: config.Gpsis,
-			Nssai: &config.Nssai,
+		ue := ue_factory.InitUeContextFactory(fileName)
+		self.UeContextPool[ue.Supi] = ue
+	}
+}
+func InitUeToDB() {
+	self := simulator_context.Simulator_Self()
+	for supi, ue := range self.UeContextPool {
+		amDate := models.AccessAndMobilitySubscriptionData{
+			Gpsis: ue.Gpsis,
+			Nssai: &ue.Nssai,
 		}
-		ueInfo.SmfSelData = config.SmfSelData
-		ueInfo.PlmnId = config.ServingPlmnId
-		ueInfo.AmPolicy.SubscCats = config.SubscCats
-		auths := config.AuthData
-		ueInfo.AuthsSubs = models.AuthenticationSubscription{
+		amPolicy := models.AmPolicyData{
+			SubscCats: ue.SubscCats,
+		}
+		auths := ue.AuthData
+		authsSubs := models.AuthenticationSubscription{
 			AuthenticationMethod:          models.AuthMethod(auths.AuthMethod),
 			AuthenticationManagementField: auths.AMF,
 			PermanentKey: &models.PermanentKey{
@@ -57,39 +63,33 @@ func ParseUeData(configDirPath string, fileList []string) {
 			SequenceNumber: auths.SQN,
 		}
 		if auths.Opc != "" {
-			ueInfo.AuthsSubs.Opc = &models.Opc{
+			authsSubs.Opc = &models.Opc{
 				OpcValue: auths.Opc,
 			}
 		} else if auths.Op != "" {
-			ueInfo.AuthsSubs.Milenage = &models.Milenage{
+			authsSubs.Milenage = &models.Milenage{
 				Op: &models.Op{
 					OpValue: auths.Op,
 				},
 			}
 		} else {
-			logger.UtilLog.Errorf("Ue[%s] need Op or OpCode", config.Supi)
+			logger.UtilLog.Errorf("Ue[%s] need Op or OpCode", ue.Supi)
 		}
-		self.UeContextPool[config.Supi] = ueInfo
-	}
-}
-func InitUeToDB() {
-	self := simulator_context.Simulator_Self()
-	for supi, info := range self.UeContextPool {
-		InsertAuthSubscriptionToMongoDB(supi, info.AuthsSubs)
-		InsertAccessAndMobilitySubscriptionDataToMongoDB(supi, info.AmDate, info.PlmnId)
-		InsertSmfSelectionSubscriptionDataToMongoDB(supi, info.SmfSelData, info.PlmnId)
-		InsertAmPolicyDataToMongoDB(supi, info.AmPolicy)
+		InsertAuthSubscriptionToMongoDB(supi, authsSubs)
+		InsertAccessAndMobilitySubscriptionDataToMongoDB(supi, amDate, ue.ServingPlmnId)
+		InsertSmfSelectionSubscriptionDataToMongoDB(supi, ue.SmfSelData, ue.ServingPlmnId)
+		InsertAmPolicyDataToMongoDB(supi, amPolicy)
 	}
 }
 
 func ClearDB() {
 	self := simulator_context.Simulator_Self()
-	for supi, info := range self.UeContextPool {
+	for supi, ue := range self.UeContextPool {
 		logger.UtilLog.Infof("Del UE[%s] Info in DB", supi)
-		DelAccessAndMobilitySubscriptionDataFromMongoDB(supi, info.PlmnId)
+		DelAccessAndMobilitySubscriptionDataFromMongoDB(supi, ue.ServingPlmnId)
 		DelAmPolicyDataFromMongoDB(supi)
 		DelAuthSubscriptionToMongoDB(supi)
-		DelSmfSelectionSubscriptionDataFromMongoDB(supi, info.PlmnId)
+		DelSmfSelectionSubscriptionDataFromMongoDB(supi, ue.ServingPlmnId)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"radio_simulator/src/simulator_context"
 
 	"gopkg.in/yaml.v2"
 )
@@ -15,13 +16,13 @@ func checkErr(err error) {
 	}
 }
 
-func InitUeConfigFactory(f string) *Config {
+func InitUeContextFactory(f string) *simulator_context.UeContext {
 	content, err := ioutil.ReadFile(f)
 	checkErr(err)
 
-	config := Config{}
+	context := simulator_context.NewUeContext()
 
-	err = yaml.Unmarshal([]byte(content), &config)
+	err = yaml.Unmarshal([]byte(content), context)
 	checkErr(err)
-	return &config
+	return context
 }

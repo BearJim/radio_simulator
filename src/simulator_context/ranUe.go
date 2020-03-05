@@ -3,6 +3,7 @@ package simulator_context
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"net"
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
@@ -54,20 +55,62 @@ const (
 	ACCESS_TYPE_NON_3GPP uint8 = 0x02
 )
 
-type RanUeContext struct {
-	Supi               string
-	RanUeNgapId        int64
-	AmfUeNgapId        int64
-	ULCount            uint32
-	DLOverflow         uint16
-	DLCountSQN         uint8
-	CipheringAlg       uint8
-	IntegrityAlg       uint8
-	KnasEnc            []uint8
-	KnasInt            []uint8
-	Kamf               []uint8
-	AuthenticationSubs models.AuthenticationSubscription
-	PduSessionId       map[int]*SessionContext
+var (
+	AlogMaps = map[string]uint8{
+		"NEA0": ALG_CIPHERING_128_NEA0,
+		"NEA1": ALG_CIPHERING_128_NEA1,
+		"NEA2": ALG_CIPHERING_128_NEA2,
+		"NEA3": ALG_CIPHERING_128_NEA3,
+		"NIA0": ALG_INTEGRITY_128_NIA0,
+		"NIA1": ALG_INTEGRITY_128_NIA1,
+		"NIA2": ALG_INTEGRITY_128_NIA2,
+		"NIA3": ALG_INTEGRITY_128_NIA3,
+	}
+)
+
+const (
+	NgapIdUnspecified int64 = 0xffffffffff
+)
+
+type UeContext struct {
+	Supi          string                              `yaml:"supi"`
+	Gpsis         []string                            `yaml:"gpsis"`
+	Nssai         models.Nssai                        `yaml:"nssai"`
+	UeAmbr        UeAmbr                              `yaml:"ueAmbr"`
+	SmfSelData    models.SmfSelectionSubscriptionData `yaml:"smfSelData"`
+	AuthData      AuthData                            `yaml:"auths"`
+	SubscCats     []string                            `yaml:"subscCats,omitempty"`
+	ServingPlmnId string                              `yaml:"servingPlmn"`
+	RanUeNgapId   int64
+	AmfUeNgapId   int64
+	// security
+	ULCount      uint32
+	DLOverflow   uint16
+	DLCountSQN   uint8
+	CipheringAlg string `yaml:"cipherAlg"`
+	IntegrityAlg string `yaml:"integrityAlg"`
+	KnasEnc      []uint8
+	KnasInt      []uint8
+	Kamf         []uint8
+	// PduSession
+	PduSession map[int]*SessionContext
+	// related Context
+	Ran           *RanContext
+	RegisterState bool
+}
+
+type UeAmbr struct {
+	Upink    string `yaml:"uplink"`
+	DownLink string `yaml:"downlink"`
+}
+
+type AuthData struct {
+	AuthMethod string `yaml:"authMethod"`
+	K          string `yaml:"K"`
+	Opc        string `yaml:"Opc,omitempty"`
+	Op         string `yaml:"Op,omitempty"`
+	AMF        string `yaml:"AMF"`
+	SQN        string `yaml:"SQN"`
 }
 
 type SessionContext struct {
@@ -78,21 +121,35 @@ type SessionContext struct {
 	TcpClient *net.Conn
 }
 
-func NewRanUeContext(supi string, ranUeNgapId int64, cipheringAlg, integrityAlg uint8) *RanUeContext {
-	ue := RanUeContext{}
-	ue.RanUeNgapId = ranUeNgapId
-	ue.Supi = supi
-	ue.CipheringAlg = cipheringAlg
-	ue.IntegrityAlg = integrityAlg
-	return &ue
+func NewUeContext() *UeContext {
+	return &UeContext{
+		PduSession:  make(map[int]*SessionContext),
+		RanUeNgapId: NgapIdUnspecified,
+	}
 }
-func (ue *RanUeContext) GetSecurityULCount() []byte {
+
+func (ue *UeContext) AttachRan(ran *RanContext) {
+	ue.Ran = ran
+	ran.UePool[ran.RanUeIDGeneator] = ue
+	ran.RanUeIDGeneator++
+}
+
+func (ue *UeContext) DetachRan(ran *RanContext) {
+	ue.Ran = nil
+	delete(ran.UePool, ue.RanUeNgapId)
+}
+
+func (ue *UeContext) GetSecurityAlg() (intAlg, cipherAlg uint8) {
+	return AlogMaps[ue.IntegrityAlg], AlogMaps[ue.CipheringAlg]
+}
+
+func (ue *UeContext) GetSecurityULCount() []byte {
 	var r = make([]byte, 4)
 	binary.BigEndian.PutUint32(r, ue.ULCount&0xffffff)
 	return r
 }
 
-func (ue *RanUeContext) GetSecurityDLCount() []byte {
+func (ue *UeContext) GetSecurityDLCount() []byte {
 	var r = make([]byte, 4)
 	binary.BigEndian.PutUint16(r, ue.DLOverflow)
 	r[3] = ue.DLCountSQN
@@ -102,19 +159,29 @@ func (ue *RanUeContext) GetSecurityDLCount() []byte {
 	return r
 }
 
-func (ue *RanUeContext) DeriveRESstarAndSetKey(authSubs models.AuthenticationSubscription, RAND []byte, snNmae string) []byte {
+func (ue *UeContext) GetServingNetworkName() string {
+	mcc := ue.ServingPlmnId[:3]
+	mnc := ue.ServingPlmnId[3:]
+	if len(mnc) == 2 {
+		mnc = "0" + mnc
+	}
+	return fmt.Sprintf("5G:mnc%s.mcc%s.3gppnetwork.org", mnc, mcc)
+}
 
-	SQN, _ := hex.DecodeString(authSubs.SequenceNumber)
+func (ue *UeContext) DeriveRESstarAndSetKey(RAND []byte) []byte {
+	authData := ue.AuthData
+	snName := ue.GetServingNetworkName()
+	SQN, _ := hex.DecodeString(authData.SQN)
 
-	AMF, _ := hex.DecodeString(authSubs.AuthenticationManagementField)
+	AMF, _ := hex.DecodeString(authData.AMF)
 
 	// Run milenage
 	MAC_A, MAC_S := make([]byte, 8), make([]byte, 8)
 	CK, IK := make([]byte, 16), make([]byte, 16)
 	RES := make([]byte, 8)
 	AK, AKstar := make([]byte, 6), make([]byte, 6)
-	OPC, _ := hex.DecodeString(authSubs.Opc.OpcValue)
-	K, _ := hex.DecodeString(authSubs.PermanentKey.PermanentKeyValue)
+	OPC, _ := hex.DecodeString(authData.Opc)
+	K, _ := hex.DecodeString(authData.K)
 	// Generate MAC_A, MAC_S
 	milenage.F1_Test(OPC, K, RAND, SQN, AMF, MAC_A, MAC_S)
 
@@ -124,18 +191,18 @@ func (ue *RanUeContext) DeriveRESstarAndSetKey(authSubs models.AuthenticationSub
 	// derive RES*
 	key := append(CK, IK...)
 	FC := UeauCommon.FC_FOR_RES_STAR_XRES_STAR_DERIVATION
-	P0 := []byte(snNmae)
+	P0 := []byte(snName)
 	P1 := RAND
 	P2 := RES
 
-	ue.DerivateKamf(key, snNmae, SQN, AK)
+	ue.DerivateKamf(key, snName, SQN, AK)
 	ue.DerivateAlgKey()
 	kdfVal_for_resStar := UeauCommon.GetKDFValue(key, FC, P0, UeauCommon.KDFLen(P0), P1, UeauCommon.KDFLen(P1), P2, UeauCommon.KDFLen(P2))
 	return kdfVal_for_resStar[len(kdfVal_for_resStar)/2:]
 
 }
 
-func (ue *RanUeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
+func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 
 	FC := UeauCommon.FC_FOR_KAUSF_DERIVATION
 	P0 := []byte(snName)
@@ -157,11 +224,11 @@ func (ue *RanUeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) 
 }
 
 // Algorithm key Derivation function defined in TS 33.501 Annex A.9
-func (ue *RanUeContext) DerivateAlgKey() {
+func (ue *UeContext) DerivateAlgKey() {
 	// Security Key
 	P0 := []byte{N_NAS_ENC_ALG}
 	L0 := UeauCommon.KDFLen(P0)
-	P1 := []byte{ue.CipheringAlg}
+	P1 := []byte{AlogMaps[ue.CipheringAlg]}
 	L1 := UeauCommon.KDFLen(P1)
 
 	kenc := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)
@@ -170,7 +237,7 @@ func (ue *RanUeContext) DerivateAlgKey() {
 	// Integrity Key
 	P0 = []byte{N_NAS_INT_ALG}
 	L0 = UeauCommon.KDFLen(P0)
-	P1 = []byte{ue.IntegrityAlg}
+	P1 = []byte{AlogMaps[ue.IntegrityAlg]}
 	L1 = UeauCommon.KDFLen(P1)
 
 	kint := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)

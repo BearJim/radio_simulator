@@ -1,7 +1,6 @@
 package simulator_context
 
 import (
-	"context"
 	"encoding/hex"
 	"net"
 	"radio_simulator/lib/ngap/ngapType"
@@ -12,15 +11,15 @@ var simContext = Simulator{}
 
 func init() {
 	Simulator_Self().RanPool = make(map[string]*RanContext)
-	Simulator_Self().UeContextPool = make(map[string]UeDBInfo)
+	Simulator_Self().UeContextPool = make(map[string]*UeContext)
 }
 
 type Simulator struct {
+	DefaultRanUri string
 	RanPool       map[string]*RanContext // RanUri -> RAN_CONTEXT
-	UeContextPool map[string]UeDBInfo    // Supi -> UeTestInfo
+	UeContextPool map[string]*UeContext  // Supi -> UeTestInfo
 	TcpServer     net.Listener
 	TcpConn       net.Conn
-	Ctx           context.Context
 }
 
 type UeDBInfo struct {

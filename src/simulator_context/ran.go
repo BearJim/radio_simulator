@@ -7,13 +7,15 @@ import (
 )
 
 type RanContext struct {
-	AMFUri        string
-	RanUri        string
-	Name          string
-	GnbId         aper.BitString
-	UePool        map[string]*RanUeContext     // Supi
-	SupportTAList map[string][]PlmnSupportItem // TAC(hex string) -> PlmnSupportItem
-	SctpConn      *sctp.SCTPConn
+	RanUeIDGeneator int64
+	AMFUri          string
+	RanUri          string
+	Name            string
+	GnbId           aper.BitString
+	UePool          map[int64]*UeContext // ranUeNgapId
+	DefaultTAC      string
+	SupportTAList   map[string][]PlmnSupportItem // TAC(hex string) -> PlmnSupportItem
+	SctpConn        *sctp.SCTPConn
 }
 
 type PlmnSupportItem struct {
@@ -21,9 +23,18 @@ type PlmnSupportItem struct {
 	SNssaiList []ngapType.SNSSAI
 }
 
+func (context *RanContext) FindUeByRanUeNgapID(ranUeNgapID int64) *UeContext {
+	if ue, ok := context.UePool[ranUeNgapID]; ok {
+		return ue
+	} else {
+		return nil
+	}
+}
+
 func NewRanContext() *RanContext {
 	return &RanContext{
-		UePool:        make(map[string]*RanUeContext),
-		SupportTAList: make(map[string][]PlmnSupportItem),
+		RanUeIDGeneator: 0,
+		UePool:          make(map[int64]*UeContext),
+		SupportTAList:   make(map[string][]PlmnSupportItem),
 	}
 }
