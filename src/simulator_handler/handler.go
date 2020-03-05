@@ -16,12 +16,12 @@ func init() {
 	NgapLog = logger.NgapLog
 }
 
-func Handle() {
+func Handle(laddr string) {
 	for {
 		select {
-		case msg, ok := <-simulator_message.SimChannel:
+		case msg, ok := <-simulator_message.SimChannel[laddr]:
 			if ok {
-				ngap_handler.Dispatch(msg.NgapAddr, msg.Value)
+				ngap_handler.Dispatch(laddr, msg.Value)
 			} else {
 				HandlerLog.Errorln("Channel closed!")
 			}

@@ -6,6 +6,7 @@ import (
 	"radio_simulator/lib/ngap/ngapSctp"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
+	"radio_simulator/src/simulator_handler"
 	"radio_simulator/src/simulator_handler/simulator_message"
 	"radio_simulator/src/simulator_ngap"
 	"strings"
@@ -78,6 +79,10 @@ func RanStart(ran *simulator_context.RanContext) {
 	check(err)
 	ran.SctpConn = conn
 	simulator_ngap.SendNGSetupRequest(ran)
+	// New NGAP Channel
+	simulator_message.AddNgapChannel(ran.RanUri)
+	// Listen NGAP Channel
+	go simulator_handler.Handle(ran.RanUri)
 	go StartHandle(ran)
 }
 
@@ -89,11 +94,12 @@ func StartHandle(ran *simulator_context.RanContext) {
 		if err != nil {
 			logger.NgapLog.Debugf("Error %v", err)
 			delete(simulator_context.Simulator_Self().RanPool, ran.RanUri)
+			simulator_message.DelNgapChannel(ran.RanUri)
 			break
 		} else if info == nil || info.PPID != NGAP_PPID {
 			logger.NgapLog.Warnf("Recv SCTP PPID != 60")
 			continue
 		}
-		simulator_message.SendMessage(simulator_message.NGAPMessage{NgapAddr: ran.RanUri, Value: buffer[:n]})
+		simulator_message.SendMessage(ran.RanUri, simulator_message.NGAPMessage{Value: buffer[:n]})
 	}
 }

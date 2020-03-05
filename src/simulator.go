@@ -12,7 +12,6 @@ import (
 	"radio_simulator/src/factory"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_handler"
 	"radio_simulator/src/simulator_init"
 	"radio_simulator/src/simulator_util"
 	"syscall"
@@ -126,8 +125,6 @@ func main() {
 	for _, ran := range self.RanPool {
 		simulator_init.RanStart(ran)
 	}
-
-	go simulator_handler.Handle()
 
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
