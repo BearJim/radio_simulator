@@ -5,7 +5,7 @@ import (
 	"radio_simulator/lib/nas"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_util"
+	"radio_simulator/src/simulator_nas/nas_security"
 )
 
 var nasLog *logrus.Entry
@@ -36,7 +36,7 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 
 	if ue.RegisterState {
 		var err error
-		msg, err = simulator_util.NASDecode(ue, nas.GetSecurityHeaderType(nasPdu)&0x0f, nasPdu)
+		msg, err = nas_security.NASDecode(ue, nas.GetSecurityHeaderType(nasPdu)&0x0f, nasPdu)
 		if err != nil {
 			nasLog.Error(err.Error())
 			return
@@ -54,6 +54,8 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 		switch msg.GmmMessage.GetMessageType() {
 		case nas.MsgTypeAuthenticationRequest:
 			checkMsgError(HandleAuthenticationRequest(ue, msg.GmmMessage.AuthenticationRequest), "AuthenticationRequest")
+		case nas.MsgTypeSecurityModeCommand:
+			checkMsgError(HandleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
 		// case nas.MsgTypeULNASTransport:
 		// 	return gmm_handler.HandleULNASTransport(amfUe, models.AccessType__3_GPP_ACCESS, gmmMessage.ULNASTransport)
 		// case nas.MsgTypeRegistrationRequest:

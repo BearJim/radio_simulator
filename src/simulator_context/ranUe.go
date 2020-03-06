@@ -55,19 +55,6 @@ const (
 	ACCESS_TYPE_NON_3GPP uint8 = 0x02
 )
 
-var (
-	AlogMaps = map[string]uint8{
-		"NEA0": ALG_CIPHERING_128_NEA0,
-		"NEA1": ALG_CIPHERING_128_NEA1,
-		"NEA2": ALG_CIPHERING_128_NEA2,
-		"NEA3": ALG_CIPHERING_128_NEA3,
-		"NIA0": ALG_INTEGRITY_128_NIA0,
-		"NIA1": ALG_INTEGRITY_128_NIA1,
-		"NIA2": ALG_INTEGRITY_128_NIA2,
-		"NIA3": ALG_INTEGRITY_128_NIA3,
-	}
-)
-
 const (
 	NgapIdUnspecified int64 = 0xffffffffff
 )
@@ -84,14 +71,16 @@ type UeContext struct {
 	RanUeNgapId   int64
 	AmfUeNgapId   int64
 	// security
-	ULCount      uint32
-	DLOverflow   uint16
-	DLCountSQN   uint8
-	CipheringAlg string `yaml:"cipherAlg"`
-	IntegrityAlg string `yaml:"integrityAlg"`
-	KnasEnc      []uint8
-	KnasInt      []uint8
-	Kamf         []uint8
+	ULCount          uint32
+	DLOverflow       uint16
+	DLCountSQN       uint8
+	CipheringAlgOrig string `yaml:"cipherAlg"`
+	IntegrityAlgOrig string `yaml:"integrityAlg"`
+	EncAlg           uint8
+	IntAlg           uint8
+	KnasEnc          []uint8
+	KnasInt          []uint8
+	Kamf             []uint8
 	// PduSession
 	PduSession map[int]*SessionContext
 	// related Context
@@ -137,10 +126,6 @@ func (ue *UeContext) AttachRan(ran *RanContext) {
 func (ue *UeContext) DetachRan(ran *RanContext) {
 	ue.Ran = nil
 	delete(ran.UePool, ue.RanUeNgapId)
-}
-
-func (ue *UeContext) GetSecurityAlg() (intAlg, cipherAlg uint8) {
-	return AlogMaps[ue.IntegrityAlg], AlogMaps[ue.CipheringAlg]
 }
 
 func (ue *UeContext) GetSecurityULCount() []byte {
@@ -228,7 +213,7 @@ func (ue *UeContext) DerivateAlgKey() {
 	// Security Key
 	P0 := []byte{N_NAS_ENC_ALG}
 	L0 := UeauCommon.KDFLen(P0)
-	P1 := []byte{AlogMaps[ue.CipheringAlg]}
+	P1 := []byte{ue.EncAlg}
 	L1 := UeauCommon.KDFLen(P1)
 
 	kenc := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)
@@ -237,7 +222,7 @@ func (ue *UeContext) DerivateAlgKey() {
 	// Integrity Key
 	P0 = []byte{N_NAS_INT_ALG}
 	L0 = UeauCommon.KDFLen(P0)
-	P1 = []byte{AlogMaps[ue.IntegrityAlg]}
+	P1 = []byte{ue.IntAlg}
 	L1 = UeauCommon.KDFLen(P1)
 
 	kint := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)

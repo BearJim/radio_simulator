@@ -238,8 +238,10 @@ func BuildInitialUEMessage(ue *simulator_context.UeContext, registrationType uin
 	ie.Value.Present = ngapType.InitialUEMessageIEsPresentNASPDU
 	ie.Value.NASPDU = new(ngapType.NASPDU)
 
-	mobileId := type_convert.SupiToMobileId(ue.Supi, ue.ServingPlmnId)
-	nasPdu := nas_packet.GetRegistrationRequest(registrationType, mobileId, type_convert.UeSecurityCap(ue.GetSecurityAlg()), nil, nil)
+	nasPdu, err := nas_packet.GetRegistrationRequestWith5GMM(ue, registrationType, nil, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	// TODO: complete NAS-PDU
 	nASPDU := ie.Value.NASPDU

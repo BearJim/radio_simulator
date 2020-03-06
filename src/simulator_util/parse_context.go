@@ -7,6 +7,7 @@ import (
 	"radio_simulator/src/factory"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
+	"radio_simulator/src/simulator_nas/nas_security"
 	"radio_simulator/src/ue_factory"
 	"strconv"
 )
@@ -40,6 +41,8 @@ func ParseUeData(configDirPath string, fileList []string) {
 	for _, ueInfoFile := range fileList {
 		fileName := configDirPath + ueInfoFile
 		ue := ue_factory.InitUeContextFactory(fileName)
+		ue.IntAlg = nas_security.AlogMaps[ue.IntegrityAlgOrig]
+		ue.EncAlg = nas_security.AlogMaps[ue.CipheringAlgOrig]
 		self.UeContextPool[ue.Supi] = ue
 	}
 }

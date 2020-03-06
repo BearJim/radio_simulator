@@ -1,9 +1,6 @@
 package simulator_util
 
 import (
-	"radio_simulator/lib/nas"
-	"radio_simulator/lib/nas/nasMessage"
-	"radio_simulator/src/simulator_context"
 
 	// Nausf_UEAU_Client "radio_simulator/lib/Nausf_UEAuthentication"
 	"radio_simulator/lib/ngap"
@@ -51,18 +48,19 @@ func GetPDUSessionResourceSetupResponse(amfUeNgapID int64, ranUeNgapID int64, ip
 	message := simulator_ngap.BuildPDUSessionResourceSetupResponseForRegistrationTest(amfUeNgapID, ranUeNgapID, ipv4)
 	return ngap.Encoder(message)
 }
-func EncodeNasPduWithSecurity(ue *simulator_context.UeContext, pdu []byte) ([]byte, error) {
-	m := nas.NewMessage()
-	err := m.PlainNasDecode(&pdu)
-	if err != nil {
-		return nil, err
-	}
-	m.SecurityHeader = nas.SecurityHeader{
-		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
-		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
-	}
-	return NASEncode(ue, m)
-}
+
+// func EncodeNasPduWithSecurity(ue *simulator_context.UeContext, pdu []byte) ([]byte, error) {
+// 	m := nas.NewMessage()
+// 	err := m.PlainNasDecode(&pdu)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	m.SecurityHeader = nas.SecurityHeader{
+// 		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
+// 		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+// 	}
+// 	return NASEncode(ue, m)
+// }
 
 func GetUEContextReleaseComplete(amfUeNgapID int64, ranUeNgapID int64, pduSessionIDList []int64) ([]byte, error) {
 	message := simulator_ngap.BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID, pduSessionIDList)

@@ -9,6 +9,9 @@ import (
 	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/lib/nas/nasType"
 	"radio_simulator/lib/openapi/models"
+	"radio_simulator/src/simulator_context"
+	"radio_simulator/src/simulator_nas/nas_security"
+	"radio_simulator/src/type_convert"
 )
 
 const (
@@ -60,7 +63,7 @@ func GetRegistrationRequest(registrationType uint8, mobileIdentity nasType.Mobil
 	return
 }
 
-func GetRegistrationRequestWith5GMM(registrationType uint8, mobileIdentity nasType.MobileIdentity5GS, requestedNSSAI *nasType.RequestedNSSAI, uplinkDataStatus *nasType.UplinkDataStatus) (nasPdu []byte) {
+func GetRegistrationRequestWith5GMM(ue *simulator_context.UeContext, registrationType uint8, requestedNSSAI *nasType.RequestedNSSAI, uplinkDataStatus *nasType.UplinkDataStatus) ([]byte, error) {
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeRegistrationRequest)
@@ -73,16 +76,17 @@ func GetRegistrationRequestWith5GMM(registrationType uint8, mobileIdentity nasTy
 	registrationRequest.NgksiAndRegistrationType5GS.SetTSC(nasMessage.TypeOfSecurityContextFlagNative)
 	registrationRequest.NgksiAndRegistrationType5GS.SetNasKeySetIdentifiler(0x01)
 	registrationRequest.NgksiAndRegistrationType5GS.SetRegistrationType5GS(registrationType)
-	registrationRequest.MobileIdentity5GS = mobileIdentity
+	registrationRequest.MobileIdentity5GS = type_convert.SupiToMobileId(ue.Supi, ue.ServingPlmnId)
+	// S1 Mode, Handover Attach, LPP are not supported
 	registrationRequest.Capability5GMM = &nasType.Capability5GMM{
 		Iei:   nasMessage.RegistrationRequestCapability5GMMType,
 		Len:   1,
-		Octet: [13]uint8{0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		Octet: [13]uint8{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 	}
 	registrationRequest.UESecurityCapability = &nasType.UESecurityCapability{
 		Iei:    nasMessage.RegistrationRequestUESecurityCapabilityType,
 		Len:    8,
-		Buffer: []uint8{0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00},
+		Buffer: type_convert.UeSecurityCap(ue.IntAlg, ue.EncAlg),
 	}
 	registrationRequest.RequestedNSSAI = requestedNSSAI
 	registrationRequest.UplinkDataStatus = uplinkDataStatus
@@ -91,14 +95,7 @@ func GetRegistrationRequestWith5GMM(registrationType uint8, mobileIdentity nasTy
 
 	m.GmmMessage.RegistrationRequest = registrationRequest
 
-	data := new(bytes.Buffer)
-	err := m.GmmMessageEncode(data)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	nasPdu = data.Bytes()
-	return
+	return m.PlainNasEncode()
 }
 
 func GetPduSessionEstablishmentRequest(pduSessionId uint8) (nasPdu []byte) {
@@ -686,11 +683,16 @@ func GetRegistrationComplete(sorTransparentContainer []uint8) (nasPdu []byte) {
 }
 
 // TS 24.501 8.2.26
-func GetSecurityModeComplete(nasMessageContainer []uint8) (nasPdu []byte) {
+func GetSecurityModeComplete(ue *simulator_context.UeContext, nasMessageContainer []uint8) ([]byte, error) {
 
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeSecurityModeComplete)
+
+	m.SecurityHeader = nas.SecurityHeader{
+		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
+		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+	}
 
 	securityModeComplete := nasMessage.NewSecurityModeComplete(0)
 	securityModeComplete.ExtendedProtocolDiscriminator.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSMobilityManagementMessage)
@@ -715,14 +717,8 @@ func GetSecurityModeComplete(nasMessageContainer []uint8) (nasPdu []byte) {
 
 	m.GmmMessage.SecurityModeComplete = securityModeComplete
 
-	data := new(bytes.Buffer)
-	err := m.GmmMessageEncode(data)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	return nas_security.NASEncode(ue, m)
 
-	nasPdu = data.Bytes()
-	return
 }
 
 func GetSecurityModeReject(cause5GMM uint8) (nasPdu []byte) {
