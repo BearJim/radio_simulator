@@ -66,6 +66,19 @@ func SendUplinkNasTransport(ran *simulator_context.RanContext, ue *simulator_con
 	SendToAmf(ran, pkt)
 }
 
+func SendIntialContextSetupResponse(ran *simulator_context.RanContext, ue *simulator_context.UeContext, pduSessionIds []string) {
+
+	ngapLog.Info("[AMF] Send Intial Context Setup Response")
+
+	pkt, err := BuildInitialContextSetupResponse(ue, pduSessionIds, nil)
+	if err != nil {
+		ngapLog.Errorf("Build Uplink Nas Transport failed : %s", err.Error())
+		return
+	}
+	SendToAmf(ran, pkt)
+
+}
+
 func SendErrorIndication(ran *simulator_context.RanContext, amfUeNgapId, ranUeNgapId *int64, cause *ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) {
 
 	ngapLog.Info("[AMF] Send Error Indication")

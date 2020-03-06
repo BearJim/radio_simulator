@@ -23,6 +23,9 @@ func HandleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMe
 }
 
 func HandleSecurityModeCommand(ue *simulator_context.UeContext, request *nasMessage.SecurityModeCommand) error {
+
+	nasLog.Infof("Ue[%s] Security Mode Command", ue.Supi)
+
 	ue.EncAlg = request.SelectedNASSecurityAlgorithms.GetTypeOfCipheringAlgorithm()
 	ue.IntAlg = request.SelectedNASSecurityAlgorithms.GetTypeOfIntegrityProtectionAlgorithm()
 	nasContent, err := nas_packet.GetRegistrationRequestWith5GMM(ue, nasMessage.RegistrationType5GSInitialRegistration, nil, nil)
@@ -30,6 +33,17 @@ func HandleSecurityModeCommand(ue *simulator_context.UeContext, request *nasMess
 		return err
 	}
 	nasPdu, err := nas_packet.GetSecurityModeComplete(ue, nasContent)
+	if err != nil {
+		return err
+	}
+	simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+	return nil
+}
+func HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessage.RegistrationAccept) error {
+
+	nasLog.Infof("Ue[%s] Registration Accept", ue.Supi)
+
+	nasPdu, err := nas_packet.GetRegistrationComplete(ue, nil)
 	if err != nil {
 		return err
 	}

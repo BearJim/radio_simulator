@@ -82,35 +82,17 @@ func Dispatch(addr string, msg []byte) {
 		// case ngapType.ProcedureCodeUplinkNonUEAssociatedNRPPaTransport:
 		// 	ngap_handler.HandleUplinkNonUEAssociatedNRPPATransport(ran, pdu)
 		default:
-			NgapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, initiatingMessage.ProcedureCode.Value)
+			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, initiatingMessage.ProcedureCode.Value)
 		}
 	case ngapType.NGAPPDUPresentSuccessfulOutcome:
 		successfulOutcome := pdu.SuccessfulOutcome
 		if successfulOutcome == nil {
-			NgapLog.Errorln("successful Outcome is nil")
+			ngapLog.Errorln("successful Outcome is nil")
 			return
 		}
 		switch successfulOutcome.ProcedureCode.Value {
-		// case ngapType.ProcedureCodeNGReset:
-		// 	ngap_handler.HandleNGResetAcknowledge(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextRelease:
-		// 	ngap_handler.HandleUEContextReleaseComplete(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceRelease:
-		// 	ngap_handler.HandlePDUSessionResourceReleaseResponse(ran, pdu)
-		// case ngapType.ProcedureCodeUERadioCapabilityCheck:
-		// 	ngap_handler.HandleUERadioCapabilityCheckResponse(ran, pdu)
-		// case ngapType.ProcedureCodeAMFConfigurationUpdate:
-		// 	ngap_handler.HandleAMFconfigurationUpdateAcknowledge(ran, pdu)
-		// case ngapType.ProcedureCodeInitialContextSetup:
-		// 	ngap_handler.HandleInitialContextSetupResponse(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextModification:
-		// 	ngap_handler.HandleUEContextModificationResponse(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceSetup:
-		// 	ngap_handler.HandlePDUSessionResourceSetupResponse(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceModify:
-		// 	ngap_handler.HandlePDUSessionResourceModifyResponse(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverResourceAllocation:
-		// 	ngap_handler.HandleHandoverRequestAcknowledge(ran, pdu)
+		case ngapType.ProcedureCodeInitialContextSetup:
+			HandleInitialContextSetupResponse(ran, pdu)
 		default:
 			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, successfulOutcome.ProcedureCode.Value)
 		}

@@ -56,6 +56,8 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 			checkMsgError(HandleAuthenticationRequest(ue, msg.GmmMessage.AuthenticationRequest), "AuthenticationRequest")
 		case nas.MsgTypeSecurityModeCommand:
 			checkMsgError(HandleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
+		case nas.MsgTypeRegistrationAccept:
+			checkMsgError(HandleRegistrationAccept(ue, msg.GmmMessage.RegistrationAccept), "RegistrationAccept")
 		// case nas.MsgTypeULNASTransport:
 		// 	return gmm_handler.HandleULNASTransport(amfUe, models.AccessType__3_GPP_ACCESS, gmmMessage.ULNASTransport)
 		// case nas.MsgTypeRegistrationRequest:

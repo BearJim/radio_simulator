@@ -652,11 +652,16 @@ func GetAuthenticationFailure(cause5GMM uint8, authenticationFailureParam []uint
 	return
 }
 
-func GetRegistrationComplete(sorTransparentContainer []uint8) (nasPdu []byte) {
+func GetRegistrationComplete(ue *simulator_context.UeContext, sorTransparentContainer []uint8) ([]byte, error) {
 
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeRegistrationComplete)
+
+	m.SecurityHeader = nas.SecurityHeader{
+		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
+		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+	}
 
 	registrationComplete := nasMessage.NewRegistrationComplete(0)
 	registrationComplete.ExtendedProtocolDiscriminator.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSMobilityManagementMessage)
@@ -672,14 +677,7 @@ func GetRegistrationComplete(sorTransparentContainer []uint8) (nasPdu []byte) {
 
 	m.GmmMessage.RegistrationComplete = registrationComplete
 
-	data := new(bytes.Buffer)
-	err := m.GmmMessageEncode(data)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	nasPdu = data.Bytes()
-	return
+	return nas_security.NASEncode(ue, m)
 }
 
 // TS 24.501 8.2.26

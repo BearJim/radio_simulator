@@ -39,10 +39,10 @@ func GetInitialContextSetupResponse(amfUeNgapID int64, ranUeNgapID int64) ([]byt
 	return ngap.Encoder(message)
 }
 
-func GetInitialContextSetupResponseForServiceRequest(amfUeNgapID int64, ranUeNgapID int64, ipv4 string) ([]byte, error) {
-	message := simulator_ngap.BuildInitialContextSetupResponse(amfUeNgapID, ranUeNgapID, ipv4, nil)
-	return ngap.Encoder(message)
-}
+// func GetInitialContextSetupResponseForServiceRequest(amfUeNgapID int64, ranUeNgapID int64, ipv4 string) ([]byte, error) {
+// 	message := simulator_ngap.BuildInitialContextSetupResponse(amfUeNgapID, ranUeNgapID, ipv4, nil)
+// 	return ngap.Encoder(message)
+// }
 
 func GetPDUSessionResourceSetupResponse(amfUeNgapID int64, ranUeNgapID int64, ipv4 string) ([]byte, error) {
 	message := simulator_ngap.BuildPDUSessionResourceSetupResponseForRegistrationTest(amfUeNgapID, ranUeNgapID, ipv4)
