@@ -34,7 +34,7 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 
 	var msg *nas.Message
 
-	if ue.RegisterState {
+	if ue.RegisterState == simulator_context.RegisterStateRegitered {
 		var err error
 		msg, err = nas_security.NASDecode(ue, nas.GetSecurityHeaderType(nasPdu)&0x0f, nasPdu)
 		if err != nil {

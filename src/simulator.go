@@ -65,52 +65,6 @@ func Terminate() {
 
 }
 
-func startTcpServer() {
-	var err error
-	srvAddr := factory.SimConfig.TcpUri
-	self.TcpServer, err = net.Listen("tcp", srvAddr)
-	if err != nil {
-		logger.SimulatorLog.Error(err.Error())
-	}
-	defer self.TcpServer.Close()
-	logger.SimulatorLog.Infof("TCP server start and listening on %s.", srvAddr)
-
-	for {
-		self.TcpConn, err = self.TcpServer.Accept()
-		if err != nil {
-			logger.InitLog.Infof("TCP server closed")
-			return
-		}
-		handleConnection(self.TcpConn)
-	}
-}
-
-func handleConnection(conn net.Conn) {
-	remoteAddr := conn.RemoteAddr().String()
-	logger.SimulatorLog.Infof("Client connected from: " + remoteAddr)
-
-	// Make a buffer to hold incoming data.
-	buf := make([]byte, 1024)
-	for {
-		// Read the incoming connection into the buffer.
-		reqLen, err := conn.Read(buf)
-		if err != nil {
-
-			if err.Error() == "EOF" {
-				logger.SimulatorLog.Infof("Disconned from ", remoteAddr)
-				break
-			} else {
-				logger.SimulatorLog.Infof("Error reading:", err.Error())
-				break
-			}
-		}
-		// Start Client
-		logger.SimulatorLog.Infof("len: %d, recv: %s\n", reqLen, string(buf[:reqLen]))
-	}
-	// Close the connection when you're done with it.
-	conn.Close()
-}
-
 func main() {
 	Initailize()
 	simulator_util.ParseRanContext()
@@ -134,6 +88,6 @@ func main() {
 		os.Exit(0)
 	}()
 	// TCP server for cli test UE
-	startTcpServer()
+	StartTcpServer()
 	simulator_util.ClearDB()
 }

@@ -48,5 +48,7 @@ func HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessa
 		return err
 	}
 	simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+	ue.RegisterState = simulator_context.RegisterStateRegitered
+	ue.SendSuccessRegister()
 	return nil
 }

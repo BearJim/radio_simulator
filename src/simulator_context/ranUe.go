@@ -8,6 +8,7 @@ import (
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
 	"radio_simulator/lib/openapi/models"
+	"sync"
 )
 
 // TS 33501 Annex A.8 Algorithm distinguisher For Knas_int Knas_enc
@@ -58,6 +59,11 @@ const (
 const (
 	NgapIdUnspecified int64 = 0xffffffffff
 )
+const (
+	RegisterStateRegitered   = "REGISTERED"
+	RegisterStateRegitering  = "REGISTERING"
+	RegisterStateDeregitered = "DEREGISTERED"
+)
 
 type UeContext struct {
 	Supi          string                              `yaml:"supi"`
@@ -85,7 +91,9 @@ type UeContext struct {
 	PduSession map[int]*SessionContext
 	// related Context
 	Ran           *RanContext
-	RegisterState bool
+	RegisterState string
+	// For TCP Client
+	TcpConn net.Conn // supi -> UeTcpClient
 }
 
 type UeAmbr struct {
@@ -103,17 +111,45 @@ type AuthData struct {
 }
 
 type SessionContext struct {
-	ULTEID    int
-	DLTEID    int
-	UpfUri    string
-	RanUri    string
-	TcpClient *net.Conn
+	Mtx          sync.Mutex
+	PduSessionId int64
+	ULTEID       int
+	DLTEID       int
+	UpfUri       string
+	RanUri       string
 }
 
 func NewUeContext() *UeContext {
 	return &UeContext{
-		PduSession:  make(map[int]*SessionContext),
-		RanUeNgapId: NgapIdUnspecified,
+		PduSession:    make(map[int]*SessionContext),
+		RanUeNgapId:   NgapIdUnspecified,
+		RegisterState: RegisterStateDeregitered,
+	}
+}
+
+func (s *SessionContext) GetTunnelMsg() string {
+	s.Mtx.Lock()
+	if s.UpfUri == "" {
+		return ""
+	}
+	msg := fmt.Sprintf("ID=%d,ULIP=%s,ULTEID=%d,DLIP=%s,DLTEID=%d", s.PduSessionId, s.UpfUri, s.ULTEID, s.RanUri, s.DLTEID)
+	s.Mtx.Unlock()
+	return msg
+}
+func (ue *UeContext) SendSuccessRegister() {
+	if ue.TcpConn != nil {
+		ue.TcpConn.Write([]byte("[REG] SUCCESS\n"))
+	}
+}
+func (ue *UeContext) SendFailRegister() {
+	if ue.TcpConn != nil {
+		ue.TcpConn.Write([]byte("[REG] FAIL\n"))
+	}
+}
+
+func (ue *UeContext) SendSuccessDeregister() {
+	if ue.TcpConn != nil {
+		ue.TcpConn.Write([]byte("[DEREG] SUCCESS\n"))
 	}
 }
 

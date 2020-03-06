@@ -19,7 +19,6 @@ type Simulator struct {
 	RanPool       map[string]*RanContext // RanUri -> RAN_CONTEXT
 	UeContextPool map[string]*UeContext  // Supi -> UeTestInfo
 	TcpServer     net.Listener
-	TcpConn       net.Conn
 }
 
 type UeDBInfo struct {
