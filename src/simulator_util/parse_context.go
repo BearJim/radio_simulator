@@ -15,6 +15,7 @@ import (
 func ParseRanContext() {
 	config := factory.SimConfig
 	self := simulator_context.Simulator_Self()
+	self.DefaultRanUri = config.RanInfo[0].RanSctpUri
 	for _, ranInfo := range config.RanInfo {
 		plmnId := ngapConvert.PlmnIdToNgap(ranInfo.GnbId.PlmnId)
 		ran := self.AddRanContext(ranInfo.AmfUri, ranInfo.RanSctpUri, ranInfo.RanName, plmnId, ranInfo.GnbId.Value, ranInfo.GnbId.BitLength)
@@ -43,6 +44,7 @@ func ParseUeData(configDirPath string, fileList []string) {
 		ue := ue_factory.InitUeContextFactory(fileName)
 		ue.IntAlg = nas_security.AlogMaps[ue.IntegrityAlgOrig]
 		ue.EncAlg = nas_security.AlogMaps[ue.CipheringAlgOrig]
+
 		self.UeContextPool[ue.Supi] = ue
 	}
 }

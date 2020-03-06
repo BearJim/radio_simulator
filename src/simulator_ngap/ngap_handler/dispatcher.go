@@ -35,6 +35,8 @@ func Dispatch(addr string, msg []byte) {
 		switch initiatingMessage.ProcedureCode.Value {
 		case ngapType.ProcedureCodeDownlinkNASTransport:
 			HandleDownlinkNASTransport(ran, pdu)
+		case ngapType.ProcedureCodeInitialContextSetup:
+			HandleInitialContextSetupRequest(ran, pdu)
 		// case ngapType.ProcedureCodeNGSetup:
 		// 	ngap_handler.HandleNGSetupRequest(ran, pdu)
 		// case ngapType.ProcedureCodeInitialUEMessage:
@@ -91,8 +93,7 @@ func Dispatch(addr string, msg []byte) {
 			return
 		}
 		switch successfulOutcome.ProcedureCode.Value {
-		case ngapType.ProcedureCodeInitialContextSetup:
-			HandleInitialContextSetupResponse(ran, pdu)
+
 		default:
 			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, successfulOutcome.ProcedureCode.Value)
 		}

@@ -57,7 +57,8 @@ const (
 )
 
 const (
-	NgapIdUnspecified int64 = 0xffffffffff
+	RanNgapIdUnspecified int64 = 0xffffffff
+	AmfNgapIdUnspecified int64 = 0xffffffffff
 )
 const (
 	RegisterStateRegitered   = "REGISTERED"
@@ -122,7 +123,8 @@ type SessionContext struct {
 func NewUeContext() *UeContext {
 	return &UeContext{
 		PduSession:    make(map[int]*SessionContext),
-		RanUeNgapId:   NgapIdUnspecified,
+		AmfUeNgapId:   AmfNgapIdUnspecified,
+		RanUeNgapId:   RanNgapIdUnspecified,
 		RegisterState: RegisterStateDeregitered,
 	}
 }
@@ -156,6 +158,7 @@ func (ue *UeContext) SendSuccessDeregister() {
 func (ue *UeContext) AttachRan(ran *RanContext) {
 	ue.Ran = ran
 	ran.UePool[ran.RanUeIDGeneator] = ue
+	ue.RanUeNgapId = ran.RanUeIDGeneator
 	ran.RanUeIDGeneator++
 }
 
@@ -217,7 +220,6 @@ func (ue *UeContext) DeriveRESstarAndSetKey(RAND []byte) []byte {
 	P2 := RES
 
 	ue.DerivateKamf(key, snName, SQN, AK)
-	ue.DerivateAlgKey()
 	kdfVal_for_resStar := UeauCommon.GetKDFValue(key, FC, P0, UeauCommon.KDFLen(P0), P1, UeauCommon.KDFLen(P1), P2, UeauCommon.KDFLen(P2))
 	return kdfVal_for_resStar[len(kdfVal_for_resStar)/2:]
 

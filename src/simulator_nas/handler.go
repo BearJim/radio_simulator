@@ -26,8 +26,6 @@ func HandleSecurityModeCommand(ue *simulator_context.UeContext, request *nasMess
 
 	nasLog.Infof("Ue[%s] Security Mode Command", ue.Supi)
 
-	ue.EncAlg = request.SelectedNASSecurityAlgorithms.GetTypeOfCipheringAlgorithm()
-	ue.IntAlg = request.SelectedNASSecurityAlgorithms.GetTypeOfIntegrityProtectionAlgorithm()
 	nasContent, err := nas_packet.GetRegistrationRequestWith5GMM(ue, nasMessage.RegistrationType5GSInitialRegistration, nil, nil)
 	if err != nil {
 		return err

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"github.com/sirupsen/logrus"
-	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_init"
 	"radio_simulator/src/simulator_util"
+	"radio_simulator/src/tcp_server"
 	"syscall"
 )
 
@@ -53,10 +53,8 @@ func Terminate() {
 		ran.SctpConn.Close()
 	}
 
-	logger.InitLog.Infof("Close TCP Connection...")
-	if self.TcpConn != nil {
-		self.TcpConn.Close()
-	}
+	logger.InitLog.Infof("Close TCP Server...")
+
 	if self.TcpServer != nil {
 		self.TcpServer.Close()
 	}
@@ -75,7 +73,6 @@ func main() {
 	}
 	simulator_util.ParseUeData(path+"/", factory.SimConfig.UeInfoFile)
 	simulator_util.InitUeToDB()
-
 	for _, ran := range self.RanPool {
 		simulator_init.RanStart(ran)
 	}
@@ -88,6 +85,6 @@ func main() {
 		os.Exit(0)
 	}()
 	// TCP server for cli test UE
-	StartTcpServer()
+	tcp_server.StartTcpServer()
 	simulator_util.ClearDB()
 }

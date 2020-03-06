@@ -167,6 +167,8 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		return
 	}
 
+	msg = new(nas.Message)
+
 	switch securityHeaderType {
 	case nas.SecurityHeaderTypePlainNas:
 	case nas.SecurityHeaderTypeIntegrityProtected:
@@ -175,6 +177,19 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		integrityProtected = true
 		ciphering = true
 	case nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext:
+		// securityModeCommand
+		peakPayload := payload[7:]
+		err := msg.PlainNasDecode(&peakPayload)
+		if err != nil {
+			return nil, err
+		}
+		if command := msg.GmmMessage.SecurityModeCommand; command != nil {
+			ue.EncAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfCipheringAlgorithm()
+			ue.IntAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfIntegrityProtectionAlgorithm()
+			ue.DerivateAlgKey()
+		} else {
+			return nil, fmt.Errorf("Integrity Protected With New 5G Nas Security is not Security command")
+		}
 		integrityProtected = true
 		newSecurityContext = true
 	case nas.SecurityHeaderTypeIntegrityProtectedAndCipheredWithNew5gNasSecurityContext:
@@ -184,7 +199,6 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 	default:
 		return nil, fmt.Errorf("Security Type[%d] is not be implemented", securityHeaderType)
 	}
-	msg = new(nas.Message)
 
 	if newSecurityContext {
 		ue.DLOverflow = 0
@@ -217,6 +231,8 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 			}
 			if !reflect.DeepEqual(mac32, receivedMac32) {
 				return nil, fmt.Errorf("NAS MAC verification failed(0x%x != 0x%x)", mac32, receivedMac32)
+			} else if securityHeaderType == nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext {
+				return msg, nil
 			}
 		}
 		// remove sequece Number

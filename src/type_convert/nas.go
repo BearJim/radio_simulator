@@ -29,8 +29,8 @@ func SupiToMobileId(supi string, plmnId string) (mobileId nasType.MobileIdentity
 
 func UeSecurityCap(integrity, cipher uint8) (cap []uint8) {
 	cap = make([]uint8, 8)
-	cap[0] = 0x80 & (0x80 >> cipher)
-	cap[1] = 0x80 & (0x80 >> integrity)
+	cap[0] = 0x80 | (0x80 >> cipher)
+	cap[1] = 0x80 | (0x80 >> integrity)
 	return cap
 }
 

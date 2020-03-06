@@ -32,22 +32,10 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 		return
 	}
 
-	var msg *nas.Message
-
-	if ue.RegisterState == simulator_context.RegisterStateRegitered {
-		var err error
-		msg, err = nas_security.NASDecode(ue, nas.GetSecurityHeaderType(nasPdu)&0x0f, nasPdu)
-		if err != nil {
-			nasLog.Error(err.Error())
-			return
-		}
-	} else {
-		msg = new(nas.Message)
-		err := msg.PlainNasDecode(&nasPdu)
-		if err != nil {
-			nasLog.Error(err.Error())
-			return
-		}
+	msg, err := nas_security.NASDecode(ue, nas.GetSecurityHeaderType(nasPdu)&0x0f, nasPdu)
+	if err != nil {
+		nasLog.Error(err.Error())
+		return
 	}
 
 	if msg.GmmMessage != nil {

@@ -14,14 +14,11 @@ import (
 	"git.cs.nctu.edu.tw/calee/sctp"
 )
 
-var NGAP_PPID uint32 = 60
-
 func check(err error) {
 	if err != nil {
 		logger.InitLog.Error(err.Error())
 	}
 }
-
 func getNgapIp(amfIP, ranIP string, amfPort, ranPort int) (amfAddr, ranAddr *sctp.SCTPAddr, err error) {
 	ips := []net.IPAddr{}
 	if ip, err1 := net.ResolveIPAddr("ip", amfIP); err1 != nil {
@@ -82,6 +79,10 @@ func RanStart(ran *simulator_context.RanContext) {
 	// New NGAP Channel
 	simulator_message.AddNgapChannel(ran.RanUri)
 	// Listen NGAP Channel
+	err = conn.SubscribeEvents(sctp.SCTP_EVENT_DATA_IO)
+	if err != nil {
+		logger.NgapLog.Errorf("Failed to subscribe SCTP Event: %v", err)
+	}
 	go simulator_handler.Handle(ran.RanUri)
 	go StartHandle(ran)
 }
@@ -96,7 +97,7 @@ func StartHandle(ran *simulator_context.RanContext) {
 			delete(simulator_context.Simulator_Self().RanPool, ran.RanUri)
 			simulator_message.DelNgapChannel(ran.RanUri)
 			break
-		} else if info == nil || info.PPID != NGAP_PPID {
+		} else if info == nil || info.PPID != ngapSctp.NGAP_PPID {
 			logger.NgapLog.Warnf("Recv SCTP PPID != 60")
 			continue
 		}

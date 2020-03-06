@@ -109,7 +109,7 @@ func HandleDownlinkNASTransport(ran *simulator_context.RanContext, message *ngap
 	}
 
 	if aMFUENGAPID != nil {
-		if ue.AmfUeNgapId == simulator_context.NgapIdUnspecified {
+		if ue.AmfUeNgapId == simulator_context.AmfNgapIdUnspecified {
 			ngapLog.Tracef("Create new logical UE-associated NG-connection")
 			ue.AmfUeNgapId = aMFUENGAPID.Value
 			// n3iwfUe.SCTPAddr = amf.SCTPAddr
@@ -126,7 +126,7 @@ func HandleDownlinkNASTransport(ran *simulator_context.RanContext, message *ngap
 	}
 }
 
-func HandleInitialContextSetupResponse(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
+func HandleInitialContextSetupRequest(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
 	var aMFUENGAPID *ngapType.AMFUENGAPID
 	var rANUENGAPID *ngapType.RANUENGAPID
 	// var oldAMF *ngapType.AMFName
