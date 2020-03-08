@@ -66,7 +66,7 @@ func ConntectToAmf(amfIP, ranIP string, amfPort, ranPort int) (*sctp.SCTPConn, e
 func RanStart(ran *simulator_context.RanContext) {
 	var amfPort, ranPort int
 	amfAddr := strings.Split(ran.AMFUri, ":")
-	ranAddr := strings.Split(ran.RanUri, ":")
+	ranAddr := strings.Split(ran.RanSctpUri, ":")
 	amfIp, ranIp := amfAddr[0], ranAddr[0]
 	fmt.Sscanf(amfAddr[1], "%d", &amfPort)
 	fmt.Sscanf(ranAddr[1], "%d", &ranPort)
@@ -77,13 +77,13 @@ func RanStart(ran *simulator_context.RanContext) {
 	ran.SctpConn = conn
 	simulator_ngap.SendNGSetupRequest(ran)
 	// New NGAP Channel
-	simulator_message.AddNgapChannel(ran.RanUri)
+	simulator_message.AddNgapChannel(ran.RanSctpUri)
 	// Listen NGAP Channel
 	err = conn.SubscribeEvents(sctp.SCTP_EVENT_DATA_IO)
 	if err != nil {
 		logger.NgapLog.Errorf("Failed to subscribe SCTP Event: %v", err)
 	}
-	go simulator_handler.Handle(ran.RanUri)
+	go simulator_handler.Handle(ran.RanSctpUri)
 	go StartHandle(ran)
 }
 
@@ -94,13 +94,13 @@ func StartHandle(ran *simulator_context.RanContext) {
 		n, info, err := ran.SctpConn.SCTPRead(buffer)
 		if err != nil {
 			logger.NgapLog.Debugf("Error %v", err)
-			delete(simulator_context.Simulator_Self().RanPool, ran.RanUri)
-			simulator_message.DelNgapChannel(ran.RanUri)
+			delete(simulator_context.Simulator_Self().RanPool, ran.RanSctpUri)
+			simulator_message.DelNgapChannel(ran.RanSctpUri)
 			break
 		} else if info == nil || info.PPID != ngapSctp.NGAP_PPID {
 			logger.NgapLog.Warnf("Recv SCTP PPID != 60")
 			continue
 		}
-		simulator_message.SendMessage(ran.RanUri, simulator_message.NGAPMessage{Value: buffer[:n]})
+		simulator_message.SendMessage(ran.RanSctpUri, simulator_message.NGAPMessage{Value: buffer[:n]})
 	}
 }

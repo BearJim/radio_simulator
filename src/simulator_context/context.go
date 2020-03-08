@@ -15,10 +15,10 @@ func init() {
 }
 
 type Simulator struct {
-	DefaultRanUri string
-	RanPool       map[string]*RanContext // RanUri -> RAN_CONTEXT
-	UeContextPool map[string]*UeContext  // Supi -> UeTestInfo
-	TcpServer     net.Listener
+	DefaultRanSctpUri string
+	RanPool           map[string]*RanContext // RanSctpUri -> RAN_CONTEXT
+	UeContextPool     map[string]*UeContext  // Supi -> UeTestInfo
+	TcpServer         net.Listener
 }
 
 type UeDBInfo struct {
@@ -29,14 +29,15 @@ type UeDBInfo struct {
 	PlmnId     string
 }
 
-func (s *Simulator) AddRanContext(AmfUri, ranUri, ranName string, plmnId ngapType.PLMNIdentity, GnbId string, gnbIdLength int) *RanContext {
+func (s *Simulator) AddRanContext(AmfUri, ranSctpUri, ranGtpUri, ranName string, plmnId ngapType.PLMNIdentity, GnbId string, gnbIdLength int) *RanContext {
 	ran := NewRanContext()
 	ran.AMFUri = AmfUri
-	ran.RanUri = ranUri
+	ran.RanSctpUri = ranSctpUri
+	ran.RanGtpUri = ranGtpUri
 	ran.Name = ranName
 	ran.GnbId.BitLength = uint64(gnbIdLength)
 	ran.GnbId.Bytes, _ = hex.DecodeString(GnbId)
-	s.RanPool[ranUri] = ran
+	s.RanPool[ranSctpUri] = ran
 	return ran
 }
 

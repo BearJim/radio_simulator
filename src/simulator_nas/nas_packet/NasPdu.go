@@ -109,8 +109,8 @@ func GetPduSessionEstablishmentRequest(pduSessionId uint8) (nasPdu []byte) {
 	pduSessionEstablishmentRequest.SetMessageType(nas.MsgTypePDUSessionEstablishmentRequest)
 	pduSessionEstablishmentRequest.PDUSessionID.SetPDUSessionID(pduSessionId)
 	pduSessionEstablishmentRequest.PTI.SetPTI(0x00)
-	pduSessionEstablishmentRequest.IntegrityProtectionMaximumDataRate.SetMaximumDataRatePerUEForUserPlaneIntegrityProtectionForDownLink(0xff)
-	pduSessionEstablishmentRequest.IntegrityProtectionMaximumDataRate.SetMaximumDataRatePerUEForUserPlaneIntegrityProtectionForUpLink(0xff)
+	pduSessionEstablishmentRequest.IntegrityProtectionMaximumDataRate.SetMaximumDataRatePerUEForUserPlaneIntegrityProtectionForDownLink(0xff) // full data rate
+	pduSessionEstablishmentRequest.IntegrityProtectionMaximumDataRate.SetMaximumDataRatePerUEForUserPlaneIntegrityProtectionForUpLink(0xff)   // full data rate
 
 	m.GsmMessage.PDUSessionEstablishmentRequest = pduSessionEstablishmentRequest
 
@@ -124,13 +124,16 @@ func GetPduSessionEstablishmentRequest(pduSessionId uint8) (nasPdu []byte) {
 	return
 }
 
-func GetUlNasTransport_PduSessionEstablishmentRequest(pduSessionId uint8, requestType uint8, dnnString string, sNssai *models.Snssai) (nasPdu []byte) {
-
-	pduSessionEstablishmentRequest := GetPduSessionEstablishmentRequest(pduSessionId)
+func GetUlNasTransport_PduSessionEstablishmentRequest(ue *simulator_context.UeContext, pduSessionId uint8, requestType uint8, dnnString string, sNssai *models.Snssai, gsmPdu []byte) ([]byte, error) {
 
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeULNASTransport)
+
+	m.SecurityHeader = nas.SecurityHeader{
+		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
+		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+	}
 
 	ulNasTransport := nasMessage.NewULNASTransport(0)
 	ulNasTransport.SpareHalfOctetAndSecurityHeaderType.SetSecurityHeaderType(nas.SecurityHeaderTypePlainNas)
@@ -160,19 +163,12 @@ func GetUlNasTransport_PduSessionEstablishmentRequest(pduSessionId uint8, reques
 	}
 
 	ulNasTransport.SpareHalfOctetAndPayloadContainerType.SetPayloadContainerType(nasMessage.PayloadContainerTypeN1SMInfo)
-	ulNasTransport.PayloadContainer.SetLen(uint16(len(pduSessionEstablishmentRequest)))
-	ulNasTransport.PayloadContainer.SetPayloadContainerContents(pduSessionEstablishmentRequest)
+	ulNasTransport.PayloadContainer.SetLen(uint16(len(gsmPdu)))
+	ulNasTransport.PayloadContainer.SetPayloadContainerContents(gsmPdu)
 
 	m.GmmMessage.ULNASTransport = ulNasTransport
 
-	data := new(bytes.Buffer)
-	err := m.GmmMessageEncode(data)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	nasPdu = data.Bytes()
-	return
+	return nas_security.NASEncode(ue, m)
 }
 
 func GetUlNasTransport_PduSessionModificationRequest(pduSessionId uint8, requestType uint8, dnnString string, sNssai *models.Snssai) (nasPdu []byte) {

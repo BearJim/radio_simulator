@@ -1439,8 +1439,12 @@ func BuildLocationReportingFailureIndication() (pdu ngapType.NGAPPDU) {
 	return
 }
 
-func BuildPDUSessionResourceSetupResponse(amfUeNgapID, ranUeNgapID int64, ipv4 string) (pdu ngapType.NGAPPDU) {
+func BuildPDUSessionResourceSetupResponse(
+	ue *simulator_context.UeContext,
+	responseList *ngapType.PDUSessionResourceSetupListSURes,
+	failedList *ngapType.PDUSessionResourceFailedToSetupListSURes) ([]byte, error) {
 
+	pdu := ngapType.NGAPPDU{}
 	pdu.Present = ngapType.NGAPPDUPresentSuccessfulOutcome
 	pdu.SuccessfulOutcome = new(ngapType.SuccessfulOutcome)
 
@@ -1462,7 +1466,7 @@ func BuildPDUSessionResourceSetupResponse(amfUeNgapID, ranUeNgapID int64, ipv4 s
 	ie.Value.AMFUENGAPID = new(ngapType.AMFUENGAPID)
 
 	aMFUENGAPID := ie.Value.AMFUENGAPID
-	aMFUENGAPID.Value = amfUeNgapID
+	aMFUENGAPID.Value = ue.AmfUeNgapId
 
 	pDUSessionResourceSetupResponseIEs.List = append(pDUSessionResourceSetupResponseIEs.List, ie)
 
@@ -1474,48 +1478,30 @@ func BuildPDUSessionResourceSetupResponse(amfUeNgapID, ranUeNgapID int64, ipv4 s
 	ie.Value.RANUENGAPID = new(ngapType.RANUENGAPID)
 
 	rANUENGAPID := ie.Value.RANUENGAPID
-	rANUENGAPID.Value = ranUeNgapID
+	rANUENGAPID.Value = ue.RanUeNgapId
 
 	pDUSessionResourceSetupResponseIEs.List = append(pDUSessionResourceSetupResponseIEs.List, ie)
 
-	// PDU Session Resource Setup Response List
-	ie = ngapType.PDUSessionResourceSetupResponseIEs{}
-	ie.Id.Value = ngapType.ProtocolIEIDPDUSessionResourceSetupListSURes
-	ie.Criticality.Value = ngapType.CriticalityPresentIgnore
-	ie.Value.Present = ngapType.PDUSessionResourceSetupResponseIEsPresentPDUSessionResourceSetupListSURes
-	ie.Value.PDUSessionResourceSetupListSURes = new(ngapType.PDUSessionResourceSetupListSURes)
+	// PDU Session Resource Setup Response List (optional)
+	if responseList != nil && len(responseList.List) > 0 {
+		ie = ngapType.PDUSessionResourceSetupResponseIEs{}
+		ie.Id.Value = ngapType.ProtocolIEIDPDUSessionResourceSetupListSURes
+		ie.Criticality.Value = ngapType.CriticalityPresentIgnore
+		ie.Value.Present = ngapType.PDUSessionResourceSetupResponseIEsPresentPDUSessionResourceSetupListSURes
+		ie.Value.PDUSessionResourceSetupListSURes = responseList
+		pDUSessionResourceSetupResponseIEs.List = append(pDUSessionResourceSetupResponseIEs.List, ie)
+	}
 
-	pDUSessionResourceSetupListSURes := ie.Value.PDUSessionResourceSetupListSURes
-
-	// PDU Session Resource Setup Response Item in PDU Session Resource Setup Response List
-	pDUSessionResourceSetupItemSURes := ngapType.PDUSessionResourceSetupItemSURes{}
-	pDUSessionResourceSetupItemSURes.PDUSessionID.Value = 10
-
-	pDUSessionResourceSetupItemSURes.PDUSessionResourceSetupResponseTransfer = GetPDUSessionResourceSetupResponseTransfer(ipv4)
-
-	pDUSessionResourceSetupListSURes.List = append(pDUSessionResourceSetupListSURes.List, pDUSessionResourceSetupItemSURes)
-
-	pDUSessionResourceSetupResponseIEs.List = append(pDUSessionResourceSetupResponseIEs.List, ie)
-
-	// PDU Sessuin Resource Failed to Setup List
-	ie = ngapType.PDUSessionResourceSetupResponseIEs{}
-	ie.Id.Value = ngapType.ProtocolIEIDPDUSessionResourceFailedToSetupListSURes
-	ie.Criticality.Value = ngapType.CriticalityPresentIgnore
-	ie.Value.Present = ngapType.PDUSessionResourceSetupResponseIEsPresentPDUSessionResourceFailedToSetupListSURes
-	ie.Value.PDUSessionResourceFailedToSetupListSURes = new(ngapType.PDUSessionResourceFailedToSetupListSURes)
-
-	pDUSessionResourceFailedToSetupListSURes := ie.Value.PDUSessionResourceFailedToSetupListSURes
-
-	// PDU Session Resource Failed to Setup Item in PDU Sessuin Resource Failed to Setup List
-	pDUSessionResourceFailedToSetupItemSURes := ngapType.PDUSessionResourceFailedToSetupItemSURes{}
-	pDUSessionResourceFailedToSetupItemSURes.PDUSessionID.Value = 10
-	pDUSessionResourceFailedToSetupItemSURes.PDUSessionResourceSetupUnsuccessfulTransfer = GetPDUSessionResourceSetupUnsucessfulTransfer()
-
-	pDUSessionResourceFailedToSetupListSURes.List = append(pDUSessionResourceFailedToSetupListSURes.List, pDUSessionResourceFailedToSetupItemSURes)
-
-	pDUSessionResourceSetupResponseIEs.List = append(pDUSessionResourceSetupResponseIEs.List, ie)
-	// Criticality Diagnostics (optional)
-	return
+	// PDU Session Resource Failed to Setup List (optional)
+	if failedList != nil && len(failedList.List) > 0 {
+		ie = ngapType.PDUSessionResourceSetupResponseIEs{}
+		ie.Id.Value = ngapType.ProtocolIEIDPDUSessionResourceFailedToSetupListSURes
+		ie.Criticality.Value = ngapType.CriticalityPresentIgnore
+		ie.Value.Present = ngapType.PDUSessionResourceSetupResponseIEsPresentPDUSessionResourceFailedToSetupListSURes
+		ie.Value.PDUSessionResourceFailedToSetupListSURes = failedList
+		pDUSessionResourceSetupResponseIEs.List = append(pDUSessionResourceSetupResponseIEs.List, ie)
+	}
+	return ngap.Encoder(pdu)
 }
 
 func BuildPDUSessionResourceSetupResponseForPaging(amfUeNgapID, ranUeNgapID int64, ipv4 string) (pdu ngapType.NGAPPDU) {

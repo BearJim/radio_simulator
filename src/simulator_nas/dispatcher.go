@@ -3,6 +3,7 @@ package simulator_nas
 import (
 	"github.com/sirupsen/logrus"
 	"radio_simulator/lib/nas"
+	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_security"
@@ -32,57 +33,45 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 		return
 	}
 
+	if nas.GetEPD(nasPdu) == nasMessage.Epd5GSSessionManagementMessage {
+		// GSM Message
+		msg := new(nas.Message)
+		err := msg.PlainNasDecode(&nasPdu)
+		if err != nil {
+			nasLog.Error(err.Error())
+			return
+		}
+		switch msg.GsmMessage.GetMessageType() {
+		case nas.MsgTypePDUSessionEstablishmentAccept:
+			checkMsgError(HandlePduSessionEstblishmentAccept(ue, msg.GsmMessage.PDUSessionEstablishmentAccept), "PduSessionEstblishmentAccept")
+		default:
+			nasLog.Errorf("Unknown GsmMessage[%d]\n", msg.GsmMessage.GetMessageType())
+		}
+		return
+	}
+
+	// GMM Message
 	msg, err := nas_security.NASDecode(ue, nas.GetSecurityHeaderType(nasPdu)&0x0f, nasPdu)
 	if err != nil {
 		nasLog.Error(err.Error())
 		return
 	}
 
-	if msg.GmmMessage != nil {
-		switch msg.GmmMessage.GetMessageType() {
-		case nas.MsgTypeAuthenticationRequest:
-			checkMsgError(HandleAuthenticationRequest(ue, msg.GmmMessage.AuthenticationRequest), "AuthenticationRequest")
-		case nas.MsgTypeSecurityModeCommand:
-			checkMsgError(HandleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
-		case nas.MsgTypeRegistrationAccept:
-			checkMsgError(HandleRegistrationAccept(ue, msg.GmmMessage.RegistrationAccept), "RegistrationAccept")
-		case nas.MsgTypeDeregistrationAcceptUEOriginatingDeregistration:
-			checkMsgError(HandleDeregistrationAccept(ue, msg.GmmMessage.DeregistrationAcceptUEOriginatingDeregistration), "DeregistraionAccept")
-		// case nas.MsgTypeULNASTransport:
-		// 	return gmm_handler.HandleULNASTransport(amfUe, models.AccessType__3_GPP_ACCESS, gmmMessage.ULNASTransport)
-		// case nas.MsgTypeRegistrationRequest:
-		// 	if err := gmm_handler.HandleRegistrationRequest(amfUe, models.AccessType__3_GPP_ACCESS, procedureCode, gmmMessage.RegistrationRequest); err != nil {
-		// 		return err
-		// 	}
-		// case nas.MsgTypeIdentityResponse:
-		// 	if err := gmm_handler.HandleIdentityResponse(amfUe, gmmMessage.IdentityResponse); err != nil {
-		// 		return err
-		// 	}
-		// case nas.MsgTypeConfigurationUpdateComplete:
-		// 	if err := gmm_handler.HandleConfigurationUpdateComplete(amfUe, gmmMessage.ConfigurationUpdateComplete); err != nil {
-		// 		return err
-		// 	}
-		// case nas.MsgTypeServiceRequest:
-		// 	if err := gmm_handler.HandleServiceRequest(amfUe, models.AccessType__3_GPP_ACCESS, procedureCode, gmmMessage.ServiceRequest); err != nil {
-		// 		return err
-		// 	}
-		// case nas.MsgTypeDeregistrationRequestUEOriginatingDeregistration:
-		// 	return gmm_handler.HandleDeregistrationRequest(amfUe, models.AccessType__3_GPP_ACCESS, gmmMessage.DeregistrationRequestUEOriginatingDeregistration)
-		// case nas.MsgTypeDeregistrationAcceptUETerminatedDeregistration:
-		// 	return gmm_handler.HandleDeregistrationAccept(amfUe, models.AccessType__3_GPP_ACCESS, gmmMessage.DeregistrationAcceptUETerminatedDeregistration)
-		// case nas.MsgTypeStatus5GMM:
-		// 	if err := gmm_handler.HandleStatus5GMM(amfUe, models.AccessType__3_GPP_ACCESS, gmmMessage.Status5GMM); err != nil {
-		// 		return err
-		// 	}
-		default:
-			nasLog.Errorf("Unknown GmmMessage[%d]\n", msg.GmmMessage.GetMessageType())
-		}
-
-	} else if msg.GsmMessage != nil {
-		nasLog.Warn("GSM Message should include in GMM Message")
-	} else {
-		nasLog.Errorln("Nas Payload is Empty")
+	switch msg.GmmMessage.GetMessageType() {
+	case nas.MsgTypeAuthenticationRequest:
+		checkMsgError(HandleAuthenticationRequest(ue, msg.GmmMessage.AuthenticationRequest), "AuthenticationRequest")
+	case nas.MsgTypeSecurityModeCommand:
+		checkMsgError(HandleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
+	case nas.MsgTypeRegistrationAccept:
+		checkMsgError(HandleRegistrationAccept(ue, msg.GmmMessage.RegistrationAccept), "RegistrationAccept")
+	case nas.MsgTypeDeregistrationAcceptUEOriginatingDeregistration:
+		checkMsgError(HandleDeregistrationAccept(ue, msg.GmmMessage.DeregistrationAcceptUEOriginatingDeregistration), "DeregistraionAccept")
+	case nas.MsgTypeDLNASTransport:
+		checkMsgError(HandleDLNASTransport(ue, msg.GmmMessage.DLNASTransport), "DLNASTransport")
+	default:
+		nasLog.Errorf("Unknown GmmMessage[%d]\n", msg.GmmMessage.GetMessageType())
 	}
+
 	return
 
 }

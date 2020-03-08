@@ -49,7 +49,7 @@ func Terminate() {
 	logger.InitLog.Infof("Close SCTP Connection...")
 
 	for _, ran := range self.RanPool {
-		logger.InitLog.Infof("Ran[%s] Connection Close", ran.RanUri)
+		logger.InitLog.Infof("Ran[%s] Connection Close", ran.RanSctpUri)
 		ran.SctpConn.Close()
 	}
 

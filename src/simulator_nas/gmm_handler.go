@@ -50,7 +50,7 @@ func HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessa
 	}
 	simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
 	ue.RegisterState = simulator_context.RegisterStateRegistered
-	ue.SendSuccessRegister()
+	ue.SendMsg("[REG] SUCCESS\n")
 	return nil
 }
 func HandleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {
@@ -58,5 +58,28 @@ func HandleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMes
 	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
 
 	ue.RegisterState = simulator_context.RegisterStateDeregitered
+	return nil
+}
+
+func HandleDLNASTransport(ue *simulator_context.UeContext, request *nasMessage.DLNASTransport) error {
+
+	nasLog.Infof("UE[%s] Handle DL NAS Transport", ue.Supi)
+
+	switch request.GetPayloadContainerType() {
+	case nasMessage.PayloadContainerTypeN1SMInfo:
+		HandleNAS(ue, request.GetPayloadContainerContents())
+	case nasMessage.PayloadContainerTypeSMS:
+		return fmt.Errorf("PayloadContainerTypeSMS has not been implemented yet in DL NAS TRANSPORT")
+	case nasMessage.PayloadContainerTypeLPP:
+		return fmt.Errorf("PayloadContainerTypeLPP has not been implemented yet in DL NAS TRANSPORT")
+	case nasMessage.PayloadContainerTypeSOR:
+		return fmt.Errorf("PayloadContainerTypeSOR has not been implemented yet in DL NAS TRANSPORT")
+	case nasMessage.PayloadContainerTypeUEPolicy:
+		return fmt.Errorf("PayloadContainerTypeUEPolicy has not been implemented yet in DL NAS TRANSPORT")
+	case nasMessage.PayloadContainerTypeUEParameterUpdate:
+		return fmt.Errorf("PayloadContainerTypeUEParameterUpdate has not been implemented yet in DL NAS TRANSPORT")
+	case nasMessage.PayloadContainerTypeMultiplePayload:
+		return fmt.Errorf("PayloadContainerTypeMultiplePayload has not been implemented yet in DL NAS TRANSPORT")
+	}
 	return nil
 }

@@ -5,23 +5,51 @@ import (
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"radio_simulator/lib/aper"
 	"radio_simulator/lib/ngap/ngapType"
+	"strings"
+)
+
+const (
+	MaxValueOfTeid uint32 = 0xffffffff
 )
 
 type RanContext struct {
-	RanUeIDGeneator int64
-	AMFUri          string
-	RanUri          string
-	Name            string
-	GnbId           aper.BitString
-	UePool          map[int64]*UeContext // ranUeNgapId
-	DefaultTAC      string
-	SupportTAList   map[string][]PlmnSupportItem // TAC(hex string) -> PlmnSupportItem
-	SctpConn        *sctp.SCTPConn
+	TEIDGenerator    uint32
+	RanUeIDGenerator int64
+	AMFUri           string
+	RanSctpUri       string
+	RanGtpUri        string
+	Name             string
+	GnbId            aper.BitString
+	UePool           map[int64]*UeContext // ranUeNgapId
+	SessPool         map[uint32]*SessionContext
+	DefaultTAC       string
+	SupportTAList    map[string][]PlmnSupportItem // TAC(hex string) -> PlmnSupportItem
+	SctpConn         *sctp.SCTPConn
 }
 
 type PlmnSupportItem struct {
 	PlmnId     ngapType.PLMNIdentity
 	SNssaiList []ngapType.SNSSAI
+}
+
+func (ran *RanContext) AttachSession(sess *SessionContext) {
+	ranGtpIp := strings.Split(ran.RanGtpUri, ":")[0]
+	sess.DLAddr = ranGtpIp
+	sess.DLTEID = ran.TEIDAlloc()
+	ran.SessPool[sess.DLTEID] = sess
+}
+
+func (ran *RanContext) TEIDAlloc() uint32 {
+	ran.TEIDGenerator %= MaxValueOfTeid
+	ran.TEIDGenerator++
+	for {
+		if _, double := ran.SessPool[ran.TEIDGenerator]; double {
+			ran.TEIDGenerator++
+		} else {
+			break
+		}
+	}
+	return ran.TEIDGenerator
 }
 
 func (ran *RanContext) FindUeByRanUeNgapID(ranUeNgapID int64) *UeContext {
@@ -60,8 +88,10 @@ func (ran *RanContext) GetUserLocation() ngapType.UserLocationInformation {
 
 func NewRanContext() *RanContext {
 	return &RanContext{
-		RanUeIDGeneator: 0,
-		UePool:          make(map[int64]*UeContext),
-		SupportTAList:   make(map[string][]PlmnSupportItem),
+		RanUeIDGenerator: 1,
+		TEIDGenerator:    0,
+		UePool:           make(map[int64]*UeContext),
+		SessPool:         make(map[uint32]*SessionContext),
+		SupportTAList:    make(map[string][]PlmnSupportItem),
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
 	"radio_simulator/lib/nas/nasType"
+	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
 	"sync"
@@ -119,10 +120,19 @@ type AuthData struct {
 type SessionContext struct {
 	Mtx          sync.Mutex
 	PduSessionId int64
-	ULTEID       int
-	DLTEID       int
-	UpfUri       string
-	RanUri       string
+	ULTEID       uint32
+	DLTEID       uint32
+	ULAddr       string
+	DLAddr       string
+	Dnn          string
+	Snssai       models.Snssai
+	QosFlows     map[int64]*QosFlow // QosFlowIdentifier as key
+	Ue           *UeContext
+}
+
+type QosFlow struct {
+	Identifier int64
+	Parameters ngapType.QosFlowLevelQosParameters
 }
 
 func NewUeContext() *UeContext {
@@ -135,53 +145,51 @@ func NewUeContext() *UeContext {
 	}
 }
 
+func (ue *UeContext) AddPduSession(pduSessionId uint8, dnn string, snssai models.Snssai) *SessionContext {
+	sess := &SessionContext{
+		PduSessionId: int64(pduSessionId),
+		Dnn:          dnn,
+		Snssai:       snssai,
+		QosFlows:     make(map[int64]*QosFlow),
+		Ue:           ue,
+	}
+	ue.PduSession[sess.PduSessionId] = sess
+	return sess
+}
+
+func (s *SessionContext) Remove() {
+	if ue := s.Ue; ue != nil {
+		if ran := ue.Ran; ran != nil {
+			delete(ran.SessPool, s.DLTEID)
+		}
+		delete(ue.PduSession, s.PduSessionId)
+	}
+}
+
 func (s *SessionContext) GetTunnelMsg() string {
 	s.Mtx.Lock()
-	if s.UpfUri == "" {
+	if s.ULAddr == "" {
 		return ""
 	}
-	msg := fmt.Sprintf("ID=%d,ULIP=%s,ULTEID=%d,DLIP=%s,DLTEID=%d", s.PduSessionId, s.UpfUri, s.ULTEID, s.RanUri, s.DLTEID)
+	msg := fmt.Sprintf("ID=%d,DNN=%s,SST=%d,SD=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n",
+		s.PduSessionId, s.Dnn, s.Snssai.Sst, s.Snssai.Sd, s.ULAddr, s.ULTEID, s.DLAddr, s.DLTEID)
 	s.Mtx.Unlock()
 	return msg
 }
-func (ue *UeContext) SendSuccessRegister() {
-	msg := "[REG] SUCCESS\n"
-	select {
-	case ue.TcpChannelMsg <- msg:
-	default:
-		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
-	}
-	// ue.TcpConn.Write([]byte("[REG] SUCCESS\n"))
-}
-func (ue *UeContext) SendFailRegister() {
-	msg := "[REG] FAIL\n"
-	select {
-	case ue.TcpChannelMsg <- msg:
-	default:
-		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
-	}
-	// if ue.TcpConn != nil {
-	// 	ue.TcpConn.Write([]byte("[REG] FAIL\n"))
-	// }
-}
 
-func (ue *UeContext) SendSuccessDeregister() {
-	msg := "[DEREG] SUCCESS\n"
+func (ue *UeContext) SendMsg(msg string) {
 	select {
 	case ue.TcpChannelMsg <- msg:
 	default:
 		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
 	}
-	// if ue.TcpConn != nil {
-	// 	ue.TcpConn.Write([]byte("[DEREG] SUCCESS\n"))
-	// }
 }
 
 func (ue *UeContext) AttachRan(ran *RanContext) {
 	ue.Ran = ran
-	ran.UePool[ran.RanUeIDGeneator] = ue
-	ue.RanUeNgapId = ran.RanUeIDGeneator
-	ran.RanUeIDGeneator++
+	ran.UePool[ran.RanUeIDGenerator] = ue
+	ue.RanUeNgapId = ran.RanUeIDGenerator
+	ran.RanUeIDGenerator++
 }
 
 func (ue *UeContext) DetachRan(ran *RanContext) {

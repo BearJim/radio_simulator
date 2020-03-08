@@ -39,52 +39,8 @@ func Dispatch(addr string, msg []byte) {
 			HandleInitialContextSetupRequest(ran, pdu)
 		case ngapType.ProcedureCodeUEContextRelease:
 			HandleUeContextReleaseCommand(ran, pdu)
-		// case ngapType.ProcedureCodeNGSetup:
-		// 	ngap_handler.HandleNGSetupRequest(ran, pdu)
-		// case ngapType.ProcedureCodeInitialUEMessage:
-		// 	ngap_handler.HandleInitialUEMessage(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkNASTransport:
-		// 	ngap_handler.HandleUplinkNasTransport(ran, pdu)
-		// case ngapType.ProcedureCodeNGReset:
-		// 	ngap_handler.HandleNGReset(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverCancel:
-		// 	ngap_handler.HandleHandoverCancel(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextReleaseRequest:
-		// 	ngap_handler.HandleUEContextReleaseRequest(ran, pdu)
-		// case ngapType.ProcedureCodeNASNonDeliveryIndication:
-		// 	ngap_handler.HandleNasNonDeliveryIndication(ran, pdu)
-		// case ngapType.ProcedureCodeLocationReportingFailureIndication:
-		// 	ngap_handler.HandleLocationReportingFailureIndication(ran, pdu)
-		// case ngapType.ProcedureCodeErrorIndication:
-		// 	ngap_handler.HandleErrorIndication(ran, pdu)
-		// case ngapType.ProcedureCodeUERadioCapabilityInfoIndication:
-		// 	ngap_handler.HandleUERadioCapabilityInfoIndication(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverNotification:
-		// 	ngap_handler.HandleHandoverNotify(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverPreparation:
-		// 	ngap_handler.HandleHandoverRequired(ran, pdu)
-		// case ngapType.ProcedureCodeRANConfigurationUpdate:
-		// 	ngap_handler.HandleRanConfigurationUpdate(ran, pdu)
-		// case ngapType.ProcedureCodeRRCInactiveTransitionReport:
-		// 	ngap_handler.HandleRRCInactiveTransitionReport(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceNotify:
-		// 	ngap_handler.HandlePDUSessionResourceNotify(ran, pdu)
-		// case ngapType.ProcedureCodePathSwitchRequest:
-		// 	ngap_handler.HandlePathSwitchRequest(ran, pdu)
-		// case ngapType.ProcedureCodeLocationReport:
-		// 	ngap_handler.HandleLocationReport(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkUEAssociatedNRPPaTransport:
-		// 	ngap_handler.HandleUplinkUEAssociatedNRPPATransport(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkRANConfigurationTransfer:
-		// 	ngap_handler.HandleUplinkRanConfigurationTransfer(ran, pdu)
-		// case ngapType.ProcedureCodePDUSessionResourceModifyIndication:
-		// 	ngap_handler.HandlePDUSessionResourceModifyIndication(ran, pdu)
-		// case ngapType.ProcedureCodeCellTrafficTrace:
-		// 	ngap_handler.HandleCellTrafficTrace(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkRANStatusTransfer:
-		// 	ngap_handler.HandleUplinkRanStatusTransfer(ran, pdu)
-		// case ngapType.ProcedureCodeUplinkNonUEAssociatedNRPPaTransport:
-		// 	ngap_handler.HandleUplinkNonUEAssociatedNRPPATransport(ran, pdu)
+		case ngapType.ProcedureCodePDUSessionResourceSetup:
+			HandlePduSessionResourceSetupRequest(ran, pdu)
 		default:
 			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, initiatingMessage.ProcedureCode.Value)
 		}

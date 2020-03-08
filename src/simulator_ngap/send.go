@@ -1,6 +1,7 @@
 package simulator_ngap
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/lib/ngap"
@@ -45,7 +46,7 @@ func SendNGSetupRequest(ran *simulator_context.RanContext) {
 }
 
 func SendInitailUeMessage_RegistraionRequest(ran *simulator_context.RanContext, ue *simulator_context.UeContext) {
-	ngapLog.Info("[AMF] Initail Ue Message (Initail Registration Request)")
+	ngapLog.Info("[RAN] Initail Ue Message (Initail Registration Request)")
 	pkt, err := BuildInitialUEMessage(ue, nasMessage.RegistrationType5GSInitialRegistration, "")
 	if err != nil {
 		ngapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
@@ -56,7 +57,7 @@ func SendInitailUeMessage_RegistraionRequest(ran *simulator_context.RanContext, 
 
 func SendUplinkNasTransport(ran *simulator_context.RanContext, ue *simulator_context.UeContext, nasPdu []byte) {
 
-	ngapLog.Info("[AMF] Send Uplink Nas Transport")
+	ngapLog.Info("[RAN] Send Uplink Nas Transport")
 
 	pkt, err := BuildUplinkNasTransport(ue, nasPdu)
 	if err != nil {
@@ -68,7 +69,7 @@ func SendUplinkNasTransport(ran *simulator_context.RanContext, ue *simulator_con
 
 func SendIntialContextSetupResponse(ran *simulator_context.RanContext, ue *simulator_context.UeContext, pduSessionIds []string) {
 
-	ngapLog.Info("[AMF] Send Intial Context Setup Response")
+	ngapLog.Info("[RAN] Send Intial Context Setup Response")
 
 	pkt, err := BuildInitialContextSetupResponse(ue, pduSessionIds, nil)
 	if err != nil {
@@ -81,7 +82,7 @@ func SendIntialContextSetupResponse(ran *simulator_context.RanContext, ue *simul
 
 func SendUeContextReleaseComplete(ran *simulator_context.RanContext, ue *simulator_context.UeContext) {
 
-	ngapLog.Info("[AMF] Send Ue Context Release Complete")
+	ngapLog.Info("[RAN] Send Ue Context Release Complete")
 
 	pkt, err := BuildUEContextReleaseComplete(ue)
 	if err != nil {
@@ -91,14 +92,47 @@ func SendUeContextReleaseComplete(ran *simulator_context.RanContext, ue *simulat
 
 	// Reset Ue Context
 	ue.AmfUeNgapId = simulator_context.AmfNgapIdUnspecified
-	for pduSessionId, _ := range ue.PduSession {
-		delete(ue.PduSession, pduSessionId)
+	for _, sess := range ue.PduSession {
+		sess.Remove()
 	}
 
 	SendToAmf(ran, pkt)
 	if ue.RegisterState == simulator_context.RegisterStateDeregitered {
 		// Complete Deregistration
-		ue.SendSuccessDeregister()
+		ue.SendMsg("[DEREG] SUCCESS\n")
+	}
+}
+
+func SendPDUSessionResourceSetupResponse(
+	ran *simulator_context.RanContext,
+	ue *simulator_context.UeContext,
+	responseList *ngapType.PDUSessionResourceSetupListSURes,
+	failedListSURes *ngapType.PDUSessionResourceFailedToSetupListSURes) {
+
+	ngapLog.Infoln("[RAN] Send PDU Session Resource Setup Response")
+
+	pkt, err := BuildPDUSessionResourceSetupResponse(ue, responseList, failedListSURes)
+	if err != nil {
+		ngapLog.Errorf("Build PDU Session Resource Setup Response failed : %+v", err)
+		return
+	}
+
+	SendToAmf(ran, pkt)
+	msg := ""
+	// Send Callback To Tcp Client
+	if responseList != nil {
+		for _, item := range responseList.List {
+			sess := ue.PduSession[item.PDUSessionID.Value]
+			msg = msg + "[SESSION] " + sess.GetTunnelMsg()
+		}
+	}
+	if failedListSURes != nil {
+		for _, item := range failedListSURes.List {
+			msg = msg + fmt.Sprintf("[SESSION] ADD %d FAIL\n", item.PDUSessionID.Value)
+		}
+	}
+	if msg != "" {
+		ue.SendMsg(msg)
 	}
 }
 

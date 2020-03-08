@@ -2,6 +2,8 @@ package tcp_server
 
 import (
 	"fmt"
+	"radio_simulator/lib/nas/nasMessage"
+	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
@@ -12,6 +14,7 @@ import (
 )
 
 var stringFormat = regexp.MustCompile(`\S+`)
+var sessFormat = regexp.MustCompile(`dnn=([^\,]+),sst=([^\,]+),sd=(\S+)`)
 
 // Parse cli Command from Tcp Server
 // Usage: [ options ]
@@ -27,7 +30,7 @@ var stringFormat = regexp.MustCompile(`\S+`)
 // 	 dereg
 // 		deregister to CoreNetwork
 //
-//   sess i [add|del]
+//   sess i [add|del] {dnn=%s,sst=%d,sd=%s}
 // 		pduSessionId i add or delete
 //
 // Output Format
@@ -35,7 +38,7 @@ var stringFormat = regexp.MustCompile(`\S+`)
 //		first line in all case:
 //			"[SHOW] REGISTERED\n" or "[SHOW] REGISTERING\n" or "[SHOW] DEREGISTERED\n"
 //		sessInfo:
-//			"[SHOW] ID=%d,ULIP=%s,ULTEID=%d,DLIP=%s,DLTEID=%d\n"
+//			"[SHOW] ID=%d,DNN=%s,SST=%d,SD=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n"
 // 		all means show all Pdu Session Id
 //
 //   reg {ip}
@@ -47,7 +50,7 @@ var stringFormat = regexp.MustCompile(`\S+`)
 // 		"[DEREG] FAIL\n" or
 //
 //   sess i [add|del]
-//		"[SESSION] ID=%d,ULIP=%s,ULTEID=%d,DLIP=%s,DLTEID=%d\n" for add case, "[SESSION] DEL %d\n" for del case or
+//		"[SESSION] ID=%d,DNN=%s,SST=%d,SD=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n" for add case, "[SESSION] DEL %d\n" for del case or
 // 		"[SESSION] ADD/DEL %d FAIL\n"
 //
 func parseCmd(ue *simulator_context.UeContext, cmd string) {
@@ -70,7 +73,7 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 					if sessInfo == "" {
 						continue
 					}
-					msg = msg + "[SHOW] " + sessInfo + "\n"
+					msg = msg + "[SHOW] " + sessInfo
 				}
 			default:
 				id, err := strconv.Atoi(params[1])
@@ -85,10 +88,10 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 				}
 				sessInfo := sess.GetTunnelMsg()
 				if sessInfo == "" {
-					msg = "sess " + params[1] + " is still establishing"
+					msg = "sess " + params[1] + " is still establishing\n"
 					break
 				}
-				msg = "[SHOW] " + sessInfo + "\n"
+				msg = "[SHOW] " + sessInfo
 			}
 		}
 	case "reg":
@@ -97,15 +100,16 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 			msg = "[REG] SUCCESS\n"
 			break
 		}
-		ran := self.RanPool[self.DefaultRanUri]
+		ran := self.RanPool[self.DefaultRanSctpUri]
 		if cnt > 1 {
+			// Use Specific RanSctpUri
 			ran = self.RanPool[params[1]]
 			if ran == nil {
 				msg = "ranIp " + params[1] + " does not exist"
 				break
 			}
-			// Use Default RanUri
 		}
+		// Send Registration Request
 		ue.AttachRan(ran)
 		ue.RegisterState = simulator_context.RegisterStateRegistering
 		simulator_ngap.SendInitailUeMessage_RegistraionRequest(ran, ue)
@@ -114,6 +118,7 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 		if ue.RegisterState == simulator_context.RegisterStateDeregitered {
 			msg = "[DEREG] SUCCESS\n"
 		} else {
+			// Send Deregistration Request
 			nasPdu, err := nas_packet.GetDeregistrationRequest(ue, 0) //normoal release
 			if err != nil {
 				logger.TcpServerLog.Error(err.Error())
@@ -137,15 +142,45 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 		switch params[2] {
 		case "add":
 			if sess == nil {
-				// TODO: Send Pdu Session Estblishment
+				pduSessionId := uint8(id)
+				dnn := "internet" // default
+				snssai := ue.Nssai.DefaultSingleNssais[0]
+				snssaiInfo, exist := ue.SmfSelData.SubscribedSnssaiInfos[fmt.Sprintf("%2d%s", snssai.Sst, snssai.Sd)]
+				if exist {
+					dnn = snssaiInfo.DnnInfos[0].Dnn
+				}
+				if cnt > 3 {
+					match := sessFormat.FindStringSubmatch(params[3])
+					if match == nil {
+						msg = "sess parameter " + params[3] + " not match format \"dnn=%s,sst=%d,sd=%s\""
+						break
+					}
+					dnn = match[1]
+					sst, _ := strconv.ParseInt(match[2], 10, 32)
+					snssai = models.Snssai{
+						Sst: int32(sst),
+						Sd:  match[3],
+					}
+				}
+				// Send Pdu Session Estblishment
+				gsmPdu := nas_packet.GetPduSessionEstablishmentRequest(pduSessionId)
+				nasPdu, err := nas_packet.GetUlNasTransport_PduSessionEstablishmentRequest(ue, pduSessionId, nasMessage.ULNASTransportRequestTypeInitialRequest, dnn, &snssai, gsmPdu)
+				if err != nil {
+					logger.TcpServerLog.Error(err.Error())
+					msg = fmt.Sprintf("[SESSION] ADD %d FAIL\n", pduSessionId)
+					break
+				}
+				simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+				ue.AddPduSession(pduSessionId, dnn, snssai)
+				msg = ReadChannelMsg(ue)
 				break
 			}
 			sessInfo := sess.GetTunnelMsg()
 			if sessInfo == "" {
-				msg = "sess " + params[1] + " is still establishing"
+				msg = "sess " + params[1] + " is still establishing\n"
 				break
 			}
-			msg = "[SESSION] " + sessInfo + "\n"
+			msg = "[SESSION] " + sessInfo
 		case "del":
 			if sess == nil {
 				msg = "[SESSION] DEL " + params[1] + "\n"

@@ -15,10 +15,10 @@ import (
 func ParseRanContext() {
 	config := factory.SimConfig
 	self := simulator_context.Simulator_Self()
-	self.DefaultRanUri = config.RanInfo[0].RanSctpUri
+	self.DefaultRanSctpUri = config.RanInfo[0].RanSctpUri
 	for _, ranInfo := range config.RanInfo {
 		plmnId := ngapConvert.PlmnIdToNgap(ranInfo.GnbId.PlmnId)
-		ran := self.AddRanContext(ranInfo.AmfUri, ranInfo.RanSctpUri, ranInfo.RanName, plmnId, ranInfo.GnbId.Value, ranInfo.GnbId.BitLength)
+		ran := self.AddRanContext(ranInfo.AmfUri, ranInfo.RanSctpUri, ranInfo.RanGtpUri, ranInfo.RanName, plmnId, ranInfo.GnbId.Value, ranInfo.GnbId.BitLength)
 		for _, supportItem := range ranInfo.SupportTAList {
 			plmnList := []simulator_context.PlmnSupportItem{}
 			for _, item := range supportItem.Plmnlist {

@@ -20,6 +20,7 @@ type Config struct {
 type RanContext struct {
 	AmfUri        string          `yaml:"amfUri"`
 	RanSctpUri    string          `yaml:"ranSctpUri"`
+	RanGtpUri     string          `yaml:"ranGtpUri"`
 	RanName       string          `yaml:"ranName"`
 	GnbId         GnbId           `yaml:"gnbId"`
 	SupportTAList []SupportTAItem `yaml:"taiList"`
