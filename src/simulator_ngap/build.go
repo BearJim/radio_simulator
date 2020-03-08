@@ -8,7 +8,6 @@ import (
 	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
-	"radio_simulator/src/type_convert"
 )
 
 // TODO: check test data
@@ -256,19 +255,7 @@ func BuildInitialUEMessage(ue *simulator_context.UeContext, registrationType uin
 	ie.Value.Present = ngapType.InitialUEMessageIEsPresentUserLocationInformation
 	ie.Value.UserLocationInformation = new(ngapType.UserLocationInformation)
 
-	userLocationInformation := ie.Value.UserLocationInformation
-	userLocationInformation.Present = ngapType.UserLocationInformationPresentUserLocationInformationNR
-	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
-
-	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
-	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
-		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
-		BitLength: 36,
-	}
-
-	userLocationInformationNR.TAI.PLMNIdentity.Value = type_convert.PlmnIdToNas(ue.ServingPlmnId)
-	userLocationInformationNR.TAI.TAC.Value, _ = hex.DecodeString(ue.Ran.DefaultTAC)
+	*ie.Value.UserLocationInformation = ue.Ran.GetUserLocation()
 
 	initialUEMessageIEs.List = append(initialUEMessageIEs.List, ie)
 
@@ -472,8 +459,9 @@ func BuildUEContextReleaseRequest(amfUeNgapID, ranUeNgapID int64, pduSessionIDLi
 	return
 }
 
-func BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID int64, pduSessionIDList []int64) (pdu ngapType.NGAPPDU) {
+func BuildUEContextReleaseComplete(ue *simulator_context.UeContext) ([]byte, error) {
 
+	pdu := ngapType.NGAPPDU{}
 	pdu.Present = ngapType.NGAPPDUPresentSuccessfulOutcome
 	pdu.SuccessfulOutcome = new(ngapType.SuccessfulOutcome)
 
@@ -495,7 +483,7 @@ func BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID int64, pduSessionIDL
 	ie.Value.AMFUENGAPID = new(ngapType.AMFUENGAPID)
 
 	aMFUENGAPID := ie.Value.AMFUENGAPID
-	aMFUENGAPID.Value = amfUeNgapID
+	aMFUENGAPID.Value = ue.AmfUeNgapId
 
 	uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
 
@@ -507,7 +495,7 @@ func BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID int64, pduSessionIDL
 	ie.Value.RANUENGAPID = new(ngapType.RANUENGAPID)
 
 	rANUENGAPID := ie.Value.RANUENGAPID
-	rANUENGAPID.Value = ranUeNgapID
+	rANUENGAPID.Value = ue.RanUeNgapId
 
 	uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
 
@@ -518,25 +506,14 @@ func BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID int64, pduSessionIDL
 	ie.Value.Present = ngapType.UEContextReleaseCompleteIEsPresentUserLocationInformation
 	ie.Value.UserLocationInformation = new(ngapType.UserLocationInformation)
 
-	userLocationInformation := ie.Value.UserLocationInformation
-	userLocationInformation.Present = ngapType.UserLocationInformationPresentUserLocationInformationNR
-	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
-
-	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
-	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
-		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
-		BitLength: 36,
-	}
-
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
-	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
+	*ie.Value.UserLocationInformation = ue.Ran.GetUserLocation()
 
 	uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
 	// Information on Recommended Cells and RAN Nodes for Paging (optional)
 
-	// PDU Session Resource List
-	if pduSessionIDList != nil {
+	if ue.RegisterState != simulator_context.RegisterStateDeregitered {
+		// TODO: N2Release - send exist pdu Session info to release
+		// PDU Session Resource List
 		ie = ngapType.UEContextReleaseCompleteIEs{}
 		ie.Id.Value = ngapType.ProtocolIEIDPDUSessionResourceListCxtRelCpl
 		ie.Criticality.Value = ngapType.CriticalityPresentReject
@@ -546,9 +523,9 @@ func BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID int64, pduSessionIDL
 		pDUSessionResourceListCxtRelCpl := ie.Value.PDUSessionResourceListCxtRelCpl
 
 		// PDU Session Resource Item (in PDU Session Resource List)
-		for _, pduSessionID := range pduSessionIDList {
+		for pduSessionId, _ := range ue.PduSession {
 			pDUSessionResourceItemCxtRelCpl := ngapType.PDUSessionResourceItemCxtRelCpl{}
-			pDUSessionResourceItemCxtRelCpl.PDUSessionID.Value = pduSessionID
+			pDUSessionResourceItemCxtRelCpl.PDUSessionID.Value = pduSessionId
 			pDUSessionResourceListCxtRelCpl.List = append(pDUSessionResourceListCxtRelCpl.List, pDUSessionResourceItemCxtRelCpl)
 		}
 
@@ -556,7 +533,7 @@ func BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID int64, pduSessionIDL
 	}
 
 	// Criticality Diagnostics (optional)
-	return
+	return ngap.Encoder(pdu)
 }
 
 func BuildUEContextModificationResponse(amfUeNgapID, ranUeNgapID int64) (pdu ngapType.NGAPPDU) {
@@ -699,19 +676,7 @@ func BuildUplinkNasTransport(ue *simulator_context.UeContext, nasPdu []byte) ([]
 	ie.Value.Present = ngapType.UplinkNASTransportIEsPresentUserLocationInformation
 	ie.Value.UserLocationInformation = new(ngapType.UserLocationInformation)
 
-	userLocationInformation := ie.Value.UserLocationInformation
-	userLocationInformation.Present = ngapType.UserLocationInformationPresentUserLocationInformationNR
-	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
-
-	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
-	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
-		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
-		BitLength: 36,
-	}
-
-	userLocationInformationNR.TAI.PLMNIdentity.Value = type_convert.PlmnIdToNas(ue.ServingPlmnId)
-	userLocationInformationNR.TAI.TAC.Value, _ = hex.DecodeString(ue.Ran.DefaultTAC)
+	*ie.Value.UserLocationInformation = ue.Ran.GetUserLocation()
 
 	uplinkNasTransportIEs.List = append(uplinkNasTransportIEs.List, ie)
 

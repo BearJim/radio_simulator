@@ -79,6 +79,29 @@ func SendIntialContextSetupResponse(ran *simulator_context.RanContext, ue *simul
 
 }
 
+func SendUeContextReleaseComplete(ran *simulator_context.RanContext, ue *simulator_context.UeContext) {
+
+	ngapLog.Info("[AMF] Send Ue Context Release Complete")
+
+	pkt, err := BuildUEContextReleaseComplete(ue)
+	if err != nil {
+		ngapLog.Errorf("Build Ue Context Release Complete failed : %s", err.Error())
+		return
+	}
+
+	// Reset Ue Context
+	ue.AmfUeNgapId = simulator_context.AmfNgapIdUnspecified
+	for pduSessionId, _ := range ue.PduSession {
+		delete(ue.PduSession, pduSessionId)
+	}
+
+	SendToAmf(ran, pkt)
+	if ue.RegisterState == simulator_context.RegisterStateDeregitered {
+		// Complete Deregistration
+		ue.SendSuccessDeregister()
+	}
+}
+
 func SendErrorIndication(ran *simulator_context.RanContext, amfUeNgapId, ranUeNgapId *int64, cause *ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) {
 
 	ngapLog.Info("[AMF] Send Error Indication")

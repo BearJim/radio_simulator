@@ -62,10 +62,10 @@ func GetPDUSessionResourceSetupResponse(amfUeNgapID int64, ranUeNgapID int64, ip
 // 	return NASEncode(ue, m)
 // }
 
-func GetUEContextReleaseComplete(amfUeNgapID int64, ranUeNgapID int64, pduSessionIDList []int64) ([]byte, error) {
-	message := simulator_ngap.BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID, pduSessionIDList)
-	return ngap.Encoder(message)
-}
+// func GetUEContextReleaseComplete(amfUeNgapID int64, ranUeNgapID int64, pduSessionIDList []int64) ([]byte, error) {
+// 	message := simulator_ngap.BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID, pduSessionIDList)
+// 	return ngap.Encoder(message)
+// }
 
 func GetUEContextReleaseRequest(amfUeNgapID int64, ranUeNgapID int64, pduSessionIDList []int64) ([]byte, error) {
 	message := simulator_ngap.BuildUEContextReleaseRequest(amfUeNgapID, ranUeNgapID, pduSessionIDList)

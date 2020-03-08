@@ -7,7 +7,9 @@ import (
 	"net"
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
+	"radio_simulator/lib/nas/nasType"
 	"radio_simulator/lib/openapi/models"
+	"radio_simulator/src/logger"
 	"sync"
 )
 
@@ -61,13 +63,14 @@ const (
 	AmfNgapIdUnspecified int64 = 0xffffffffff
 )
 const (
-	RegisterStateRegitered   = "REGISTERED"
-	RegisterStateRegitering  = "REGISTERING"
+	RegisterStateRegistered  = "REGISTERED"
+	RegisterStateRegistering = "REGISTERING"
 	RegisterStateDeregitered = "DEREGISTERED"
 )
 
 type UeContext struct {
-	Supi          string                              `yaml:"supi"`
+	Supi          string `yaml:"supi"`
+	Guti          *nasType.GUTI5G
 	Gpsis         []string                            `yaml:"gpsis"`
 	Nssai         models.Nssai                        `yaml:"nssai"`
 	UeAmbr        UeAmbr                              `yaml:"ueAmbr"`
@@ -88,13 +91,15 @@ type UeContext struct {
 	KnasEnc          []uint8
 	KnasInt          []uint8
 	Kamf             []uint8
+	NgKsi            uint8
 	// PduSession
-	PduSession map[int]*SessionContext
+	PduSession map[int64]*SessionContext
 	// related Context
 	Ran           *RanContext
 	RegisterState string
 	// For TCP Client
-	TcpConn net.Conn // supi -> UeTcpClient
+	TcpChannelMsg chan string
+	TcpConn       net.Conn // supi -> UeTcpClient
 }
 
 type UeAmbr struct {
@@ -122,10 +127,11 @@ type SessionContext struct {
 
 func NewUeContext() *UeContext {
 	return &UeContext{
-		PduSession:    make(map[int]*SessionContext),
+		PduSession:    make(map[int64]*SessionContext),
 		AmfUeNgapId:   AmfNgapIdUnspecified,
 		RanUeNgapId:   RanNgapIdUnspecified,
 		RegisterState: RegisterStateDeregitered,
+		TcpChannelMsg: make(chan string),
 	}
 }
 
@@ -139,20 +145,36 @@ func (s *SessionContext) GetTunnelMsg() string {
 	return msg
 }
 func (ue *UeContext) SendSuccessRegister() {
-	if ue.TcpConn != nil {
-		ue.TcpConn.Write([]byte("[REG] SUCCESS\n"))
+	msg := "[REG] SUCCESS\n"
+	select {
+	case ue.TcpChannelMsg <- msg:
+	default:
+		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
 	}
+	// ue.TcpConn.Write([]byte("[REG] SUCCESS\n"))
 }
 func (ue *UeContext) SendFailRegister() {
-	if ue.TcpConn != nil {
-		ue.TcpConn.Write([]byte("[REG] FAIL\n"))
+	msg := "[REG] FAIL\n"
+	select {
+	case ue.TcpChannelMsg <- msg:
+	default:
+		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
 	}
+	// if ue.TcpConn != nil {
+	// 	ue.TcpConn.Write([]byte("[REG] FAIL\n"))
+	// }
 }
 
 func (ue *UeContext) SendSuccessDeregister() {
-	if ue.TcpConn != nil {
-		ue.TcpConn.Write([]byte("[DEREG] SUCCESS\n"))
+	msg := "[DEREG] SUCCESS\n"
+	select {
+	case ue.TcpChannelMsg <- msg:
+	default:
+		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
 	}
+	// if ue.TcpConn != nil {
+	// 	ue.TcpConn.Write([]byte("[DEREG] SUCCESS\n"))
+	// }
 }
 
 func (ue *UeContext) AttachRan(ran *RanContext) {

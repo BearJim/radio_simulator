@@ -745,36 +745,39 @@ func GetSecurityModeReject(cause5GMM uint8) (nasPdu []byte) {
 	return
 }
 
-func GetDeregistrationRequest(accessType uint8, switchOff uint8, ngKsi uint8, mobileIdentity5GS nasType.MobileIdentity5GS) (nasPdu []byte) {
+func GetDeregistrationRequest(ue *simulator_context.UeContext, switchOff uint8) ([]byte, error) {
 
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeDeregistrationRequestUEOriginatingDeregistration)
 
+	if ue.RegisterState == simulator_context.RegisterStateRegistered {
+		m.SecurityHeader = nas.SecurityHeader{
+			ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
+			SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+		}
+	}
 	deregistrationRequest := nasMessage.NewDeregistrationRequestUEOriginatingDeregistration(0)
 	deregistrationRequest.ExtendedProtocolDiscriminator.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSMobilityManagementMessage)
 	deregistrationRequest.SpareHalfOctetAndSecurityHeaderType.SetSecurityHeaderType(nas.SecurityHeaderTypePlainNas)
 	deregistrationRequest.SpareHalfOctetAndSecurityHeaderType.SetSpareHalfOctet(0)
 	deregistrationRequest.DeregistrationRequestMessageIdentity.SetMessageType(nas.MsgTypeDeregistrationRequestUEOriginatingDeregistration)
 
-	deregistrationRequest.NgksiAndDeregistrationType.SetAccessType(accessType)
+	deregistrationRequest.NgksiAndDeregistrationType.SetAccessType(nasMessage.AccessType3GPP)
 	deregistrationRequest.NgksiAndDeregistrationType.SetSwitchOff(switchOff)
 	deregistrationRequest.NgksiAndDeregistrationType.SetReRegistrationRequired(0)
-	deregistrationRequest.NgksiAndDeregistrationType.SetTSC(ngKsi)
-	deregistrationRequest.NgksiAndDeregistrationType.SetNasKeySetIdentifiler(ngKsi)
-	deregistrationRequest.MobileIdentity5GS.SetLen(mobileIdentity5GS.GetLen())
-	deregistrationRequest.MobileIdentity5GS.SetMobileIdentity5GSContents(mobileIdentity5GS.GetMobileIdentity5GSContents())
+	deregistrationRequest.NgksiAndDeregistrationType.SetTSC(0) // Kamf=0 , Kasme=1
+	deregistrationRequest.NgksiAndDeregistrationType.SetNasKeySetIdentifiler(ue.NgKsi)
+	if ue.Guti == nil {
+		deregistrationRequest.MobileIdentity5GS = type_convert.SupiToMobileId(ue.Supi, ue.ServingPlmnId)
+	} else {
+		deregistrationRequest.MobileIdentity5GS.SetLen(ue.Guti.Len)
+		deregistrationRequest.MobileIdentity5GS.SetMobileIdentity5GSContents(ue.Guti.Octet[:])
+	}
 
 	m.GmmMessage.DeregistrationRequestUEOriginatingDeregistration = deregistrationRequest
 
-	data := new(bytes.Buffer)
-	err := m.GmmMessageEncode(data)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	nasPdu = data.Bytes()
-	return
+	return nas_security.NASEncode(ue, m)
 }
 
 func GetDeregistrationAccept() (nasPdu []byte) {

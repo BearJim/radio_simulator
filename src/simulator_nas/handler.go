@@ -10,11 +10,12 @@ import (
 
 func HandleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
 
-	nasLog.Infof("Ue[%s] Handle Authentication Request", ue.Supi)
+	nasLog.Infof("UE[%s] Handle Authentication Request", ue.Supi)
 
 	if request == nil {
 		return fmt.Errorf("AuthenticationRequest body is nil")
 	}
+	ue.NgKsi = request.GetNasKeySetIdentifiler()
 	rand := request.GetRANDValue()
 	resStat := ue.DeriveRESstarAndSetKey(rand[:])
 	nasPdu := nas_packet.GetAuthenticationResponse(resStat, "")
@@ -24,7 +25,7 @@ func HandleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMe
 
 func HandleSecurityModeCommand(ue *simulator_context.UeContext, request *nasMessage.SecurityModeCommand) error {
 
-	nasLog.Infof("Ue[%s] Security Mode Command", ue.Supi)
+	nasLog.Infof("UE[%s] Handle Security Mode Command", ue.Supi)
 
 	nasContent, err := nas_packet.GetRegistrationRequestWith5GMM(ue, nasMessage.RegistrationType5GSInitialRegistration, nil, nil)
 	if err != nil {
@@ -39,14 +40,23 @@ func HandleSecurityModeCommand(ue *simulator_context.UeContext, request *nasMess
 }
 func HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessage.RegistrationAccept) error {
 
-	nasLog.Infof("Ue[%s] Registration Accept", ue.Supi)
+	nasLog.Infof("UE[%s] Handle Registration Accept", ue.Supi)
+
+	ue.Guti = request.GUTI5G
 
 	nasPdu, err := nas_packet.GetRegistrationComplete(ue, nil)
 	if err != nil {
 		return err
 	}
 	simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
-	ue.RegisterState = simulator_context.RegisterStateRegitered
+	ue.RegisterState = simulator_context.RegisterStateRegistered
 	ue.SendSuccessRegister()
+	return nil
+}
+func HandleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {
+
+	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
+
+	ue.RegisterState = simulator_context.RegisterStateDeregitered
 	return nil
 }

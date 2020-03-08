@@ -292,6 +292,81 @@ func HandleInitialContextSetupRequest(ran *simulator_context.RanContext, message
 
 }
 
+func HandleUeContextReleaseCommand(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
+	var uENGAPIDs *ngapType.UENGAPIDs
+	var cause *ngapType.Cause
+
+	var iesCriticalityDiagnostics ngapType.CriticalityDiagnosticsIEList
+
+	if ran == nil {
+		ngapLog.Error("RAN Context is nil")
+		return
+	}
+
+	if message == nil {
+		ngapLog.Error("NGAP Message is nil")
+		return
+	}
+
+	initiatingMessage := message.InitiatingMessage
+	if initiatingMessage == nil {
+		ngapLog.Error("InitiatingMessage is nil")
+		return
+	}
+
+	uEContextReleaseCommand := initiatingMessage.Value.UEContextReleaseCommand
+	if uEContextReleaseCommand == nil {
+		ngapLog.Error("uEContextReleaseCommand is nil")
+		return
+	}
+
+	for _, ie := range uEContextReleaseCommand.ProtocolIEs.List {
+		switch ie.Id.Value {
+		case ngapType.ProtocolIEIDUENGAPIDs:
+			ngapLog.Traceln("[NGAP] Decode IE UENGAPIDs")
+			uENGAPIDs = ie.Value.UENGAPIDs
+			if uENGAPIDs == nil {
+				ngapLog.Error("UENGAPIDs is nil")
+				item := buildCriticalityDiagnosticsIEItem(ngapType.CriticalityPresentReject, ie.Id.Value, ngapType.TypeOfErrorPresentMissing)
+				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
+			}
+		case ngapType.ProtocolIEIDCause:
+			ngapLog.Traceln("[NGAP] Decode IE Cause")
+			cause = ie.Value.Cause
+		}
+	}
+
+	if len(iesCriticalityDiagnostics.List) > 0 {
+		procudureCode := ngapType.ProcedureCodeUEContextRelease
+		trigger := ngapType.TriggeringMessagePresentInitiatingMessage
+		criticality := ngapType.CriticalityPresentReject
+		criticalityDiagnostics := buildCriticalityDiagnostics(&procudureCode, &trigger, &criticality, &iesCriticalityDiagnostics)
+		simulator_ngap.SendErrorIndication(ran, nil, nil, nil, &criticalityDiagnostics)
+		return
+	}
+
+	var ue *simulator_context.UeContext
+
+	switch uENGAPIDs.Present {
+	case ngapType.UENGAPIDsPresentAMFUENGAPID:
+		ue = ran.FindUeByAmfUeNgapID(uENGAPIDs.AMFUENGAPID.Value)
+		if ue == nil {
+			ngapLog.Warnf("No UE Context[AmfUeNgapID:%d]\n", uENGAPIDs.AMFUENGAPID.Value)
+			return
+		}
+	case ngapType.UENGAPIDsPresentUENGAPIDPair:
+		pair := uENGAPIDs.UENGAPIDPair
+		ue = ran.FindUeByRanUeNgapID(pair.RANUENGAPID.Value)
+		if ue == nil {
+			ngapLog.Warnf("No UE Context[RanUeNgapID:%d]\n", pair.RANUENGAPID.Value)
+			return
+		}
+	}
+
+	printAndGetCause(cause)
+	simulator_ngap.SendUeContextReleaseComplete(ran, ue)
+}
+
 func buildCriticalityDiagnostics(
 	procedureCode *int64,
 	triggeringMessage *aper.Enumerated,
@@ -335,4 +410,29 @@ func buildCriticalityDiagnosticsIEItem(ieCriticality aper.Enumerated, ieID int64
 	}
 
 	return item
+}
+
+func printAndGetCause(cause *ngapType.Cause) (present int, value aper.Enumerated) {
+
+	present = cause.Present
+	switch cause.Present {
+	case ngapType.CausePresentRadioNetwork:
+		ngapLog.Warnf("Cause RadioNetwork[%d]", cause.RadioNetwork.Value)
+		value = cause.RadioNetwork.Value
+	case ngapType.CausePresentTransport:
+		ngapLog.Warnf("Cause Transport[%d]", cause.Transport.Value)
+		value = cause.Transport.Value
+	case ngapType.CausePresentProtocol:
+		ngapLog.Warnf("Cause Protocol[%d]", cause.Protocol.Value)
+		value = cause.Protocol.Value
+	case ngapType.CausePresentNas:
+		ngapLog.Warnf("Cause Nas[%d]", cause.Nas.Value)
+		value = cause.Nas.Value
+	case ngapType.CausePresentMisc:
+		ngapLog.Warnf("Cause Misc[%d]", cause.Misc.Value)
+		value = cause.Misc.Value
+	default:
+		ngapLog.Errorf("Invalid Cause group[%d]", cause.Present)
+	}
+	return
 }

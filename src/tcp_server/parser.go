@@ -1,10 +1,14 @@
 package tcp_server
 
 import (
+	"fmt"
+	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
+	"radio_simulator/src/simulator_nas/nas_packet"
 	"radio_simulator/src/simulator_ngap"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 var stringFormat = regexp.MustCompile(`\S+`)
@@ -74,7 +78,7 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 					msg = "sess id is not digit"
 					break
 				}
-				sess := ue.PduSession[id]
+				sess := ue.PduSession[int64(id)]
 				if sess == nil {
 					msg = "sess " + params[1] + " has not established yet"
 					break
@@ -89,11 +93,9 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 		}
 	case "reg":
 		switch ue.RegisterState {
-		case simulator_context.RegisterStateRegitered:
-			ue.SendSuccessRegister()
-			return
-		case simulator_context.RegisterStateRegitering:
-			return
+		case simulator_context.RegisterStateRegistered:
+			msg = "[REG] SUCCESS\n"
+			break
 		}
 		ran := self.RanPool[self.DefaultRanUri]
 		if cnt > 1 {
@@ -105,14 +107,21 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 			// Use Default RanUri
 		}
 		ue.AttachRan(ran)
-		ue.RegisterState = simulator_context.RegisterStateRegitering
+		ue.RegisterState = simulator_context.RegisterStateRegistering
 		simulator_ngap.SendInitailUeMessage_RegistraionRequest(ran, ue)
+		msg = ReadChannelMsg(ue)
 	case "dereg":
 		if ue.RegisterState == simulator_context.RegisterStateDeregitered {
-			ue.SendSuccessDeregister()
-			return
+			msg = "[DEREG] SUCCESS\n"
 		} else {
-			// TODO: Send Degister Request
+			nasPdu, err := nas_packet.GetDeregistrationRequest(ue, 0) //normoal release
+			if err != nil {
+				logger.TcpServerLog.Error(err.Error())
+				msg = "[DEREG] FAIL\n"
+				break
+			}
+			simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+			msg = ReadChannelMsg(ue)
 		}
 	case "sess":
 		if cnt <= 2 {
@@ -124,7 +133,7 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 			msg = "sess id is not digit"
 			break
 		}
-		sess := ue.PduSession[id]
+		sess := ue.PduSession[int64(id)]
 		switch params[2] {
 		case "add":
 			if sess == nil {
@@ -156,4 +165,13 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 		ue.TcpConn.Write([]byte(msg))
 	}
 
+}
+
+func ReadChannelMsg(ue *simulator_context.UeContext) string {
+	select {
+	case msg := <-ue.TcpChannelMsg:
+		return msg
+	case <-time.After(5 * time.Second):
+		return fmt.Sprintf("[TIMEOUT]\n")
+	}
 }

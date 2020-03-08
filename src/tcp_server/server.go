@@ -77,7 +77,6 @@ func Read(conn net.Conn, supi *string) error {
 			return err
 		}
 		cmd := string(line)
-
 		if *supi != "" {
 			parseCmd(self.UeContextPool[*supi], cmd)
 		} else if strings.HasPrefix(cmd, "imsi-") {
@@ -87,12 +86,12 @@ func Read(conn net.Conn, supi *string) error {
 			} else {
 				ue.TcpConn = conn
 				*supi = cmd
-				conn.Write([]byte(fmt.Sprintf("Welcom User %s\n", *supi)))
+				conn.Write([]byte(fmt.Sprintf("Welcome User %s\n", *supi)))
 			}
 		} else {
 			conn.Write([]byte("Please type Supi first\n"))
 		}
-		if !isPrefix {
+		if isPrefix {
 			break
 		}
 	}

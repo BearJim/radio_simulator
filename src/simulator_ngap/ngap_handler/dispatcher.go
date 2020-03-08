@@ -37,6 +37,8 @@ func Dispatch(addr string, msg []byte) {
 			HandleDownlinkNASTransport(ran, pdu)
 		case ngapType.ProcedureCodeInitialContextSetup:
 			HandleInitialContextSetupRequest(ran, pdu)
+		case ngapType.ProcedureCodeUEContextRelease:
+			HandleUeContextReleaseCommand(ran, pdu)
 		// case ngapType.ProcedureCodeNGSetup:
 		// 	ngap_handler.HandleNGSetupRequest(ran, pdu)
 		// case ngapType.ProcedureCodeInitialUEMessage:
