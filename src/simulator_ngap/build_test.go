@@ -239,7 +239,7 @@ func TestBuildNGResetAcknowledge(t *testing.T) {
 
 func TestBuildUplinkNasTransport(t *testing.T) {
 
-	pduSessionEstablishmentRequest := nasTestpacket.GetPduSessionEstablishmentRequest(1)
+	pduSessionEstablishmentRequest := nasTestpacket.GetPduSessionEstablishmentRequest(1, 1)
 
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()

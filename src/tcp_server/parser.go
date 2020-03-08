@@ -38,7 +38,7 @@ var sessFormat = regexp.MustCompile(`dnn=([^\,]+),sst=([^\,]+),sd=(\S+)`)
 //		first line in all case:
 //			"[SHOW] REGISTERED\n" or "[SHOW] REGISTERING\n" or "[SHOW] DEREGISTERED\n"
 //		sessInfo:
-//			"[SHOW] ID=%d,DNN=%s,SST=%d,SD=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n"
+//			"[SHOW] ID=%d,DNN=%s,SST=%d,SD=%s,UEIP=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n"
 // 		all means show all Pdu Session Id
 //
 //   reg {ip}
@@ -50,7 +50,7 @@ var sessFormat = regexp.MustCompile(`dnn=([^\,]+),sst=([^\,]+),sd=(\S+)`)
 // 		"[DEREG] FAIL\n" or
 //
 //   sess i [add|del]
-//		"[SESSION] ID=%d,DNN=%s,SST=%d,SD=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n" for add case, "[SESSION] DEL %d\n" for del case or
+//		"[SESSION] ID=%d,DNN=%s,SST=%d,SD=%s,UEIP=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n" for add case, "[SESSION] DEL %d\n" for del case or
 // 		"[SESSION] ADD/DEL %d FAIL\n"
 //
 func parseCmd(ue *simulator_context.UeContext, cmd string) {
@@ -163,7 +163,7 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 					}
 				}
 				// Send Pdu Session Estblishment
-				gsmPdu := nas_packet.GetPduSessionEstablishmentRequest(pduSessionId)
+				gsmPdu := nas_packet.GetPduSessionEstablishmentRequest(pduSessionId, nasMessage.PDUSessionTypeIPv4)
 				nasPdu, err := nas_packet.GetUlNasTransport_PduSessionEstablishmentRequest(ue, pduSessionId, nasMessage.ULNASTransportRequestTypeInitialRequest, dnn, &snssai, gsmPdu)
 				if err != nil {
 					logger.TcpServerLog.Error(err.Error())

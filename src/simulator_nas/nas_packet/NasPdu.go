@@ -98,7 +98,7 @@ func GetRegistrationRequestWith5GMM(ue *simulator_context.UeContext, registratio
 	return m.PlainNasEncode()
 }
 
-func GetPduSessionEstablishmentRequest(pduSessionId uint8) (nasPdu []byte) {
+func GetPduSessionEstablishmentRequest(pduSessionId, sessionType uint8) (nasPdu []byte) {
 
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
@@ -111,6 +111,11 @@ func GetPduSessionEstablishmentRequest(pduSessionId uint8) (nasPdu []byte) {
 	pduSessionEstablishmentRequest.PTI.SetPTI(0x00)
 	pduSessionEstablishmentRequest.IntegrityProtectionMaximumDataRate.SetMaximumDataRatePerUEForUserPlaneIntegrityProtectionForDownLink(0xff) // full data rate
 	pduSessionEstablishmentRequest.IntegrityProtectionMaximumDataRate.SetMaximumDataRatePerUEForUserPlaneIntegrityProtectionForUpLink(0xff)   // full data rate
+	if sessionType != 0 {
+		pduSessionEstablishmentRequest.PDUSessionType = new(nasType.PDUSessionType)
+		pduSessionEstablishmentRequest.PDUSessionType.SetIei(nasMessage.PDUSessionEstablishmentAcceptPDUAddressType)
+		pduSessionEstablishmentRequest.PDUSessionType.SetPDUSessionTypeValue(sessionType)
+	}
 
 	m.GsmMessage.PDUSessionEstablishmentRequest = pduSessionEstablishmentRequest
 

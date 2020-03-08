@@ -120,6 +120,7 @@ type AuthData struct {
 type SessionContext struct {
 	Mtx          sync.Mutex
 	PduSessionId int64
+	UeIp         string
 	ULTEID       uint32
 	DLTEID       uint32
 	ULAddr       string
@@ -171,8 +172,8 @@ func (s *SessionContext) GetTunnelMsg() string {
 	if s.ULAddr == "" {
 		return ""
 	}
-	msg := fmt.Sprintf("ID=%d,DNN=%s,SST=%d,SD=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n",
-		s.PduSessionId, s.Dnn, s.Snssai.Sst, s.Snssai.Sd, s.ULAddr, s.ULTEID, s.DLAddr, s.DLTEID)
+	msg := fmt.Sprintf("ID=%d,DNN=%s,SST=%d,SD=%s,UEIP=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n",
+		s.PduSessionId, s.Dnn, s.Snssai.Sst, s.Snssai.Sd, s.UeIp, s.ULAddr, s.ULTEID, s.DLAddr, s.DLTEID)
 	s.Mtx.Unlock()
 	return msg
 }
