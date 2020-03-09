@@ -39,6 +39,10 @@ func (ran *RanContext) AttachSession(sess *SessionContext) {
 	ran.SessPool[sess.DLTEID] = sess
 }
 
+func (ran *RanContext) DetachSession(sess *SessionContext) {
+	delete(ran.SessPool, sess.DLTEID)
+}
+
 func (ran *RanContext) TEIDAlloc() uint32 {
 	ran.TEIDGenerator %= MaxValueOfTeid
 	ran.TEIDGenerator++

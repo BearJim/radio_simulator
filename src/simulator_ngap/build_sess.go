@@ -48,6 +48,13 @@ func BuildPDUSessionResourceSetupResponseTransfer(sess *simulator_context.Sessio
 	return aper.MarshalWithParams(transfer, "valueExt")
 }
 
+func BuildPDUSessionResourceReleaseResponseTransfer() ([]byte, error) {
+
+	transfer := ngapType.PDUSessionResourceReleaseResponseTransfer{}
+
+	return aper.MarshalWithParams(transfer, "valueExt")
+}
+
 func AppendPDUSessionResourceSetupListSURes(list *ngapType.PDUSessionResourceSetupListSURes, pduSessionID int64, transfer []byte) {
 	item := ngapType.PDUSessionResourceSetupItemSURes{}
 	item.PDUSessionID.Value = pduSessionID
@@ -59,5 +66,12 @@ func AppendPDUSessionResourceFailedToSetupListSURes(list *ngapType.PDUSessionRes
 	item := ngapType.PDUSessionResourceFailedToSetupItemSURes{}
 	item.PDUSessionID.Value = pduSessionID
 	item.PDUSessionResourceSetupUnsuccessfulTransfer = transfer
+	list.List = append(list.List, item)
+}
+
+func AppendPDUSessionResourceReleasedListRelRes(list *ngapType.PDUSessionResourceReleasedListRelRes, pduSessionID int64, transfer []byte) {
+	item := ngapType.PDUSessionResourceReleasedItemRelRes{}
+	item.PDUSessionID.Value = pduSessionID
+	item.PDUSessionResourceReleaseResponseTransfer = transfer
 	list.List = append(list.List, item)
 }

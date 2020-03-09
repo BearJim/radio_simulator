@@ -479,6 +479,110 @@ func HandlePduSessionResourceSetupRequest(ran *simulator_context.RanContext, mes
 	}
 }
 
+func HandlePduSessionResourceReleaseCommand(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
+	var aMFUENGAPID *ngapType.AMFUENGAPID
+	var rANUENGAPID *ngapType.RANUENGAPID
+	// var rANPagingPriority *ngapType.RANPagingPriority
+	var nASPDU *ngapType.NASPDU
+	var pDUSessionResourceToReleaseListRelCmd *ngapType.PDUSessionResourceToReleaseListRelCmd
+
+	var iesCriticalityDiagnostics ngapType.CriticalityDiagnosticsIEList
+
+	if ran == nil {
+		ngapLog.Error("RAN Context is nil")
+		return
+	}
+
+	if message == nil {
+		ngapLog.Error("NGAP Message is nil")
+		return
+	}
+
+	initiatingMessage := message.InitiatingMessage
+	if initiatingMessage == nil {
+		ngapLog.Error("InitiatingMessage is nil")
+		return
+	}
+
+	pDUSessionResourceReleaseCommand := initiatingMessage.Value.PDUSessionResourceReleaseCommand
+	if pDUSessionResourceReleaseCommand == nil {
+		ngapLog.Error("pDUSessionResourceReleaseCommand is nil")
+		return
+	}
+
+	for _, ie := range pDUSessionResourceReleaseCommand.ProtocolIEs.List {
+		switch ie.Id.Value {
+		case ngapType.ProtocolIEIDAMFUENGAPID:
+			ngapLog.Traceln("[NGAP] Decode IE AMFUENGAPID")
+			aMFUENGAPID = ie.Value.AMFUENGAPID
+			if aMFUENGAPID == nil {
+				ngapLog.Error("AMFUENGAPID is nil")
+				item := buildCriticalityDiagnosticsIEItem(ngapType.CriticalityPresentReject, ie.Id.Value, ngapType.TypeOfErrorPresentMissing)
+				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
+			}
+		case ngapType.ProtocolIEIDRANUENGAPID:
+			ngapLog.Traceln("[NGAP] Decode IE RANUENGAPID")
+			rANUENGAPID = ie.Value.RANUENGAPID
+			if rANUENGAPID == nil {
+				ngapLog.Error("RANUENGAPID is nil")
+				item := buildCriticalityDiagnosticsIEItem(ngapType.CriticalityPresentReject, ie.Id.Value, ngapType.TypeOfErrorPresentMissing)
+				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
+			}
+		case ngapType.ProtocolIEIDRANPagingPriority:
+			ngapLog.Traceln("[NGAP] Decode IE RANPagingPriority")
+			// rANPagingPriority = ie.Value.RANPagingPriority
+		case ngapType.ProtocolIEIDNASPDU:
+			ngapLog.Traceln("[NGAP] Decode IE NASPDU")
+			nASPDU = ie.Value.NASPDU
+		case ngapType.ProtocolIEIDPDUSessionResourceToReleaseListRelCmd:
+			ngapLog.Traceln("[NGAP] Decode IE PDUSessionResourceToReleaseListRelCmd")
+			pDUSessionResourceToReleaseListRelCmd = ie.Value.PDUSessionResourceToReleaseListRelCmd
+			if pDUSessionResourceToReleaseListRelCmd == nil {
+				ngapLog.Error("PDUSessionResourceToReleaseListRelCmd is nil")
+				item := buildCriticalityDiagnosticsIEItem(ngapType.CriticalityPresentReject, ie.Id.Value, ngapType.TypeOfErrorPresentMissing)
+				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
+			}
+		}
+	}
+
+	if len(iesCriticalityDiagnostics.List) > 0 {
+		procudureCode := ngapType.ProcedureCodePDUSessionResourceRelease
+		trigger := ngapType.TriggeringMessagePresentInitiatingMessage
+		criticality := ngapType.CriticalityPresentReject
+		criticalityDiagnostics := buildCriticalityDiagnostics(&procudureCode, &trigger, &criticality, &iesCriticalityDiagnostics)
+		simulator_ngap.SendErrorIndication(ran, nil, nil, nil, &criticalityDiagnostics)
+		return
+	}
+
+	ue := ran.FindUeByRanUeNgapID(rANUENGAPID.Value)
+	if ue == nil {
+		ngapLog.Warnf("No UE Context[RanUeNgapID:%d]\n", rANUENGAPID.Value)
+		return
+	}
+
+	responseList := ngapType.PDUSessionResourceReleasedListRelRes{}
+	for _, pduSession := range pDUSessionResourceToReleaseListRelCmd.List {
+		pduSessionId := pduSession.PDUSessionID.Value
+		sess, exist := ue.PduSession[pduSessionId]
+		if !exist {
+			ngapLog.Warnf("No PduSession Context[PduSessionId:%d]\n", pduSessionId)
+			continue
+		}
+		resTransfer, err := handlePDUSessionResourceReleaseCommandTransfer(sess, pduSession.PDUSessionResourceReleaseCommandTransfer)
+		if err != nil {
+			ngapLog.Warn(err.Error())
+		}
+		simulator_ngap.AppendPDUSessionResourceReleasedListRelRes(&responseList, pduSessionId, resTransfer)
+		ran.DetachSession(sess)
+	}
+
+	simulator_ngap.SendPDUSessionResourceReleaseResponse(ran, ue, responseList, nil)
+
+	if nASPDU != nil {
+		simulator_nas.HandleNAS(ue, nASPDU.Value)
+	}
+}
+
 func buildCriticalityDiagnostics(
 	procedureCode *int64,
 	triggeringMessage *aper.Enumerated,

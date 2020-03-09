@@ -44,6 +44,8 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 		switch msg.GsmMessage.GetMessageType() {
 		case nas.MsgTypePDUSessionEstablishmentAccept:
 			checkMsgError(HandlePduSessionEstblishmentAccept(ue, msg.GsmMessage.PDUSessionEstablishmentAccept), "PduSessionEstblishmentAccept")
+		case nas.MsgTypePDUSessionReleaseCommand:
+			checkMsgError(HandlePduSessionReleaseCommand(ue, msg.GsmMessage.PDUSessionReleaseCommand), "PduSessionReleaseCommand")
 		default:
 			nasLog.Errorf("Unknown GsmMessage[%d]\n", msg.GsmMessage.GetMessageType())
 		}

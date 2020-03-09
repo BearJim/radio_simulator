@@ -34,13 +34,20 @@ func Dispatch(addr string, msg []byte) {
 		}
 		switch initiatingMessage.ProcedureCode.Value {
 		case ngapType.ProcedureCodeDownlinkNASTransport:
+			ngapLog.Infof("Handle Downlink NAS Transport")
 			HandleDownlinkNASTransport(ran, pdu)
 		case ngapType.ProcedureCodeInitialContextSetup:
+			ngapLog.Infof("Handle Initial Context Setup Request")
 			HandleInitialContextSetupRequest(ran, pdu)
 		case ngapType.ProcedureCodeUEContextRelease:
+			ngapLog.Infof("Handle Ue Context Release Command")
 			HandleUeContextReleaseCommand(ran, pdu)
 		case ngapType.ProcedureCodePDUSessionResourceSetup:
+			ngapLog.Infof("Handle Pdu Session Resource Setup Request")
 			HandlePduSessionResourceSetupRequest(ran, pdu)
+		case ngapType.ProcedureCodePDUSessionResourceRelease:
+			ngapLog.Infof("Handle Pdu Session Resource Release Command")
+			HandlePduSessionResourceReleaseCommand(ran, pdu)
 		default:
 			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, initiatingMessage.ProcedureCode.Value)
 		}
@@ -62,14 +69,6 @@ func Dispatch(addr string, msg []byte) {
 			return
 		}
 		switch unsuccessfulOutcome.ProcedureCode.Value {
-		// case ngapType.ProcedureCodeAMFConfigurationUpdate:
-		// 	ngap_handler.HandleAMFconfigurationUpdateFailure(ran, pdu)
-		// case ngapType.ProcedureCodeInitialContextSetup:
-		// 	ngap_handler.HandleInitialContextSetupFailure(ran, pdu)
-		// case ngapType.ProcedureCodeUEContextModification:
-		// 	ngap_handler.HandleUEContextModificationFailure(ran, pdu)
-		// case ngapType.ProcedureCodeHandoverResourceAllocation:
-		// 	ngap_handler.HandleHandoverFailure(ran, pdu)
 		default:
 			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, unsuccessfulOutcome.ProcedureCode.Value)
 		}

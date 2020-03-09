@@ -161,7 +161,7 @@ func (ue *UeContext) AddPduSession(pduSessionId uint8, dnn string, snssai models
 func (s *SessionContext) Remove() {
 	if ue := s.Ue; ue != nil {
 		if ran := ue.Ran; ran != nil {
-			delete(ran.SessPool, s.DLTEID)
+			ran.DetachSession(s)
 		}
 		delete(ue.PduSession, s.PduSessionId)
 	}

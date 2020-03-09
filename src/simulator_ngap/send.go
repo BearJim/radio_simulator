@@ -136,6 +136,28 @@ func SendPDUSessionResourceSetupResponse(
 	}
 }
 
+func SendPDUSessionResourceReleaseResponse(
+	ran *simulator_context.RanContext,
+	ue *simulator_context.UeContext,
+	relList ngapType.PDUSessionResourceReleasedListRelRes,
+	diagnostics *ngapType.CriticalityDiagnostics) {
+
+	ngapLog.Infoln("[EAN] Send PDU Session Resource Release Response")
+
+	if len(relList.List) < 1 {
+		ngapLog.Errorln("PDUSessionResourceReleasedListRelRes is nil. This message shall contain at least one Item")
+		return
+	}
+
+	pkt, err := BuildPDUSessionResourceReleaseResponse(ue, relList, diagnostics)
+	if err != nil {
+		ngapLog.Errorf("Build PDU Session Resource Release Response failed : %+v", err)
+		return
+	}
+
+	SendToAmf(ran, pkt)
+}
+
 func SendErrorIndication(ran *simulator_context.RanContext, amfUeNgapId, ranUeNgapId *int64, cause *ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) {
 
 	ngapLog.Info("[AMF] Send Error Indication")

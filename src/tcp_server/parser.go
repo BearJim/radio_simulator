@@ -187,6 +187,15 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 				break
 			} else {
 				// TODO: Send Pdu Session Release
+				pduSessionId := uint8(id)
+				nasPdu, err := nas_packet.GetUlNasTransport_PduSessionCommonData(ue, pduSessionId, nas_packet.PDUSesRelReq)
+				if err != nil {
+					logger.TcpServerLog.Error(err.Error())
+					msg = fmt.Sprintf("[SESSION] DEL %d FAIL\n", pduSessionId)
+					break
+				}
+				simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+				msg = ReadChannelMsg(ue)
 			}
 		default:
 			msg = "sess action is not [add/del]"

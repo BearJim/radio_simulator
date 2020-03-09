@@ -89,3 +89,13 @@ func handlePDUSessionResourceSetupRequestTransfer(sess *simulator_context.Sessio
 	}
 	return successfulTransfer, nil
 }
+
+func handlePDUSessionResourceReleaseCommandTransfer(sess *simulator_context.SessionContext, b []byte) ([]byte, error) {
+
+	transfer := ngapType.PDUSessionResourceReleaseCommandTransfer{}
+
+	err := aper.UnmarshalWithParams(b, &transfer, "valueExt")
+
+	successfulTransfer, _ := simulator_ngap.BuildPDUSessionResourceReleaseResponseTransfer()
+	return successfulTransfer, err
+}

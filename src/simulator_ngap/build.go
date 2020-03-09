@@ -1096,8 +1096,12 @@ func BuildHandoverFailure(amfUeNgapID int64) (pdu ngapType.NGAPPDU) {
 	return
 }
 
-func BuildPDUSessionResourceReleaseResponse() (pdu ngapType.NGAPPDU) {
+func BuildPDUSessionResourceReleaseResponse(
+	ue *simulator_context.UeContext,
+	relList ngapType.PDUSessionResourceReleasedListRelRes,
+	diagnostics *ngapType.CriticalityDiagnostics) ([]byte, error) {
 
+	var pdu ngapType.NGAPPDU
 	pdu.Present = ngapType.NGAPPDUPresentSuccessfulOutcome
 	pdu.SuccessfulOutcome = new(ngapType.SuccessfulOutcome)
 
@@ -1119,7 +1123,7 @@ func BuildPDUSessionResourceReleaseResponse() (pdu ngapType.NGAPPDU) {
 	ie.Value.AMFUENGAPID = new(ngapType.AMFUENGAPID)
 
 	aMFUENGAPID := ie.Value.AMFUENGAPID
-	aMFUENGAPID.Value = 1
+	aMFUENGAPID.Value = ue.AmfUeNgapId
 
 	pDUSessionResourceReleaseResponseIEs.List = append(pDUSessionResourceReleaseResponseIEs.List, ie)
 
@@ -1131,7 +1135,7 @@ func BuildPDUSessionResourceReleaseResponse() (pdu ngapType.NGAPPDU) {
 	ie.Value.RANUENGAPID = new(ngapType.RANUENGAPID)
 
 	rANUENGAPID := ie.Value.RANUENGAPID
-	rANUENGAPID.Value = 4294967295
+	rANUENGAPID.Value = ue.RanUeNgapId
 
 	pDUSessionResourceReleaseResponseIEs.List = append(pDUSessionResourceReleaseResponseIEs.List, ie)
 
@@ -1143,13 +1147,7 @@ func BuildPDUSessionResourceReleaseResponse() (pdu ngapType.NGAPPDU) {
 	ie.Value.PDUSessionResourceReleasedListRelRes = new(ngapType.PDUSessionResourceReleasedListRelRes)
 
 	pDUSessionResourceReleasedListRelRes := ie.Value.PDUSessionResourceReleasedListRelRes
-
-	// PDU Session Resource Released Item
-	pDUSessionResourceReleasedItemRelRes := ngapType.PDUSessionResourceReleasedItemRelRes{}
-	pDUSessionResourceReleasedItemRelRes.PDUSessionID.Value = 10
-	pDUSessionResourceReleasedItemRelRes.PDUSessionResourceReleaseResponseTransfer = aper.OctetString("\x01\x02\x03")
-
-	pDUSessionResourceReleasedListRelRes.List = append(pDUSessionResourceReleasedListRelRes.List, pDUSessionResourceReleasedItemRelRes)
+	*pDUSessionResourceReleasedListRelRes = relList
 
 	pDUSessionResourceReleaseResponseIEs.List = append(pDUSessionResourceReleaseResponseIEs.List, ie)
 
@@ -1160,24 +1158,24 @@ func BuildPDUSessionResourceReleaseResponse() (pdu ngapType.NGAPPDU) {
 	ie.Value.Present = ngapType.PDUSessionResourceReleaseResponseIEsPresentUserLocationInformation
 	ie.Value.UserLocationInformation = new(ngapType.UserLocationInformation)
 
-	userLocationInformation := ie.Value.UserLocationInformation
-	userLocationInformation.Present = ngapType.UserLocationInformationPresentUserLocationInformationNR
-	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
-
-	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
-	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
-		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
-		BitLength: 36,
-	}
-
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
-	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
+	*ie.Value.UserLocationInformation = ue.Ran.GetUserLocation()
 
 	pDUSessionResourceReleaseResponseIEs.List = append(pDUSessionResourceReleaseResponseIEs.List, ie)
 
 	// Criticality Diagnostics (optional)
-	return
+	if diagnostics != nil {
+		ie := ngapType.PDUSessionResourceReleaseResponseIEs{}
+		ie.Id.Value = ngapType.ProtocolIEIDCriticalityDiagnostics
+		ie.Criticality.Value = ngapType.CriticalityPresentIgnore
+		ie.Value.Present = ngapType.PDUSessionResourceReleaseResponseIEsPresentCriticalityDiagnostics
+		ie.Value.CriticalityDiagnostics = new(ngapType.CriticalityDiagnostics)
+
+		criticalityDiagnostics := ie.Value.CriticalityDiagnostics
+		*criticalityDiagnostics = *diagnostics
+
+		pDUSessionResourceReleaseResponseIEs.List = append(pDUSessionResourceReleaseResponseIEs.List, ie)
+	}
+	return ngap.Encoder(pdu)
 }
 
 func BuildAMFConfigurationUpdateFailure() (pdu ngapType.NGAPPDU) {
