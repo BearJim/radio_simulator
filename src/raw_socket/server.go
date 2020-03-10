@@ -43,7 +43,11 @@ func serveRawSocket(conn *ipv4.RawConn) {
 			return
 		}
 		payload := buf[20:n]
-		ip4header, _ := ipv4.ParseHeader(payload[:20])
+		ip4header, err := ipv4.ParseHeader(payload[:20])
+		if err != nil {
+			logger.GtpLog.Errorf(err.Error())
+			continue
+		}
 		ueIp := ip4header.Src.String()
 		if sess, exist := self.SessPool[ueIp]; exist {
 			binary.BigEndian.PutUint16(sess.GtpHdr[2:4], sess.GtpHdrLen-1+uint16(n)-20)

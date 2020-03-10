@@ -98,7 +98,7 @@ func GetRegistrationRequestWith5GMM(ue *simulator_context.UeContext, registratio
 	return m.PlainNasEncode()
 }
 
-func GetPduSessionEstablishmentRequest(pduSessionId, sessionType uint8) (nasPdu []byte) {
+func GetPduSessionEstablishmentRequest(pduSessionId, sessionType uint8) ([]byte, error) {
 
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
@@ -119,14 +119,7 @@ func GetPduSessionEstablishmentRequest(pduSessionId, sessionType uint8) (nasPdu 
 
 	m.GsmMessage.PDUSessionEstablishmentRequest = pduSessionEstablishmentRequest
 
-	data := new(bytes.Buffer)
-	err := m.GsmMessageEncode(data)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	nasPdu = data.Bytes()
-	return
+	return m.PlainNasEncode()
 }
 
 func GetUlNasTransport_PduSessionEstablishmentRequest(ue *simulator_context.UeContext, pduSessionId uint8, requestType uint8, dnnString string, sNssai *models.Snssai, gsmPdu []byte) ([]byte, error) {

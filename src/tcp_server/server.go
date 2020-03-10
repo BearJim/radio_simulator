@@ -37,7 +37,7 @@ func StartTcpServer() {
 func handleUeConnection(raddr string, conn net.Conn) {
 
 	logger.TcpServerLog.Infof("Client connected from: " + raddr)
-	conn.Write([]byte("Please Enter Supi:"))
+	conn.Write([]byte("Please Enter Supi:\n"))
 	supi := new(string)
 	// Make a buffer to hold incoming data.
 	for {

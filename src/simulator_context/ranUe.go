@@ -196,7 +196,7 @@ func (s *SessionContext) NewGtpHeader(extHdrFlag, sqnFlag, numFlag byte) {
 	// S: 1-bit
 	// PN: 1-bit
 	s.GtpHdr[0] = 0x01<<5 | 0x01<<4 | extHdrFlag<<2 | sqnFlag<<1 | numFlag
-	// Message Type: 8-bit reference to 3GPP TS 29.061 subclause 7.1
+	// Message Type: 8-bit reference to 3GPP TS 29.060 subclause 7.1
 	s.GtpHdr[1] = 0xff
 	// Total Length: 16-bit not include first 8 bits
 	// Wait for realData

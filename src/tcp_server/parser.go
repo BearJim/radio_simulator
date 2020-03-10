@@ -95,8 +95,7 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 			}
 		}
 	case "reg":
-		switch ue.RegisterState {
-		case simulator_context.RegisterStateRegistered:
+		if ue.RegisterState == simulator_context.RegisterStateRegistered {
 			msg = "[REG] SUCCESS\n"
 			break
 		}
@@ -163,7 +162,12 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 					}
 				}
 				// Send Pdu Session Estblishment
-				gsmPdu := nas_packet.GetPduSessionEstablishmentRequest(pduSessionId, nasMessage.PDUSessionTypeIPv4)
+				gsmPdu, err := nas_packet.GetPduSessionEstablishmentRequest(pduSessionId, nasMessage.PDUSessionTypeIPv4)
+				if err != nil {
+					logger.TcpServerLog.Error(err.Error())
+					msg = fmt.Sprintf("[SESSION] ADD %d FAIL\n", pduSessionId)
+					break
+				}
 				nasPdu, err := nas_packet.GetUlNasTransport_PduSessionEstablishmentRequest(ue, pduSessionId, nasMessage.ULNASTransportRequestTypeInitialRequest, dnn, &snssai, gsmPdu)
 				if err != nil {
 					logger.TcpServerLog.Error(err.Error())
