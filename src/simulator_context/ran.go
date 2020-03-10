@@ -3,9 +3,9 @@ package simulator_context
 import (
 	"encoding/hex"
 	"git.cs.nctu.edu.tw/calee/sctp"
+	"net"
 	"radio_simulator/lib/aper"
 	"radio_simulator/lib/ngap/ngapType"
-	"strings"
 )
 
 const (
@@ -17,7 +17,8 @@ type RanContext struct {
 	RanUeIDGenerator int64
 	AMFUri           string
 	RanSctpUri       string
-	RanGtpUri        string
+	RanGtpUri        AddrInfo
+	UpfInfoList      map[string]*UpfInfo
 	Name             string
 	GnbId            aper.BitString
 	UePool           map[int64]*UeContext // ranUeNgapId
@@ -27,14 +28,22 @@ type RanContext struct {
 	SctpConn         *sctp.SCTPConn
 }
 
+type AddrInfo struct {
+	IP   string `yaml:"ip"`
+	Port int    `yaml:"port"`
+}
+
+type UpfInfo struct {
+	Addr    AddrInfo
+	GtpConn *net.UDPConn
+}
 type PlmnSupportItem struct {
 	PlmnId     ngapType.PLMNIdentity
 	SNssaiList []ngapType.SNSSAI
 }
 
 func (ran *RanContext) AttachSession(sess *SessionContext) {
-	ranGtpIp := strings.Split(ran.RanGtpUri, ":")[0]
-	sess.DLAddr = ranGtpIp
+	sess.DLAddr = ran.RanGtpUri.IP
 	sess.DLTEID = ran.TEIDAlloc()
 	ran.SessPool[sess.DLTEID] = sess
 }
@@ -97,5 +106,6 @@ func NewRanContext() *RanContext {
 		UePool:           make(map[int64]*UeContext),
 		SessPool:         make(map[uint32]*SessionContext),
 		SupportTAList:    make(map[string][]PlmnSupportItem),
+		UpfInfoList:      make(map[string]*UpfInfo),
 	}
 }

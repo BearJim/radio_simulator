@@ -2,6 +2,7 @@ package factory
 
 import (
 	"radio_simulator/lib/openapi/models"
+	"radio_simulator/src/simulator_context"
 )
 
 var TestAmDataTable = make(map[string]models.AccessAndMobilitySubscriptionData)
@@ -14,16 +15,19 @@ type Config struct {
 	RanInfo    []RanContext `yaml:"ranInfo"`
 	TcpUri     string       `yaml:"tcpUri"`
 	UeInfoFile []string     `yaml:"ueInfoFile"`
+	TunDev     string       `yaml:"tunDev"`
+	ListenIp   string       `yaml:"listenIp"`
 	Logger     Logger       `yaml:"logger"`
 }
 
 type RanContext struct {
-	AmfUri        string          `yaml:"amfUri"`
-	RanSctpUri    string          `yaml:"ranSctpUri"`
-	RanGtpUri     string          `yaml:"ranGtpUri"`
-	RanName       string          `yaml:"ranName"`
-	GnbId         GnbId           `yaml:"gnbId"`
-	SupportTAList []SupportTAItem `yaml:"taiList"`
+	AmfUri        string                       `yaml:"amfUri"`
+	RanSctpUri    string                       `yaml:"ranSctpUri"`
+	RanGtpUri     simulator_context.AddrInfo   `yaml:"ranGtpUri"`
+	UpfUriList    []simulator_context.AddrInfo `yaml:"upfUriList"`
+	RanName       string                       `yaml:"ranName"`
+	GnbId         GnbId                        `yaml:"gnbId"`
+	SupportTAList []SupportTAItem              `yaml:"taiList"`
 }
 
 type GnbId struct {

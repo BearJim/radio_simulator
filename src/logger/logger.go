@@ -13,6 +13,7 @@ var SimulatorLog *logrus.Entry
 var UtilLog *logrus.Entry
 var InitLog *logrus.Entry
 var NgapLog *logrus.Entry
+var GtpLog *logrus.Entry
 var HandlerLog *logrus.Entry
 var NasLog *logrus.Entry
 var TcpServerLog *logrus.Entry
@@ -45,6 +46,7 @@ func init() {
 
 	SimulatorLog = log.WithFields(logrus.Fields{"SimulatorLog": "SimulatorLog"})
 	NgapLog = log.WithFields(logrus.Fields{"SimulatorLog": "NgapLog"})
+	GtpLog = log.WithFields(logrus.Fields{"SimulatorLog": "GtpLog"})
 	HandlerLog = log.WithFields(logrus.Fields{"SimulatorLog": "HandlerLog"})
 	InitLog = log.WithFields(logrus.Fields{"SimulatorLog": "InitLog"})
 	UtilLog = log.WithFields(logrus.Fields{"SimulatorLog": "UtilLog"})

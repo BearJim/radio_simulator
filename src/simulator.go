@@ -10,6 +10,7 @@ import (
 	"radio_simulator/lib/path_util"
 	"radio_simulator/src/factory"
 	"radio_simulator/src/logger"
+	"radio_simulator/src/raw_socket"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_init"
 	"radio_simulator/src/simulator_util"
@@ -59,6 +60,18 @@ func Terminate() {
 		self.TcpServer.Close()
 	}
 
+	logger.InitLog.Infof("Close GTP Connection...")
+
+	for key, conn := range self.GtpConnPool {
+		logger.InitLog.Infof("GTP[%s] Connection Close", key)
+		conn.Close()
+	}
+
+	logger.InitLog.Infof("Close Raw Socket...")
+	if self.ListenRawConn != nil {
+		self.ListenRawConn.Close()
+	}
+
 	logger.InitLog.Infof("Simulator terminated")
 
 }
@@ -66,6 +79,7 @@ func Terminate() {
 func main() {
 	Initailize()
 	simulator_util.ParseRanContext()
+	simulator_util.ParseTunDev()
 
 	path, err := filepath.Abs(filepath.Dir(config))
 	if err != nil {
@@ -84,6 +98,8 @@ func main() {
 		Terminate()
 		os.Exit(0)
 	}()
+	// Raw Socket Server
+	self.ListenRawConn = raw_socket.ListenRawSocket(factory.SimConfig.ListenIp)
 	// TCP server for cli test UE
 	tcp_server.StartTcpServer()
 	simulator_util.ClearDB()

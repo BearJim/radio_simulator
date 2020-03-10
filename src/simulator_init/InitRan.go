@@ -45,7 +45,7 @@ func getNgapIp(amfIP, ranIP string, amfPort, ranPort int) (amfAddr, ranAddr *sct
 	return
 }
 
-func ConntectToAmf(amfIP, ranIP string, amfPort, ranPort int) (*sctp.SCTPConn, error) {
+func ConnectToAmf(amfIP, ranIP string, amfPort, ranPort int) (*sctp.SCTPConn, error) {
 	amfAddr, ranAddr, err := getNgapIp(amfIP, ranIP, amfPort, ranPort)
 	if err != nil {
 		return nil, err
@@ -63,6 +63,18 @@ func ConntectToAmf(amfIP, ranIP string, amfPort, ranPort int) (*sctp.SCTPConn, e
 	return conn, nil
 }
 
+func connectToUpf(enbIP, upfIP string, gnbPort, upfPort int) (*net.UDPConn, error) {
+	upfAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", upfIP, upfPort))
+	if err != nil {
+		return nil, err
+	}
+	gnbAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", enbIP, gnbPort))
+	if err != nil {
+		return nil, err
+	}
+	return net.DialUDP("udp", gnbAddr, upfAddr)
+}
+
 func RanStart(ran *simulator_context.RanContext) {
 	var amfPort, ranPort int
 	amfAddr := strings.Split(ran.AMFUri, ":")
@@ -71,8 +83,16 @@ func RanStart(ran *simulator_context.RanContext) {
 	fmt.Sscanf(amfAddr[1], "%d", &amfPort)
 	fmt.Sscanf(ranAddr[1], "%d", &ranPort)
 
+	var err error
+	// RAN connect to UPF
+	for _, upf := range ran.UpfInfoList {
+		upf.GtpConn, err = connectToUpf(ran.RanGtpUri.IP, upf.Addr.IP, ran.RanGtpUri.Port, upf.Addr.Port)
+		check(err)
+		simulator_context.Simulator_Self().GtpConnPool[fmt.Sprintf("%s,%s", ran.RanGtpUri.IP, upf.Addr.IP)] = upf.GtpConn
+		go StartHandleGtp(upf)
+	}
 	// RAN connect to AMF
-	conn, err := ConntectToAmf(amfIp, ranIp, amfPort, ranPort)
+	conn, err := ConnectToAmf(amfIp, ranIp, amfPort, ranPort)
 	check(err)
 	ran.SctpConn = conn
 	simulator_ngap.SendNGSetupRequest(ran)
@@ -84,10 +104,11 @@ func RanStart(ran *simulator_context.RanContext) {
 		logger.NgapLog.Errorf("Failed to subscribe SCTP Event: %v", err)
 	}
 	go simulator_handler.Handle(ran.RanSctpUri)
-	go StartHandle(ran)
+	go StartHandleSctp(ran)
+
 }
 
-func StartHandle(ran *simulator_context.RanContext) {
+func StartHandleSctp(ran *simulator_context.RanContext) {
 	defer ran.SctpConn.Close()
 	for {
 		buffer := make([]byte, 8192)
@@ -102,5 +123,18 @@ func StartHandle(ran *simulator_context.RanContext) {
 			continue
 		}
 		simulator_message.SendMessage(ran.RanSctpUri, simulator_message.NGAPMessage{Value: buffer[:n]})
+	}
+}
+
+func StartHandleGtp(upf *simulator_context.UpfInfo) {
+	defer upf.GtpConn.Close()
+	buffer := make([]byte, 8192)
+	for {
+		n, err := upf.GtpConn.Read(buffer)
+		if err != nil {
+			logger.GtpLog.Debugf("Error %v", err)
+			break
+		}
+		simulator_context.Simulator_Self().SendToTunDev(buffer[:n])
 	}
 }

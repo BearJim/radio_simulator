@@ -27,10 +27,10 @@ func HandlePduSessionEstblishmentAccept(ue *simulator_context.UeContext, request
 	}
 	if request.PDUAddress != nil {
 		ipBytes := request.PDUAddress.GetPDUAddressInformation()
-		fmt.Println(ipBytes)
 		switch request.PDUAddress.GetPDUSessionTypeValue() {
 		case nasMessage.PDUSessionTypeIPv4:
 			sess.UeIp = net.IP(ipBytes[:4]).String()
+			simulator_context.Simulator_Self().SessPool[sess.UeIp] = sess
 		case nasMessage.PDUSessionTypeIPv6, nasMessage.PDUSessionTypeIPv4IPv6:
 			return fmt.Errorf("Ipv6 is not support yet")
 		}
