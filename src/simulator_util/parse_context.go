@@ -57,7 +57,7 @@ func ParseTunDev() {
 		logger.UtilLog.Errorf("Get Interface[%s] Addr Error[%s]", config.TunDev, err.Error())
 		return
 	}
-	uri := strings.Split(addrs[0].String(), ":")
+	uri := strings.Split(addrs[0].String(), "/")
 	var ipAddr [4]byte
 	copy(ipAddr[:], net.ParseIP(uri[0]).To4())
 	self.TunSockAddr = &syscall.SockaddrInet4{

@@ -135,6 +135,10 @@ func StartHandleGtp(upf *simulator_context.UpfInfo) {
 			logger.GtpLog.Debugf("Error %v", err)
 			break
 		}
-		simulator_context.Simulator_Self().SendToTunDev(buffer[:n])
+		msg := buffer[8:n] // remove gtp header
+		// if msg[0] != 0x45 {
+		// 	msg = msg[4:]
+		// }
+		simulator_context.Simulator_Self().SendToTunDev(msg)
 	}
 }
