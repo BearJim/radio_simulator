@@ -1,3 +1,2 @@
-lib/linux_kenel_gtp
 bin/*
 test.go
