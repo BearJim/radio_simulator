@@ -15,9 +15,14 @@ type Config struct {
 	RanInfo    []RanContext `yaml:"ranInfo"`
 	TcpUri     string       `yaml:"tcpUri"`
 	UeInfoFile []string     `yaml:"ueInfoFile"`
-	TunDev     string       `yaml:"tunDev"`
-	ListenIp   string       `yaml:"listenIp"`
-	Logger     Logger       `yaml:"logger"`
+	TunnelInfo TunnelInfo   `yaml:"gtp5gTunnelInfo"`
+	// ListenIp   string       `yaml:"listenIp"`
+	Logger Logger `yaml:"logger"`
+}
+
+type TunnelInfo struct {
+	TunDev    string `yaml:"tunDev"`
+	Gtp5gPath string `yaml:"path"`
 }
 
 type RanContext struct {

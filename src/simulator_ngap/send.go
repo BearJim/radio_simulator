@@ -3,6 +3,7 @@ package simulator_ngap
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"os/exec"
 	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/lib/ngap"
 	"radio_simulator/lib/ngap/ngapType"
@@ -94,6 +95,9 @@ func SendUeContextReleaseComplete(ran *simulator_context.RanContext, ue *simulat
 	ue.AmfUeNgapId = simulator_context.AmfNgapIdUnspecified
 	for _, sess := range ue.PduSession {
 		sess.Remove()
+		if sess.UeIp != "" {
+			exec.Command("ip", "addr", "del", sess.UeIp, "dev", "lo").Output()
+		}
 	}
 
 	SendToAmf(ran, pkt)

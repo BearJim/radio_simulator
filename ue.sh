@@ -17,8 +17,8 @@
 SESS_FORMAT=$'\[SESSION\] ID=([0-9]+),DNN=([^,]+),SST=([0-9]+),SD=([0-9]+),UEIP=([^,]+),ULAddr=([^,]+),ULTEID=([0-9]+),DLAddr=([^,]+),DLTEID=([0-9]+)'
 # if [[ $test_string =~ $SESS_FORMAT ]]; then echo "DNN=${BASH_REMATCH[1]},UEIP=${BASH_REMATCH[4]}"; fi
 
-TUN="uetun"
-TUN_ADDR="60.60.0.1"
+# TUN="uetun"
+# TUN_ADDR="60.60.0.1"
 
 function show_usage {
     echo
@@ -113,11 +113,11 @@ msg_in=$(read_msg 3)
 echo "$msg_in"
 
 # Add Ip in tun dev
-UEIP=$(get_ueip "$msg_in")
-if [ -n "${UEIP}" ] && [ "${UEIP}" != ${TUN_ADDR} ]
-then
-    sudo ip addr add ${UEIP} dev ${TUN}
-fi
+# UEIP=$(get_ueip "$msg_in")
+# if [ -n "${UEIP}" ] && [ "${UEIP}" != ${TUN_ADDR} ]
+# then
+#     sudo ip addr add ${UEIP} dev ${TUN}
+# fi
 
 
 if [ $TIME -gt 0 ]

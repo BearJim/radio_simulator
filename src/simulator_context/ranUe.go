@@ -118,15 +118,18 @@ type AuthData struct {
 }
 
 type SessionContext struct {
-	Mtx          sync.Mutex
-	GtpHdr       []byte
-	GtpHdrLen    uint16
+	Mtx sync.Mutex
+	// GtpHdr       []byte
+	// GtpHdrLen    uint16
 	PduSessionId int64
 	UeIp         string
-	ULTEID       uint32
-	DLTEID       uint32
 	ULAddr       string
+	ULTEID       uint32
+	ULFarID      string
+	ULPdrID      string
 	DLAddr       string
+	DLTEID       uint32
+	DLPdrID      string // DLFarID = default far 1(just forward)
 	Dnn          string
 	Snssai       models.Snssai
 	QosFlows     map[int64]*QosFlow // QosFlowIdentifier as key
@@ -167,45 +170,45 @@ func (s *SessionContext) Remove() {
 		}
 		delete(ue.PduSession, s.PduSessionId)
 	}
-	delete(Simulator_Self().SessPool, s.UeIp)
+	Simulator_Self().DetachSession(s)
 }
 
-func (s *SessionContext) GetGtpConn() (*net.UDPConn, error) {
-	key := fmt.Sprintf("%s,%s", s.DLAddr, s.ULAddr)
-	if conn := Simulator_Self().GtpConnPool[key]; conn != nil {
-		return conn, nil
-	} else {
-		return nil, fmt.Errorf("gtp conn is empty, map key [%s]", key)
-	}
-}
+// func (s *SessionContext) GetGtpConn() (*net.UDPConn, error) {
+// 	key := fmt.Sprintf("%s,%s", s.DLAddr, s.ULAddr)
+// 	if conn := Simulator_Self().GtpConnPool[key]; conn != nil {
+// 		return conn, nil
+// 	} else {
+// 		return nil, fmt.Errorf("gtp conn is empty, map key [%s]", key)
+// 	}
+// }
 
-func (s *SessionContext) NewGtpHeader(extHdrFlag, sqnFlag, numFlag byte) {
-	extHdrFlag &= 0x1
-	sqnFlag &= 0x1
-	numFlag &= 0x1
-	if extHdrFlag == 0 && sqnFlag == 0 && numFlag == 0 {
-		s.GtpHdrLen = 8
-	} else {
-		s.GtpHdrLen = 12
-	}
-	s.GtpHdr = make([]byte, s.GtpHdrLen)
-	// Version: 3-bit, gtpv1=1
-	// Protocol type: 1-bit, GTP=1, GTP'=0
-	// Reserved: 1-bit 0
-	// E: 1-bit
-	// S: 1-bit
-	// PN: 1-bit
-	s.GtpHdr[0] = 0x01<<5 | 0x01<<4 | extHdrFlag<<2 | sqnFlag<<1 | numFlag
-	// Message Type: 8-bit reference to 3GPP TS 29.060 subclause 7.1
-	s.GtpHdr[1] = 0xff
-	// Total Length: 16-bit not include first 8 bits
-	// Wait for realData
-	// TEID: 32-bit
-	binary.BigEndian.PutUint32(s.GtpHdr[4:8], s.ULTEID)
-	// Sequence number: 32-bit (optinal, if D is true)
-	// N-PDU number: 16-bit (optinal, if PN is true)
-	// Next extension header type: 16-bit (optinal, if E is true)
-}
+// func (s *SessionContext) NewGtpHeader(extHdrFlag, sqnFlag, numFlag byte) {
+// 	extHdrFlag &= 0x1
+// 	sqnFlag &= 0x1
+// 	numFlag &= 0x1
+// 	if extHdrFlag == 0 && sqnFlag == 0 && numFlag == 0 {
+// 		s.GtpHdrLen = 8
+// 	} else {
+// 		s.GtpHdrLen = 12
+// 	}
+// 	s.GtpHdr = make([]byte, s.GtpHdrLen)
+// 	// Version: 3-bit, gtpv1=1
+// 	// Protocol type: 1-bit, GTP=1, GTP'=0
+// 	// Reserved: 1-bit 0
+// 	// E: 1-bit
+// 	// S: 1-bit
+// 	// PN: 1-bit
+// 	s.GtpHdr[0] = 0x01<<5 | 0x01<<4 | extHdrFlag<<2 | sqnFlag<<1 | numFlag
+// 	// Message Type: 8-bit reference to 3GPP TS 29.060 subclause 7.1
+// 	s.GtpHdr[1] = 0xff
+// 	// Total Length: 16-bit not include first 8 bits
+// 	// Wait for realData
+// 	// TEID: 32-bit
+// 	binary.BigEndian.PutUint32(s.GtpHdr[4:8], s.ULTEID)
+// 	// Sequence number: 32-bit (optinal, if D is true)
+// 	// N-PDU number: 16-bit (optinal, if PN is true)
+// 	// Next extension header type: 16-bit (optinal, if E is true)
+// }
 
 func (s *SessionContext) GetTunnelMsg() string {
 	s.Mtx.Lock()

@@ -468,6 +468,8 @@ func HandlePduSessionResourceSetupRequest(ran *simulator_context.RanContext, mes
 		resTransfer, err := handlePDUSessionResourceSetupRequestTransfer(sess, pduSession.PDUSessionResourceSetupRequestTransfer)
 		if err == nil {
 			simulator_ngap.AppendPDUSessionResourceSetupListSURes(responseList, pduSessionId, resTransfer)
+			// build ULPDR, ULFAR, DLPDR
+			simulator_context.Simulator_Self().AttachSession(sess)
 		} else {
 			ngapLog.Warnf("Pdu Session Resource Setup Fail: %s", err.Error())
 			simulator_ngap.AppendPDUSessionResourceFailedToSetupListSURes(failedListSURes, pduSessionId, resTransfer)
