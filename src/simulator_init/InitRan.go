@@ -85,12 +85,12 @@ func RanStart(ran *simulator_context.RanContext) {
 
 	var err error
 	// RAN connect to UPF
-	for _, upf := range ran.UpfInfoList {
-		upf.GtpConn, err = connectToUpf(ran.RanGtpUri.IP, upf.Addr.IP, ran.RanGtpUri.Port, upf.Addr.Port)
-		check(err)
-		simulator_context.Simulator_Self().GtpConnPool[fmt.Sprintf("%s,%s", ran.RanGtpUri.IP, upf.Addr.IP)] = upf.GtpConn
-		go StartHandleGtp(upf)
-	}
+	// for _, upf := range ran.UpfInfoList {
+	// upf.GtpConn, err = connectToUpf(ran.RanGtpUri.IP, upf.Addr.IP, ran.RanGtpUri.Port, upf.Addr.Port)
+	// check(err)
+	// simulator_context.Simulator_Self().GtpConnPool[fmt.Sprintf("%s,%s", ran.RanGtpUri.IP, upf.Addr.IP)] = upf.GtpConn
+	// go StartHandleGtp(upf)
+	// }
 	// RAN connect to AMF
 	conn, err := ConnectToAmf(amfIp, ranIp, amfPort, ranPort)
 	check(err)
@@ -126,19 +126,19 @@ func StartHandleSctp(ran *simulator_context.RanContext) {
 	}
 }
 
-func StartHandleGtp(upf *simulator_context.UpfInfo) {
-	defer upf.GtpConn.Close()
-	buffer := make([]byte, 8192)
-	for {
-		n, err := upf.GtpConn.Read(buffer)
-		if err != nil {
-			logger.GtpLog.Debugf("Error %v", err)
-			break
-		}
-		msg := buffer[8:n] // remove gtp header
-		// if msg[0] != 0x45 {
-		// 	msg = msg[4:]
-		// }
-		simulator_context.Simulator_Self().SendToTunDev(msg)
-	}
-}
+// func StartHandleGtp(upf *simulator_context.UpfInfo) {
+// 	defer upf.GtpConn.Close()
+// 	buffer := make([]byte, 8192)
+// 	for {
+// 		n, err := upf.GtpConn.Read(buffer)
+// 		if err != nil {
+// 			logger.GtpLog.Debugf("Error %v", err)
+// 			break
+// 		}
+// 		msg := buffer[8:n] // remove gtp header
+// 		// if msg[0] != 0x45 {
+// 		// 	msg = msg[4:]
+// 		// }
+// 		simulator_context.Simulator_Self().SendToTunDev(msg)
+// 	}
+// }

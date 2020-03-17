@@ -82,7 +82,7 @@ func handlePDUSessionResourceSetupRequestTransfer(sess *simulator_context.Sessio
 		sess.QosFlows[qosFlow.Identifier] = &qosFlow
 	}
 	// Flag Set To Zero
-	sess.NewGtpHeader(0, 0, 0)
+	// sess.NewGtpHeader(0, 0, 0)
 	sess.Mtx.Unlock()
 
 	successfulTransfer, err := simulator_ngap.BuildPDUSessionResourceSetupResponseTransfer(sess)
