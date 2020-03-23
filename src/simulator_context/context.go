@@ -82,8 +82,8 @@ func (s *Simulator) AttachSession(sess *SessionContext) {
 		sess.DLPdrID = s.PDRAlloc()
 	}
 	{
-		// "<add|mod> far <tunDev> <id> --action 2 <ul-teid> <ul-addr> 2152"
-		_, err := exec.Command(s.Gtp5gTunnelExec, ulAct, "far", s.TunDev, sess.ULFarID, "--action", "2", "--hdr-creation", "0", fmt.Sprintf("%d", sess.ULTEID), sess.ULAddr, "2152").Output()
+		// "<add|mod> far <tunDev> <id> --action 2 --hdr-creation 1 <ul-teid> <ul-addr> 2152"
+		_, err := exec.Command(s.Gtp5gTunnelExec, ulAct, "far", s.TunDev, sess.ULFarID, "--action", "2", "--hdr-creation", "1", fmt.Sprintf("%d", sess.ULTEID), sess.ULAddr, "2152").Output()
 		if err != nil {
 			logger.ContextLog.Errorf("Create UL FAR Failed[%s]", err.Error())
 			return
