@@ -1,10 +1,6 @@
 #!/bin/bash
 
-# IFS=$'\n' read -rd '' -a array <<<"$msg"
-# for i in "${array[@]}"; do
-#     echo ${i}
-# done
-
+CONTAINER_NAME="simulator"
 
 # test_string="[SESSION] ID=10,DNN=internet,SST=1,SD=010203,UEIP=60.60.0.1,ULAddr=10.200.200.102,ULTEID=2,DLAddr=10.200.200.1,DLTEID=1"
 SESS_FORMAT=$'\[SESSION\] ID=([0-9]+),DNN=([^,]+),SST=([0-9]+),SD=([0-9]+),UEIP=([^,]+),ULAddr=([^,]+),ULTEID=([0-9]+),DLAddr=([^,]+),DLTEID=([0-9]+)'
@@ -16,16 +12,17 @@ SESS_FORMAT=$'\[SESSION\] ID=([0-9]+),DNN=([^,]+),SST=([0-9]+),SD=([0-9]+),UEIP=
 function show_usage {
     echo
     echo "Ue Simulator"
-    echo "Usage: $0 ip port supi [-k|--keep-alive] [-id=] [-t|--time=] [-s|--slice=]"
+    echo "Usage: $0 <ip> <port> <supi> <id> <time> <servicIp> <servicePort> [-k|--keep-alive] [-b|--bandwidth=] [-s|--slice=]"
     echo
     echo "Arguments:"
+    echo "  id                 : pdu session id"
+    echo "  time               : pdu session would exist n[seconds]"
     echo "  -k|--keep-alive    : do not deregsiter"
-    echo "  -id=               : pdu session id (default=10)"
-    echo "  -t|--time=n        : pdu session would exist n[seconds](if not set when script terminate would be released)"
+    echo "  -b|--bandwidth=    : iperf3 client send data bandwidth(default is 20mbps)"
     echo "  -s|--slice=        : specific pdu session slice info, format: \"dnn=%s,sst=%d,sd=%s\""
 }
 
-if [ -z "$3" ]
+if [ -z "$5" ]
 then
     show_usage
     exit 1
@@ -35,25 +32,25 @@ fi
 HOST=$1
 PORT=$2
 SUPI=$3
+ID=$4
+TIME=$5
+ServiceIp=$6
+ServicePort=$7
+BANDWIDTH=20m
 ALIVE=false
-TIME=0
 
 shift 3
 
 for i in "$@"
 do
 case $i in
+    -m|--bandwidth)
+    BANDWIDTH=${i#*=}
+    shift
+    ;;
     -k|--keep-alive)
     ALIVE=true
     shift
-    ;;
-    -id=*)
-    ID="${i#*=}"
-    shift
-    ;;
-    -t=*|--time=*)
-    TIME=${i#*=}
-    shift # past argument with no value
     ;;
     -s=*|--slice)
     SLICE="${i#*=}"
@@ -98,48 +95,31 @@ send_msg "reg" 3
 read_msg 3
 
 # ADD Session
-msg_out="sess 10 add"
-[ -n "$ID" ] && msg_out="sess $ID add"
+msg_out="sess $ID add"
 [ -n "$SLICE" ] && msg_out="$msg_out"" ${SLICE}"
 send_msg "$msg_out" 3
 msg_in=$(read_msg 3)
-echo "$msg_in"
 
 # Add Ip in tun dev
-# UEIP=$(get_ueip "$msg_in")
-# if [ -n "${UEIP}" ] && [ "${UEIP}" != ${TUN_ADDR} ]
-# then
-#     sudo ip addr add ${UEIP} dev ${TUN}
-# fi
+UEIP=$(get_ueip "$msg_in")
 
-
-if [ $TIME -gt 0 ]
-then 
-    echo "Wait $TIME seconds"
-    sleep $TIME &
+if [ -n "${UEIP}" ] 
+then
+    echo "UE_IP: ${UEIP}"
+    docker exec $CONTAINER_NAME /bin/bash -c "iperf3 -c ${ServiceIp} -p ${ServicePort} -B ${UEIP} -t $TIME -u -b 20m" > /dev/null
 else 
-    sleep infinity & 
+    echo "$msg_in"
 fi
 
-function terminate(){
-    if $ALIVE;
-    then
-        # send rel pdu sess
-        send_msg "$(echo "${msg_out}" | sed -e "s/add/del/g")" 3
-        read_msg 3
-    else 
-        # send del reg
-        send_msg "dereg" 3
-        read_msg 3
-    fi
-    if [ -n "${UEIP}" ] && [ "${UEIP}" != ${TUN_ADDR} ]
-    then
-        sudo ip addr del ${UEIP} dev ${TUN}
-    fi
-    exit 1
-}
+if $ALIVE;
+then
+    # send rel pdu sess
+    send_msg "sess $ID del" 3
+    read_msg 3
+else 
+    # send del reg
+    send_msg "dereg" 3
+    read_msg 3
+fi
 
-trap terminate SIGINT
-wait 
-
-terminate
+exec 3<&-

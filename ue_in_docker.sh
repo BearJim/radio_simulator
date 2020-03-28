@@ -1,16 +1,4 @@
 #!/bin/bash
-#
-# Bash must have been compiled with this ability: --enable-net-redirections
-# The device files below do not actually exist.
-# Use /dev/udp for UDP sockets
-
-# msg=$'asfasdf\nsdfasdfasdf\n'
-
-
-# IFS=$'\n' read -rd '' -a array <<<"$msg"
-# for i in "${array[@]}"; do
-#     echo ${i}
-# done
 
 
 # test_string="[SESSION] ID=10,DNN=internet,SST=1,SD=010203,UEIP=60.60.0.1,ULAddr=10.200.200.102,ULTEID=2,DLAddr=10.200.200.1,DLTEID=1"
@@ -138,10 +126,6 @@ function terminate(){
         # send del reg
         send_msg "dereg" 3
         read_msg 3
-    fi
-    if [ -n "${UEIP}" ] && [ "${UEIP}" != ${TUN_ADDR} ]
-    then
-        ip addr del ${UEIP} dev ${TUN}
     fi
     exit 1
 }
