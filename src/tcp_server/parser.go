@@ -53,11 +53,11 @@ var sessFormat = regexp.MustCompile(`dnn=([^\,]+),sst=([^\,]+),sd=(\S+)`)
 //		"[SESSION] ID=%d,DNN=%s,SST=%d,SD=%s,UEIP=%s,ULAddr=%s,ULTEID=%d,DLAddr=%s,DLTEID=%d\n" for add case, "[SESSION] DEL %d\n" for del case or
 // 		"[SESSION] ADD/DEL %d FAIL\n"
 //
-func parseCmd(ue *simulator_context.UeContext, cmd string) {
+func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string {
 	params := stringFormat.FindAllString(cmd, -1)
 	cnt := len(params)
 	if cnt == 0 {
-		return
+		return ""
 	}
 	var msg string
 	switch params[0] {
@@ -108,11 +108,13 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 				break
 			}
 		}
-		// Send Registration Request
-		ue.AttachRan(ran)
-		ue.RegisterState = simulator_context.RegisterStateRegistering
-		simulator_ngap.SendInitailUeMessage_RegistraionRequest(ran, ue)
-		msg = ReadChannelMsg(ue)
+		if ue.RegisterState == simulator_context.RegisterStateDeregitered {
+			// Send Registration Request
+			ue.AttachRan(ran)
+			ue.RegisterState = simulator_context.RegisterStateRegistering
+			simulator_ngap.SendInitailUeMessage_RegistraionRequest(ran, ue)
+		}
+		msg = ReadChannelMsg(ue, raddr)
 	case "dereg":
 		if ue.RegisterState == simulator_context.RegisterStateDeregitered {
 			msg = "[DEREG] SUCCESS\n"
@@ -125,9 +127,13 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 				break
 			}
 			simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
-			msg = ReadChannelMsg(ue)
+			msg = ReadChannelMsg(ue, raddr)
 		}
 	case "sess":
+		if ue.RegisterState != simulator_context.RegisterStateRegistered {
+			msg = "need to registrate first"
+			break
+		}
 		if cnt <= 2 {
 			msg = "sess need id and action[add/del]"
 			break
@@ -175,8 +181,8 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 					break
 				}
 				simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
-				ue.AddPduSession(pduSessionId, dnn, snssai)
-				msg = ReadChannelMsg(ue)
+				sess := ue.AddPduSession(pduSessionId, dnn, snssai)
+				msg = ReadSessChannelMsg(sess)
 				break
 			}
 			sessInfo := sess.GetTunnelMsg()
@@ -199,25 +205,34 @@ func parseCmd(ue *simulator_context.UeContext, cmd string) {
 					break
 				}
 				simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
-				msg = ReadChannelMsg(ue)
+				msg = ReadSessChannelMsg(sess)
 			}
 		default:
 			msg = "sess action is not [add/del]"
 		}
 	}
-
-	if msg != "" {
-		if msg[0] != '[' {
-			msg = "[ERROR] " + msg + "\n"
-		}
-		ue.TcpConn.Write([]byte(msg))
-	}
+	return msg
 
 }
 
-func ReadChannelMsg(ue *simulator_context.UeContext) string {
+func ReadChannelMsg(ue *simulator_context.UeContext, raddr string) (msg string) {
+	mtx.Lock()
+	ue.TcpChannelMsg[raddr] = make(chan string)
+	mtx.Unlock()
 	select {
-	case msg := <-ue.TcpChannelMsg:
+	case msg = <-ue.TcpChannelMsg[raddr]:
+	case <-time.After(5 * time.Second):
+		msg = fmt.Sprintf("[TIMEOUT]\n")
+	}
+	mtx.Lock()
+	delete(ue.TcpChannelMsg, raddr)
+	mtx.Unlock()
+	return
+}
+
+func ReadSessChannelMsg(sess *simulator_context.SessionContext) string {
+	select {
+	case msg := <-sess.SessTcpChannelMsg:
 		return msg
 	case <-time.After(5 * time.Second):
 		return fmt.Sprintf("[TIMEOUT]\n")

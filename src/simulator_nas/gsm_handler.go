@@ -57,9 +57,9 @@ func HandlePduSessionReleaseCommand(ue *simulator_context.UeContext, request *na
 		return err
 	}
 	simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
-	sess.Remove()
 	// Send Nootify Msg to UE
-	ue.SendMsg(fmt.Sprintf("[SESSION] DEL %d SUCCESS\n", pduSessionId))
+	sess.SendMsg(fmt.Sprintf("[SESSION] DEL %d SUCCESS\n", pduSessionId))
+	sess.Remove()
 	if sess.UeIp != "" {
 		_, err := exec.Command("ip", "addr", "del", sess.UeIp, "dev", "lo").Output()
 		if err != nil {

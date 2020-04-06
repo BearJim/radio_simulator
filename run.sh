@@ -17,6 +17,9 @@ killall -9 gtp5g-link
 PID_LIST+=($!)
 sleep 0.2
 
+# Add MTU on tun dev
+ip l s dev ${TUN} mtu 1500
+
 # Add Route to tunnel interface 
 ip r add ${SERVER_SUBNET} dev ${TUN}
 

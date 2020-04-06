@@ -9,9 +9,11 @@ import (
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 	"strings"
+	"sync"
 )
 
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()
+var mtx sync.Mutex
 
 func StartTcpServer() {
 	var err error
@@ -42,7 +44,7 @@ func handleUeConnection(raddr string, conn net.Conn) {
 	// Make a buffer to hold incoming data.
 	for {
 		// Read the incoming connection into the buffer.
-		err := Read(conn, supi)
+		err := Read(conn, raddr, supi)
 		if err != nil {
 
 			if err == io.EOF {
@@ -55,18 +57,18 @@ func handleUeConnection(raddr string, conn net.Conn) {
 		}
 	}
 	// Close the connection when you're done with it.
-	if supi != nil {
-		ue := self.UeContextPool[*supi]
-		if ue != nil {
-			ue.TcpConn = nil
-		}
-	}
+	// if supi != nil {
+	// ue := self.UeContextPool[*supi]
+	// if ue != nil {
+	// 	delete(ue.TcpConn, raddr)
+	// }
+	// }
 	if conn != nil {
 		conn.Close()
 	}
 }
 
-func Read(conn net.Conn, supi *string) error {
+func Read(conn net.Conn, raddr string, supi *string) error {
 	reader := bufio.NewReader(conn)
 	for {
 		line, isPrefix, err := reader.ReadLine()
@@ -78,13 +80,21 @@ func Read(conn net.Conn, supi *string) error {
 		}
 		cmd := string(line)
 		if *supi != "" {
-			parseCmd(self.UeContextPool[*supi], cmd)
+			msg := parseCmd(self.UeContextPool[*supi], raddr, cmd)
+			if msg != "" {
+				if msg[0] != '[' {
+					msg = "[ERROR] " + msg + "\n"
+				}
+				conn.Write([]byte(msg))
+			}
 		} else if strings.HasPrefix(cmd, "imsi-") {
 			ue := self.UeContextPool[cmd]
 			if ue == nil {
 				conn.Write([]byte("[ERROR] UE_NOT_EXIST\n"))
 			} else {
-				ue.TcpConn = conn
+				// mtx.Lock()
+				// ue.TcpConn[raddr] = conn
+				// mtx.Unlock()
 				*supi = cmd
 				conn.Write([]byte(fmt.Sprintf("Welcome User %s\n", *supi)))
 			}

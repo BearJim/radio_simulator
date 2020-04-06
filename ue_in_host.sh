@@ -39,12 +39,12 @@ ServicePort=$7
 BANDWIDTH=20m
 ALIVE=false
 
-shift 3
+shift 6
 
 for i in "$@"
 do
 case $i in
-    -m|--bandwidth)
+    -b=*|--bandwidth)
     BANDWIDTH=${i#*=}
     shift
     ;;
@@ -106,7 +106,7 @@ UEIP=$(get_ueip "$msg_in")
 if [ -n "${UEIP}" ] 
 then
     echo "UE_IP: ${UEIP}"
-    docker exec $CONTAINER_NAME /bin/bash -c "iperf3 -c ${ServiceIp} -p ${ServicePort} -B ${UEIP} -t $TIME -u -b 20m" > /dev/null
+    docker exec $CONTAINER_NAME /bin/bash -c "iperf -c ${ServiceIp} -p ${ServicePort} -B ${UEIP} -t $TIME -i 1 -u -b ${BANDWIDTH}" > $SUPI_$ID.txt
 else 
     echo "$msg_in"
 fi

@@ -122,21 +122,23 @@ func SendPDUSessionResourceSetupResponse(
 	}
 
 	SendToAmf(ran, pkt)
-	msg := ""
 	// Send Callback To Tcp Client
 	if responseList != nil {
 		for _, item := range responseList.List {
 			sess := ue.PduSession[item.PDUSessionID.Value]
-			msg = msg + "[SESSION] " + sess.GetTunnelMsg()
+			msg := "[SESSION] " + sess.GetTunnelMsg()
+			sess.SendMsg(msg)
 		}
 	}
 	if failedListSURes != nil {
 		for _, item := range failedListSURes.List {
-			msg = msg + fmt.Sprintf("[SESSION] ADD %d FAIL\n", item.PDUSessionID.Value)
+			sess := ue.PduSession[item.PDUSessionID.Value]
+			if sess != nil {
+				msg := fmt.Sprintf("[SESSION] ADD %d FAIL\n", item.PDUSessionID.Value)
+				sess.SendMsg(msg)
+				sess.Remove()
+			}
 		}
-	}
-	if msg != "" {
-		ue.SendMsg(msg)
 	}
 }
 

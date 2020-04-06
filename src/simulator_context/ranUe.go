@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"net"
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
 	"radio_simulator/lib/nas/nasType"
@@ -99,8 +98,8 @@ type UeContext struct {
 	Ran           *RanContext
 	RegisterState string
 	// For TCP Client
-	TcpChannelMsg chan string
-	TcpConn       net.Conn // supi -> UeTcpClient
+	TcpChannelMsg map[string]chan string
+	// TcpConn       map[string]net.Conn // supi -> UeTcpClient
 }
 
 type UeAmbr struct {
@@ -134,6 +133,8 @@ type SessionContext struct {
 	Snssai       models.Snssai
 	QosFlows     map[int64]*QosFlow // QosFlowIdentifier as key
 	Ue           *UeContext
+	// Sess Channel To Tcp Client
+	SessTcpChannelMsg chan string
 }
 
 type QosFlow struct {
@@ -147,17 +148,19 @@ func NewUeContext() *UeContext {
 		AmfUeNgapId:   AmfNgapIdUnspecified,
 		RanUeNgapId:   RanNgapIdUnspecified,
 		RegisterState: RegisterStateDeregitered,
-		TcpChannelMsg: make(chan string),
+		TcpChannelMsg: make(map[string]chan string),
+		// TcpConn:       make(map[string]net.Conn),
 	}
 }
 
 func (ue *UeContext) AddPduSession(pduSessionId uint8, dnn string, snssai models.Snssai) *SessionContext {
 	sess := &SessionContext{
-		PduSessionId: int64(pduSessionId),
-		Dnn:          dnn,
-		Snssai:       snssai,
-		QosFlows:     make(map[int64]*QosFlow),
-		Ue:           ue,
+		PduSessionId:      int64(pduSessionId),
+		Dnn:               dnn,
+		Snssai:            snssai,
+		QosFlows:          make(map[int64]*QosFlow),
+		Ue:                ue,
+		SessTcpChannelMsg: make(chan string),
 	}
 	ue.PduSession[sess.PduSessionId] = sess
 	return sess
@@ -171,6 +174,16 @@ func (s *SessionContext) Remove() {
 		delete(ue.PduSession, s.PduSessionId)
 	}
 	Simulator_Self().DetachSession(s)
+}
+
+func (s *SessionContext) SendMsg(msg string) {
+	if s.SessTcpChannelMsg != nil {
+		select {
+		case s.SessTcpChannelMsg <- msg:
+		default:
+			logger.ContextLog.Warnf("Can't send Msg to Tcp client")
+		}
+	}
 }
 
 // func (s *SessionContext) GetGtpConn() (*net.UDPConn, error) {
@@ -222,10 +235,12 @@ func (s *SessionContext) GetTunnelMsg() string {
 }
 
 func (ue *UeContext) SendMsg(msg string) {
-	select {
-	case ue.TcpChannelMsg <- msg:
-	default:
-		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
+	for _, channel := range ue.TcpChannelMsg {
+		select {
+		case channel <- msg:
+		default:
+			logger.ContextLog.Warnf("Can't send Msg to Tcp client")
+		}
 	}
 }
 
