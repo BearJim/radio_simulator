@@ -106,6 +106,7 @@ UEIP=$(get_ueip "$msg_in")
 if [ -n "${UEIP}" ] 
 then
     echo "UE_IP: ${UEIP}"
+    docker exec $CONTAINER_NAME /bin/bash -c "ping ${ServiceIp} -I ${UEIP} -i1 -c $TIME > /ping_log/ping_rr_${ID}.txt &"
     docker exec $CONTAINER_NAME /bin/bash -c "iperf -c ${ServiceIp} -p ${ServicePort} -B ${UEIP} -t $TIME -i 1 -u -b ${BANDWIDTH} -l 14000" > ${SUPI}_${ID}.txt
 else 
     echo "$msg_in"
