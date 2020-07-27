@@ -6,6 +6,13 @@ Created by WeiTing
 
 gtp5g module
 
+```bash
+git clone https://github.com/PrinzOwO/gtp5g.git
+cd gtp5g
+make -j8
+sudo make install
+```
+
 Can build on RPI 4 4GB with Ubuntu Server & Linux kernel 5.3.0-1017-raspi2
 
 Cannot build on 5.3.0-1023-raspi2
@@ -31,11 +38,12 @@ sudo apt -y install gcc cmake libmnl-dev autoconf libtool pkg-config
 cd lib/upf/lib/libgtp5gnl
 autoreconf -iv
 ./configure
-cd tools
 make -j8
 ```
 
 ## Run
+
+Run RAN
 
 ```bash
 sudo ./run.sh
@@ -43,12 +51,16 @@ sudo ./run.sh
 
 In another tty (terminal)
 
+UE registrator
+
 ```bash
 nc -v localhost 9999
+
 imsi-2089300000003
-reg
-sess 1 add
-sess 1 del
-dereg
+reg # registrator
+sess 1 add # add session
+
+sess 1 del # delete session
+dereg # de-registration
 ```
 
