@@ -4,8 +4,8 @@ exe() { echo "\$ $@" ; "$@" ; }
 TUN="rantun"
 # LISTEN_ADDR="127.0.0.2"
 # UE_SUBNET="60.60.0.1/16"
-SERVER_SUBNET="60.60.1.0/24"
-GTPNL_PATH=lib/linux_kernel_gtp/libgtp5gnl/tools
+SERVER_SUBNET="60.60.0.0/24"
+GTPNL_PATH=lib/upf/lib/libgtp5gnl/tools
 
 [ -n "$1" ] && SERVER_SUBNET=$1
 
@@ -22,6 +22,7 @@ ip l s dev ${TUN} mtu 1500
 
 # Add Route to tunnel interface 
 ip r add ${SERVER_SUBNET} dev ${TUN}
+ip r add default dev ${TUN}
 
 # Setup tunnel interface 
 # exe sudo ip tunnel add ${TUN} mode ipip remote ${LISTEN_ADDR} local 127.0.0.1
@@ -35,7 +36,10 @@ PID_LIST+=($!)
 function terminate()
 {
     for ((idx=${#PID_LIST[@]}-1;idx>=0;idx--)); do
+	#echo ${PID_LIST[$idx]}
         kill -SIGINT ${PID_LIST[$idx]}
+        kill -SIGTERM ${PID_LIST[$idx]}
+        kill -9 ${PID_LIST[$idx]}
     done
    
 }

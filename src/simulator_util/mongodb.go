@@ -75,12 +75,12 @@ func DelAccessAndMobilitySubscriptionDataFromMongoDB(ueId string, servingPlmnId 
 }
 
 func InsertSmfSelectionSubscriptionDataToMongoDB(ueId string, smfSelData models.SmfSelectionSubscriptionData, servingPlmnId string) {
-	collName := "subscriptionData.provisionedData.smfSelectionSubscriptionData"
-	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
+	//collName := "subscriptionData.provisionedData.smfSelectionSubscriptionData"
+	//filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 	putData := toBsonM(smfSelData)
 	putData["ueId"] = ueId
 	putData["servingPlmnId"] = servingPlmnId
-	MongoDBLibrary.RestfulAPIPutOne(collName, filter, putData)
+	//MongoDBLibrary.RestfulAPIPutOne(collName, filter, putData)
 }
 
 func GetSmfSelectionSubscriptionDataFromMongoDB(ueId string, servingPlmnId string) (smfSelData *models.SmfSelectionSubscriptionData) {

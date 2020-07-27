@@ -87,6 +87,8 @@ func ParseUeData(configDirPath string, fileList []string) {
 }
 func InitUeToDB() {
 	for supi, ue := range self.UeContextPool {
+	//for _, ue := range self.UeContextPool {
+		/*
 		amDate := models.AccessAndMobilitySubscriptionData{
 			Gpsis: ue.Gpsis,
 			Nssai: &ue.Nssai,
@@ -94,6 +96,7 @@ func InitUeToDB() {
 		amPolicy := models.AmPolicyData{
 			SubscCats: ue.SubscCats,
 		}
+		*/
 		auths := ue.AuthData
 		authsSubs := models.AuthenticationSubscription{
 			AuthenticationMethod:          models.AuthMethod(auths.AuthMethod),
@@ -116,10 +119,10 @@ func InitUeToDB() {
 		} else {
 			logger.UtilLog.Errorf("Ue[%s] need Op or OpCode", ue.Supi)
 		}
-		InsertAuthSubscriptionToMongoDB(supi, authsSubs)
-		InsertAccessAndMobilitySubscriptionDataToMongoDB(supi, amDate, ue.ServingPlmnId)
+		//InsertAuthSubscriptionToMongoDB(supi, authsSubs)
+		//InsertAccessAndMobilitySubscriptionDataToMongoDB(supi, amDate, ue.ServingPlmnId)
 		InsertSmfSelectionSubscriptionDataToMongoDB(supi, ue.SmfSelData, ue.ServingPlmnId)
-		InsertAmPolicyDataToMongoDB(supi, amPolicy)
+		//InsertAmPolicyDataToMongoDB(supi, amPolicy)
 	}
 }
 

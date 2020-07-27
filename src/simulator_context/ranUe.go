@@ -3,6 +3,7 @@ package simulator_context
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"regexp"
 	"fmt"
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
@@ -327,7 +328,12 @@ func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 	P0 = []byte(snName)
 	Kseaf := UeauCommon.GetKDFValue(Kausf, UeauCommon.FC_FOR_KSEAF_DERIVATION, P0, UeauCommon.KDFLen(P0))
 
-	P0 = []byte(ue.Supi)
+	supiRegexp, _ := regexp.Compile("(?:imsi|supi)-([0-9]{5,15})")
+	groups := supiRegexp.FindStringSubmatch(ue.Supi)
+	if groups == nil {
+		return
+	}
+	P0 = []byte(groups[1])
 	L0 := UeauCommon.KDFLen(P0)
 	P1 = []byte{0x00, 0x00}
 	L1 := UeauCommon.KDFLen(P1)

@@ -124,7 +124,7 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message) (payload []byt
 		}
 		if ciphering {
 			// TODO: Support for ue has nas connection in both accessType
-			if err = NasEncrypt(ue.EncAlg, ue.KnasEnc, ue.GetSecurityULCount(), SECURITY_ONLY_ONE_BEARER,
+			if err = NasEncrypt(ue.EncAlg, ue.KnasEnc, ue.GetSecurityULCount(), SECURITY_BEARER_3GPP,
 				SECURITY_DIRECTION_UPLINK, payload); err != nil {
 				return
 			}
@@ -134,7 +134,7 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message) (payload []byt
 		payload = append([]byte{sequenceNumber}, payload[:]...)
 		mac32 := make([]byte, 4)
 		if integrityProtected {
-			mac32, err = NasMacCalculate(ue.IntAlg, ue.KnasInt, ue.GetSecurityULCount(), SECURITY_ONLY_ONE_BEARER, SECURITY_DIRECTION_UPLINK, payload)
+			mac32, err = NasMacCalculate(ue.IntAlg, ue.KnasInt, ue.GetSecurityULCount(), SECURITY_BEARER_3GPP, SECURITY_DIRECTION_UPLINK, payload)
 			if err != nil {
 				return
 			}
@@ -224,7 +224,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		ue.DLCountSQN = sequenceNumber
 		if integrityProtected {
 			// ToDo: use real mac calculate
-			mac32, err := NasMacCalculate(ue.IntAlg, ue.KnasInt, ue.GetSecurityDLCount(), SECURITY_ONLY_ONE_BEARER,
+			mac32, err := NasMacCalculate(ue.IntAlg, ue.KnasInt, ue.GetSecurityDLCount(), SECURITY_BEARER_3GPP,
 				SECURITY_DIRECTION_DOWNLINK, payload)
 			if err != nil {
 				return nil, err
@@ -240,7 +240,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 
 		if ciphering {
 			// TODO: Support for ue has nas connection in both accessType
-			if err = NasEncrypt(ue.EncAlg, ue.KnasEnc, ue.GetSecurityDLCount(), SECURITY_ONLY_ONE_BEARER,
+			if err = NasEncrypt(ue.EncAlg, ue.KnasEnc, ue.GetSecurityDLCount(), SECURITY_BEARER_3GPP,
 				SECURITY_DIRECTION_DOWNLINK, payload); err != nil {
 				return
 			}
