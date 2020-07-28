@@ -3,13 +3,13 @@ package simulator_util
 import (
 	"fmt"
 	"os/exec"
+	"radio_simulator/lib/nas/security"
 	"radio_simulator/lib/ngap/ngapConvert"
 	"radio_simulator/lib/openapi/models"
 	"radio_simulator/lib/path_util"
 	"radio_simulator/src/factory"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_nas/nas_security"
 	"radio_simulator/src/ue_factory"
 	"strconv"
 )
@@ -79,23 +79,42 @@ func ParseUeData(configDirPath string, fileList []string) {
 	for _, ueInfoFile := range fileList {
 		fileName := configDirPath + ueInfoFile
 		ue := ue_factory.InitUeContextFactory(fileName)
-		ue.IntAlg = nas_security.AlogMaps[ue.IntegrityAlgOrig]
-		ue.EncAlg = nas_security.AlogMaps[ue.CipheringAlgOrig]
+		switch ue.IntegrityAlgOrig {
+		case "NIA0":
+			ue.IntAlg = security.AlgIntegrity128NIA0
+		case "NIA1":
+			ue.IntAlg = security.AlgIntegrity128NIA1
+		case "NIA2":
+			ue.IntAlg = security.AlgIntegrity128NIA2
+		case "NIA3":
+			ue.IntAlg = security.AlgIntegrity128NIA3
+		}
+
+		switch ue.CipheringAlgOrig {
+		case "NEA0":
+			ue.EncAlg = security.AlgCiphering128NEA0
+		case "NEA1":
+			ue.EncAlg = security.AlgCiphering128NEA1
+		case "NEA2":
+			ue.EncAlg = security.AlgCiphering128NEA2
+		case "NEA3":
+			ue.EncAlg = security.AlgCiphering128NEA3
+		}
 
 		self.UeContextPool[ue.Supi] = ue
 	}
 }
 func InitUeToDB() {
 	for supi, ue := range self.UeContextPool {
-	//for _, ue := range self.UeContextPool {
+		//for _, ue := range self.UeContextPool {
 		/*
-		amDate := models.AccessAndMobilitySubscriptionData{
-			Gpsis: ue.Gpsis,
-			Nssai: &ue.Nssai,
-		}
-		amPolicy := models.AmPolicyData{
-			SubscCats: ue.SubscCats,
-		}
+			amDate := models.AccessAndMobilitySubscriptionData{
+				Gpsis: ue.Gpsis,
+				Nssai: &ue.Nssai,
+			}
+			amPolicy := models.AmPolicyData{
+				SubscCats: ue.SubscCats,
+			}
 		*/
 		auths := ue.AuthData
 		authsSubs := models.AuthenticationSubscription{

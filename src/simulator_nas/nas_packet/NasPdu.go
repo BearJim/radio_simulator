@@ -166,7 +166,7 @@ func GetUlNasTransport_PduSessionEstablishmentRequest(ue *simulator_context.UeCo
 
 	m.GmmMessage.ULNASTransport = ulNasTransport
 
-	return nas_security.NASEncode(ue, m)
+	return nas_security.NASEncode(ue, m, true, false)
 }
 
 func GetUlNasTransport_PduSessionModificationRequest(pduSessionId uint8, requestType uint8, dnnString string, sNssai *models.Snssai) (nasPdu []byte) {
@@ -442,7 +442,7 @@ func GetUlNasTransport_PduSessionCommonData(ue *simulator_context.UeContext, pdu
 
 	m.GmmMessage.ULNASTransport = ulNasTransport
 
-	return nas_security.NASEncode(ue, m)
+	return nas_security.NASEncode(ue, m, true, false)
 }
 
 func GetIdentityResponse(mobileIdentity nasType.MobileIdentity) (nasPdu []byte) {
@@ -653,7 +653,7 @@ func GetRegistrationComplete(ue *simulator_context.UeContext, sorTransparentCont
 
 	m.GmmMessage.RegistrationComplete = registrationComplete
 
-	return nas_security.NASEncode(ue, m)
+	return nas_security.NASEncode(ue, m, true, false)
 }
 
 // TS 24.501 8.2.26
@@ -691,7 +691,7 @@ func GetSecurityModeComplete(ue *simulator_context.UeContext, nasMessageContaine
 
 	m.GmmMessage.SecurityModeComplete = securityModeComplete
 
-	return nas_security.NASEncode(ue, m)
+	return nas_security.NASEncode(ue, m, true, true)
 
 }
 
@@ -753,7 +753,7 @@ func GetDeregistrationRequest(ue *simulator_context.UeContext, switchOff uint8) 
 
 	m.GmmMessage.DeregistrationRequestUEOriginatingDeregistration = deregistrationRequest
 
-	return nas_security.NASEncode(ue, m)
+	return nas_security.NASEncode(ue, m, true, false)
 }
 
 func GetDeregistrationAccept() (nasPdu []byte) {

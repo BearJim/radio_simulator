@@ -1,16 +1,16 @@
 package simulator_context
 
 import (
-	"encoding/binary"
 	"encoding/hex"
-	"regexp"
 	"fmt"
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
 	"radio_simulator/lib/nas/nasType"
+	"radio_simulator/lib/nas/security"
 	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
+	"regexp"
 	"sync"
 )
 
@@ -82,15 +82,14 @@ type UeContext struct {
 	RanUeNgapId   int64
 	AmfUeNgapId   int64
 	// security
-	ULCount          uint32
-	DLOverflow       uint16
-	DLCountSQN       uint8
+	ULCount          security.Count
+	DLCount          security.Count
 	CipheringAlgOrig string `yaml:"cipherAlg"`
 	IntegrityAlgOrig string `yaml:"integrityAlg"`
 	EncAlg           uint8
 	IntAlg           uint8
-	KnasEnc          []uint8
-	KnasInt          []uint8
+	KnasEnc          [16]uint8
+	KnasInt          [16]uint8
 	Kamf             []uint8
 	NgKsi            uint8
 	// PduSession
@@ -257,22 +256,6 @@ func (ue *UeContext) DetachRan(ran *RanContext) {
 	delete(ran.UePool, ue.RanUeNgapId)
 }
 
-func (ue *UeContext) GetSecurityULCount() []byte {
-	var r = make([]byte, 4)
-	binary.BigEndian.PutUint32(r, ue.ULCount&0xffffff)
-	return r
-}
-
-func (ue *UeContext) GetSecurityDLCount() []byte {
-	var r = make([]byte, 4)
-	binary.BigEndian.PutUint16(r, ue.DLOverflow)
-	r[3] = ue.DLCountSQN
-	r[2] = r[1]
-	r[1] = r[0]
-	r[0] = 0x00
-	return r
-}
-
 func (ue *UeContext) GetServingNetworkName() string {
 	mcc := ue.ServingPlmnId[:3]
 	mnc := ue.ServingPlmnId[3:]
@@ -350,7 +333,7 @@ func (ue *UeContext) DerivateAlgKey() {
 	L1 := UeauCommon.KDFLen(P1)
 
 	kenc := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)
-	ue.KnasEnc = kenc[16:32]
+	copy(ue.KnasEnc[:], kenc[16:32])
 
 	// Integrity Key
 	P0 = []byte{N_NAS_INT_ALG}
@@ -359,5 +342,5 @@ func (ue *UeContext) DerivateAlgKey() {
 	L1 = UeauCommon.KDFLen(P1)
 
 	kint := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)
-	ue.KnasInt = kint[16:32]
+	copy(ue.KnasInt[:], kint[16:32])
 }
