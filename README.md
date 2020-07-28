@@ -2,6 +2,8 @@
 
 Created by WeiTing
 
+Now only support free5GC v3.0.2. On v3.0.3, the nas decode will failed on RAN side due to some modify in CN between v3.0.2 and v3.0.3.
+
 ## Requirement
 
 gtp5g module
