@@ -14,51 +14,6 @@ import (
 	"sync"
 )
 
-// TS 33501 Annex A.8 Algorithm distinguisher For Knas_int Knas_enc
-const (
-	N_NAS_ENC_ALG uint8 = 0x01
-	N_NAS_INT_ALG uint8 = 0x02
-	N_RRC_ENC_ALG uint8 = 0x03
-	N_RRC_INT_ALG uint8 = 0x04
-	N_UP_ENC_alg  uint8 = 0x05
-	N_UP_INT_alg  uint8 = 0x06
-)
-
-// TS 33501 Annex D Algorithm identifier values For Knas_int
-const (
-	ALG_INTEGRITY_128_NIA0 uint8 = 0x00 // NULL
-	ALG_INTEGRITY_128_NIA1 uint8 = 0x01 // 128-Snow3G
-	ALG_INTEGRITY_128_NIA2 uint8 = 0x02 // 128-AES
-	ALG_INTEGRITY_128_NIA3 uint8 = 0x03 // 128-ZUC
-)
-
-// TS 33501 Annex D Algorithm identifier values For Knas_enc
-const (
-	ALG_CIPHERING_128_NEA0 uint8 = 0x00 // NULL
-	ALG_CIPHERING_128_NEA1 uint8 = 0x01 // 128-Snow3G
-	ALG_CIPHERING_128_NEA2 uint8 = 0x02 // 128-AES
-	ALG_CIPHERING_128_NEA3 uint8 = 0x03 // 128-ZUC
-)
-
-// 1bit
-const (
-	SECURITY_DIRECTION_UPLINK   uint8 = 0x00
-	SECURITY_DIRECTION_DOWNLINK uint8 = 0x01
-)
-
-// 5bits
-const (
-	SECURITY_ONLY_ONE_BEARER uint8 = 0x00
-	SECURITY_BEARER_3GPP     uint8 = 0x01
-	SECURITY_BEARER_NON_3GPP uint8 = 0x02
-)
-
-// TS 33501 Annex A.0 Access type distinguisher For Kgnb Kn3iwf
-const (
-	ACCESS_TYPE_3GPP     uint8 = 0x01
-	ACCESS_TYPE_NON_3GPP uint8 = 0x02
-)
-
 const (
 	RanNgapIdUnspecified int64 = 0xffffffff
 	AmfNgapIdUnspecified int64 = 0xffffffffff
@@ -327,7 +282,7 @@ func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 // Algorithm key Derivation function defined in TS 33.501 Annex A.9
 func (ue *UeContext) DerivateAlgKey() {
 	// Security Key
-	P0 := []byte{N_NAS_ENC_ALG}
+	P0 := []byte{security.NNASEncAlg}
 	L0 := UeauCommon.KDFLen(P0)
 	P1 := []byte{ue.EncAlg}
 	L1 := UeauCommon.KDFLen(P1)
@@ -336,7 +291,7 @@ func (ue *UeContext) DerivateAlgKey() {
 	copy(ue.KnasEnc[:], kenc[16:32])
 
 	// Integrity Key
-	P0 = []byte{N_NAS_INT_ALG}
+	P0 = []byte{security.NNASIntAlg}
 	L0 = UeauCommon.KDFLen(P0)
 	P1 = []byte{ue.IntAlg}
 	L1 = UeauCommon.KDFLen(P1)
