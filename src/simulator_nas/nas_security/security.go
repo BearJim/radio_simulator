@@ -85,9 +85,21 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		err = msg.PlainNasDecode(&payload)
 		return
 	} else {
-		if securityHeaderType == nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext ||
-			securityHeaderType == nas.SecurityHeaderTypeIntegrityProtectedAndCipheredWithNew5gNasSecurityContext {
+		// security mode command
+		if securityHeaderType == nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext {
 			ue.DLCount.Set(0, 0)
+
+			plainNas := payload[7:]
+			if err := msg.PlainNasDecode(&plainNas); err != nil {
+				return nil, err
+			}
+			if command := msg.GmmMessage.SecurityModeCommand; command != nil {
+				ue.EncAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfCipheringAlgorithm()
+				ue.IntAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfIntegrityProtectionAlgorithm()
+				ue.DerivateAlgKey()
+			} else {
+				return nil, fmt.Errorf("Integrity Protected With New 5G Nas Security is not Security command")
+			}
 		}
 
 		securityHeader := payload[0:6]
