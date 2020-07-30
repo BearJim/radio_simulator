@@ -129,9 +129,12 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		payload = payload[1:]
 
 		// TODO: Support for ue has nas connection in both accessType
-		if err = security.NASEncrypt(ue.EncAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
-			security.DirectionUplink, payload); err != nil {
-			return nil, err
+		if securityHeaderType != nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext &&
+			securityHeaderType != nas.SecurityHeaderTypeIntegrityProtected {
+			if err = security.NASEncrypt(ue.EncAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
+				security.DirectionDownlink, payload); err != nil {
+				return nil, err
+			}
 		}
 	}
 	err = msg.PlainNasDecode(&payload)

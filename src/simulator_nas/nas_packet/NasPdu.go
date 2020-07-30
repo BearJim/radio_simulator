@@ -665,7 +665,7 @@ func GetSecurityModeComplete(ue *simulator_context.UeContext, nasMessageContaine
 
 	m.SecurityHeader = nas.SecurityHeader{
 		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
-		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCipheredWithNew5gNasSecurityContext,
 	}
 
 	securityModeComplete := nasMessage.NewSecurityModeComplete(0)
