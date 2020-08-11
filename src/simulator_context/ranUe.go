@@ -1,62 +1,17 @@
 package simulator_context
 
 import (
-	"encoding/binary"
 	"encoding/hex"
-	"regexp"
 	"fmt"
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
 	"radio_simulator/lib/nas/nasType"
+	"radio_simulator/lib/nas/security"
 	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
+	"regexp"
 	"sync"
-)
-
-// TS 33501 Annex A.8 Algorithm distinguisher For Knas_int Knas_enc
-const (
-	N_NAS_ENC_ALG uint8 = 0x01
-	N_NAS_INT_ALG uint8 = 0x02
-	N_RRC_ENC_ALG uint8 = 0x03
-	N_RRC_INT_ALG uint8 = 0x04
-	N_UP_ENC_alg  uint8 = 0x05
-	N_UP_INT_alg  uint8 = 0x06
-)
-
-// TS 33501 Annex D Algorithm identifier values For Knas_int
-const (
-	ALG_INTEGRITY_128_NIA0 uint8 = 0x00 // NULL
-	ALG_INTEGRITY_128_NIA1 uint8 = 0x01 // 128-Snow3G
-	ALG_INTEGRITY_128_NIA2 uint8 = 0x02 // 128-AES
-	ALG_INTEGRITY_128_NIA3 uint8 = 0x03 // 128-ZUC
-)
-
-// TS 33501 Annex D Algorithm identifier values For Knas_enc
-const (
-	ALG_CIPHERING_128_NEA0 uint8 = 0x00 // NULL
-	ALG_CIPHERING_128_NEA1 uint8 = 0x01 // 128-Snow3G
-	ALG_CIPHERING_128_NEA2 uint8 = 0x02 // 128-AES
-	ALG_CIPHERING_128_NEA3 uint8 = 0x03 // 128-ZUC
-)
-
-// 1bit
-const (
-	SECURITY_DIRECTION_UPLINK   uint8 = 0x00
-	SECURITY_DIRECTION_DOWNLINK uint8 = 0x01
-)
-
-// 5bits
-const (
-	SECURITY_ONLY_ONE_BEARER uint8 = 0x00
-	SECURITY_BEARER_3GPP     uint8 = 0x01
-	SECURITY_BEARER_NON_3GPP uint8 = 0x02
-)
-
-// TS 33501 Annex A.0 Access type distinguisher For Kgnb Kn3iwf
-const (
-	ACCESS_TYPE_3GPP     uint8 = 0x01
-	ACCESS_TYPE_NON_3GPP uint8 = 0x02
 )
 
 const (
@@ -82,15 +37,14 @@ type UeContext struct {
 	RanUeNgapId   int64
 	AmfUeNgapId   int64
 	// security
-	ULCount          uint32
-	DLOverflow       uint16
-	DLCountSQN       uint8
+	ULCount          security.Count
+	DLCount          security.Count
 	CipheringAlgOrig string `yaml:"cipherAlg"`
 	IntegrityAlgOrig string `yaml:"integrityAlg"`
 	EncAlg           uint8
 	IntAlg           uint8
-	KnasEnc          []uint8
-	KnasInt          []uint8
+	KnasEnc          [16]uint8
+	KnasInt          [16]uint8
 	Kamf             []uint8
 	NgKsi            uint8
 	// PduSession
@@ -257,22 +211,6 @@ func (ue *UeContext) DetachRan(ran *RanContext) {
 	delete(ran.UePool, ue.RanUeNgapId)
 }
 
-func (ue *UeContext) GetSecurityULCount() []byte {
-	var r = make([]byte, 4)
-	binary.BigEndian.PutUint32(r, ue.ULCount&0xffffff)
-	return r
-}
-
-func (ue *UeContext) GetSecurityDLCount() []byte {
-	var r = make([]byte, 4)
-	binary.BigEndian.PutUint16(r, ue.DLOverflow)
-	r[3] = ue.DLCountSQN
-	r[2] = r[1]
-	r[1] = r[0]
-	r[0] = 0x00
-	return r
-}
-
 func (ue *UeContext) GetServingNetworkName() string {
 	mcc := ue.ServingPlmnId[:3]
 	mnc := ue.ServingPlmnId[3:]
@@ -344,20 +282,20 @@ func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 // Algorithm key Derivation function defined in TS 33.501 Annex A.9
 func (ue *UeContext) DerivateAlgKey() {
 	// Security Key
-	P0 := []byte{N_NAS_ENC_ALG}
+	P0 := []byte{security.NNASEncAlg}
 	L0 := UeauCommon.KDFLen(P0)
 	P1 := []byte{ue.EncAlg}
 	L1 := UeauCommon.KDFLen(P1)
 
 	kenc := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)
-	ue.KnasEnc = kenc[16:32]
+	copy(ue.KnasEnc[:], kenc[16:32])
 
 	// Integrity Key
-	P0 = []byte{N_NAS_INT_ALG}
+	P0 = []byte{security.NNASIntAlg}
 	L0 = UeauCommon.KDFLen(P0)
 	P1 = []byte{ue.IntAlg}
 	L1 = UeauCommon.KDFLen(P1)
 
 	kint := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)
-	ue.KnasInt = kint[16:32]
+	copy(ue.KnasInt[:], kint[16:32])
 }

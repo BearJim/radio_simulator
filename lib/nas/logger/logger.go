@@ -2,15 +2,17 @@ package logger
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 var log *logrus.Logger
 var NasMsgLog *logrus.Entry
 var ConvertLog *logrus.Entry
+var SecurityLog *logrus.Entry
 
 func init() {
 	log = logrus.New()
@@ -39,6 +41,7 @@ func init() {
 
 	NasMsgLog = log.WithFields(logrus.Fields{"NAS": "message"})
 	ConvertLog = log.WithFields(logrus.Fields{"NAS": "convert"})
+	SecurityLog = log.WithFields(logrus.Fields{"NAS": "security"})
 }
 
 func SetLogLevel(level logrus.Level) {
