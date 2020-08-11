@@ -60,7 +60,13 @@ func (s *Simulator) AddRanContext(AmfUri, ranSctpUri, ranName string, ranGtpUri 
 	ran := NewRanContext()
 	ran.AMFUri = AmfUri
 	ran.RanSctpUri = ranSctpUri
-	ran.RanGtpUri = ranGtpUri
+	resRanGtpIP, err := net.ResolveIPAddr("ip", ranGtpUri.IP)
+	if err != nil {
+		logger.ContextLog.Errorf("AddRanContext: ResolveIPAddr(%s) error - %v]", ranGtpUri.IP, err)
+		return nil
+	}
+	ran.RanGtpUri.IP = resRanGtpIP.String()
+	ran.RanGtpUri.Port = ranGtpUri.Port
 	ran.Name = ranName
 	ran.GnbId.BitLength = uint64(gnbIdLength)
 	ran.GnbId.Bytes, _ = hex.DecodeString(GnbId)
