@@ -42,8 +42,19 @@ func IPAddressToNgap(ipv4Addr, ipv6Addr string) (ipAddr ngapType.TransportLayerA
 	}
 
 	if ipv4Addr != "" && ipv6Addr != "" { // Both ipv4 & ipv6
-		ipv4NetIP := net.ParseIP(ipv4Addr).To4()
-		ipv6NetIP := net.ParseIP(ipv6Addr).To16()
+		resIPv4, err := net.ResolveIPAddr("ip", ipv4Addr)
+		if err != nil {
+			logger.NgapLog.Errorf("IPAddressToNgap: ResolveIPAddr(%s) error - %v", ipv4Addr, err)
+			return
+		}
+		ipv4NetIP := resIPv4.IP.To4()
+
+		resIPv6, err := net.ResolveIPAddr("ip", ipv6Addr)
+		if err != nil {
+			logger.NgapLog.Errorf("IPAddressToNgap: ResolveIPAddr(%s) error - %v", ipv6Addr, err)
+			return
+		}
+		ipv6NetIP := resIPv6.IP.To16()
 
 		ipBytes := []byte{ipv4NetIP[0], ipv4NetIP[1], ipv4NetIP[2], ipv4NetIP[3]}
 		for i := 0; i < 16; i++ {
@@ -55,7 +66,12 @@ func IPAddressToNgap(ipv4Addr, ipv6Addr string) (ipAddr ngapType.TransportLayerA
 			BitLength: 160,
 		}
 	} else if ipv4Addr != "" && ipv6Addr == "" { // ipv4
-		ipv4NetIP := net.ParseIP(ipv4Addr).To4()
+		resIPv4, err := net.ResolveIPAddr("ip", ipv4Addr)
+		if err != nil {
+			logger.NgapLog.Errorf("IPAddressToNgap: ResolveIPAddr(%s) error - %v", ipv4Addr, err)
+			return
+		}
+		ipv4NetIP := resIPv4.IP.To4()
 
 		ipBytes := []byte{ipv4NetIP[0], ipv4NetIP[1], ipv4NetIP[2], ipv4NetIP[3]}
 
@@ -64,7 +80,12 @@ func IPAddressToNgap(ipv4Addr, ipv6Addr string) (ipAddr ngapType.TransportLayerA
 			BitLength: 32,
 		}
 	} else { // ipv6
-		ipv6NetIP := net.ParseIP(ipv6Addr).To16()
+		resIPv6, err := net.ResolveIPAddr("ip", ipv6Addr)
+		if err != nil {
+			logger.NgapLog.Errorf("IPAddressToNgap: ResolveIPAddr(%s) error - %v", ipv6Addr, err)
+			return
+		}
+		ipv6NetIP := resIPv6.IP.To16()
 
 		ipBytes := []byte{}
 		for i := 0; i < 16; i++ {
