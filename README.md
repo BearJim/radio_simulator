@@ -37,7 +37,7 @@ source ~/.bashrc
 # build gtp tools
 git submodule update --init
 sudo apt -y install gcc cmake libmnl-dev autoconf libtool pkg-config
-cd lib/upf/lib/libgtp5gnl
+cd lib/libgtp5gnl
 autoreconf -iv
 ./configure
 make -j8
