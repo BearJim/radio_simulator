@@ -2,6 +2,9 @@ package simulator_nas
 
 import (
 	"fmt"
+	"io/ioutil"
+	"strings"
+	"strconv"
 	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
@@ -50,6 +53,22 @@ func HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessa
 	}
 	simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
 	ue.RegisterState = simulator_context.RegisterStateRegistered
+
+	fmt.Println(ue.AuthData.SQN)
+	input, _ := ioutil.ReadFile("config/uecfg.conf")
+	lines := strings.Split(string(input), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, "SQN") {
+			//noSpace := strings.Replace(lines[i], " ", "", -1)
+			//num, _ := strconv.ParseInt(strings.Split(noSpace, ":")[1], 16, 64)
+			num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
+			ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
+			lines[i] = fmt.Sprintf("  SQN: %s", ue.AuthData.SQN)
+		}
+	}
+	output := strings.Join(lines, "\n")
+	ioutil.WriteFile("config/uecfg.conf", []byte(output), 0644)
+
 	ue.SendMsg("[REG] SUCCESS\n")
 	return nil
 }
