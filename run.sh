@@ -5,13 +5,13 @@ TUN="rantun"
 # LISTEN_ADDR="127.0.0.2"
 # UE_SUBNET="60.60.0.1/16"
 SERVER_SUBNET="60.60.0.0/24"
-GTPNL_PATH=lib/upf/lib/libgtp5gnl/tools
+GTPNL_PATH=lib/libgtp5gnl/tools
 
 [ -n "$1" ] && SERVER_SUBNET=$1
 
 PID_LIST=()
 
-# Setup tunnel interface 
+# Setup tunnel interface
 killall -9 gtp5g-link
 ./${GTPNL_PATH}/gtp5g-link add ${TUN} --ran &
 PID_LIST+=($!)
@@ -20,16 +20,17 @@ sleep 0.2
 # Add MTU on tun dev
 ip l s dev ${TUN} mtu 1500
 
-# Add Route to tunnel interface 
+# Add Route to tunnel interface
+ip r del default
 ip r add ${SERVER_SUBNET} dev ${TUN}
 ip r add default dev ${TUN}
 
-# Setup tunnel interface 
+# Setup tunnel interface
 # exe sudo ip tunnel add ${TUN} mode ipip remote ${LISTEN_ADDR} local 127.0.0.1
 # exe sudo ip link set ${TUN} up
 # exe sudo ip addr add ${UE_SUBNET} peer ${SERVER_SUBNET} dev ${TUN}
 
-./bin/simulator & 
+./bin/simulator &
 PID_LIST+=($!)
 
 
@@ -41,7 +42,7 @@ function terminate()
         kill -SIGTERM ${PID_LIST[$idx]}
         kill -9 ${PID_LIST[$idx]}
     done
-   
+
 }
 
 
