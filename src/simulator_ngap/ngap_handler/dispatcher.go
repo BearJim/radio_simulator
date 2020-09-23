@@ -1,11 +1,12 @@
 package ngap_handler
 
 import (
-	"github.com/sirupsen/logrus"
-	"radio_simulator/lib/ngap"
-	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
+
+	"bitbucket.org/free5gc-team/ngap"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"github.com/sirupsen/logrus"
 )
 
 var ngapLog *logrus.Entry

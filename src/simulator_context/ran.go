@@ -2,10 +2,11 @@ package simulator_context
 
 import (
 	"encoding/hex"
-	"git.cs.nctu.edu.tw/calee/sctp"
 	"net"
-	"radio_simulator/lib/aper"
-	"radio_simulator/lib/ngap/ngapType"
+
+	"bitbucket.org/free5gc-team/aper"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"git.cs.nctu.edu.tw/calee/sctp"
 )
 
 const (

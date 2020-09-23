@@ -1,8 +1,9 @@
 package factory
 
 import (
-	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/simulator_context"
+
+	"bitbucket.org/free5gc-team/openapi/models"
 )
 
 var TestAmDataTable = make(map[string]models.AccessAndMobilitySubscriptionData)

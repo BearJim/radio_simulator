@@ -3,8 +3,9 @@ package type_convert
 import (
 	"encoding/hex"
 	"math/bits"
-	"radio_simulator/lib/nas/nasMessage"
-	"radio_simulator/lib/nas/nasType"
+
+	"bitbucket.org/free5gc-team/nas/nasMessage"
+	"bitbucket.org/free5gc-team/nas/nasType"
 )
 
 // Only Support Supi imsi-xxxxxxxxxxx format

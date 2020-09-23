@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"radio_simulator/lib/UeauCommon"
 	"radio_simulator/lib/milenage"
-	"radio_simulator/lib/nas/nasType"
-	"radio_simulator/lib/nas/security"
-	"radio_simulator/lib/ngap/ngapType"
-	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
 	"regexp"
 	"sync"
+
+	"bitbucket.org/free5gc-team/nas/nasType"
+	"bitbucket.org/free5gc-team/nas/security"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"bitbucket.org/free5gc-team/openapi/models"
 )
 
 const (

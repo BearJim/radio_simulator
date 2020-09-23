@@ -2,10 +2,11 @@ package simulator_ngap
 
 import (
 	"encoding/binary"
-	"radio_simulator/lib/aper"
-	"radio_simulator/lib/ngap/ngapConvert"
-	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/src/simulator_context"
+
+	"bitbucket.org/free5gc-team/aper"
+	"bitbucket.org/free5gc-team/ngap/ngapConvert"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
 )
 
 func BuildPDUSessionResourceSetupUnsuccessfulTransfer(cause ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) ([]byte, error) {
@@ -27,8 +28,8 @@ func BuildPDUSessionResourceSetupResponseTransfer(sess *simulator_context.Sessio
 
 	transfer := ngapType.PDUSessionResourceSetupResponseTransfer{}
 
-	// QOS Flow Per TNL Information
-	qosFlowPerTNLInformation := &transfer.QosFlowPerTNLInformation
+	// DL QOS Flow Per TNL Information
+	qosFlowPerTNLInformation := &transfer.DLQosFlowPerTNLInformation
 	qosFlowPerTNLInformation.UPTransportLayerInformation.Present = ngapType.UPTransportLayerInformationPresentGTPTunnel
 	qosFlowPerTNLInformation.UPTransportLayerInformation.GTPTunnel = new(ngapType.GTPTunnel)
 	teid := make([]byte, 4)
@@ -36,7 +37,7 @@ func BuildPDUSessionResourceSetupResponseTransfer(sess *simulator_context.Sessio
 	qosFlowPerTNLInformation.UPTransportLayerInformation.GTPTunnel.GTPTEID.Value = teid
 	qosFlowPerTNLInformation.UPTransportLayerInformation.GTPTunnel.TransportLayerAddress = ngapConvert.IPAddressToNgap(sess.DLAddr, "") // Only Support Ipv4
 
-	for qfi, _ := range sess.QosFlows {
+	for qfi := range sess.QosFlows {
 		item := ngapType.AssociatedQosFlowItem{
 			QosFlowIdentifier: ngapType.QosFlowIdentifier{
 				Value: qfi,

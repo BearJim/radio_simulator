@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
-	"radio_simulator/lib/nas/nasConvert"
-	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
 	"radio_simulator/src/simulator_ngap"
+
+	"bitbucket.org/free5gc-team/nas/nasConvert"
+	"bitbucket.org/free5gc-team/nas/nasMessage"
 )
 
 func HandlePduSessionEstblishmentAccept(ue *simulator_context.UeContext, request *nasMessage.PDUSessionEstablishmentAccept) error {

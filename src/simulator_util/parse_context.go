@@ -3,15 +3,16 @@ package simulator_util
 import (
 	"fmt"
 	"os/exec"
-	"radio_simulator/lib/nas/security"
-	"radio_simulator/lib/ngap/ngapConvert"
-	"radio_simulator/lib/openapi/models"
 	"radio_simulator/lib/path_util"
 	"radio_simulator/src/factory"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/ue_factory"
 	"strconv"
+
+	"bitbucket.org/free5gc-team/nas/security"
+	"bitbucket.org/free5gc-team/ngap/ngapConvert"
+	"bitbucket.org/free5gc-team/openapi/models"
 )
 
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()

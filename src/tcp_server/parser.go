@@ -2,8 +2,6 @@ package tcp_server
 
 import (
 	"fmt"
-	"radio_simulator/lib/nas/nasMessage"
-	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
@@ -11,6 +9,9 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+
+	"bitbucket.org/free5gc-team/nas/nasMessage"
+	"bitbucket.org/free5gc-team/openapi/models"
 )
 
 var stringFormat = regexp.MustCompile(`\S+`)
@@ -222,7 +223,7 @@ func ReadChannelMsg(ue *simulator_context.UeContext, raddr string) (msg string) 
 	select {
 	case msg = <-ue.TcpChannelMsg[raddr]:
 	case <-time.After(5 * time.Second):
-		msg = fmt.Sprintf("[TIMEOUT]\n")
+		msg = "[TIMEOUT]\n"
 	}
 	mtx.Lock()
 	delete(ue.TcpChannelMsg, raddr)
@@ -235,6 +236,6 @@ func ReadSessChannelMsg(sess *simulator_context.SessionContext) string {
 	case msg := <-sess.SessTcpChannelMsg:
 		return msg
 	case <-time.After(5 * time.Second):
-		return fmt.Sprintf("[TIMEOUT]\n")
+		return "[TIMEOUT]\n"
 	}
 }

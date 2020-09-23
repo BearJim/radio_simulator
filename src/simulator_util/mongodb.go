@@ -2,9 +2,10 @@ package simulator_util
 
 import (
 	"encoding/json"
+
+	"bitbucket.org/free5gc-team/MongoDBLibrary"
+	"bitbucket.org/free5gc-team/openapi/models"
 	"go.mongodb.org/mongo-driver/bson"
-	"radio_simulator/lib/MongoDBLibrary"
-	"radio_simulator/lib/openapi/models"
 )
 
 func toBsonM(data interface{}) bson.M {

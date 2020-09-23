@@ -2,10 +2,11 @@ package nas_security
 
 import (
 	"fmt"
-	"radio_simulator/lib/nas"
-	"radio_simulator/lib/nas/security"
 	"radio_simulator/src/simulator_context"
 	"reflect"
+
+	"bitbucket.org/free5gc-team/nas"
+	"bitbucket.org/free5gc-team/nas/security"
 )
 
 func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContextAvailable bool, newSecurityContext bool) (payload []byte, err error) {

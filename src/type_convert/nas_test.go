@@ -1,10 +1,11 @@
 package type_convert_test
 
 import (
-	"github.com/stretchr/testify/assert"
-	"radio_simulator/lib/nas/nasType"
 	"radio_simulator/src/type_convert"
 	"testing"
+
+	"bitbucket.org/free5gc-team/nas/nasType"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSupiToMobileId(t *testing.T) {

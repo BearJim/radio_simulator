@@ -3,7 +3,6 @@ package simulator_init
 import (
 	"fmt"
 	"net"
-	"radio_simulator/lib/ngap/ngapSctp"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_handler"
@@ -13,6 +12,8 @@ import (
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 )
+
+const NGAP_PPID uint32 = 0x3c000000
 
 func check(err error) {
 	if err != nil {
@@ -55,7 +56,7 @@ func ConnectToAmf(amfIP, ranIP string, amfPort, ranPort int) (*sctp.SCTPConn, er
 		return nil, err
 	}
 	info, _ := conn.GetDefaultSentParam()
-	info.PPID = ngapSctp.NGAP_PPID
+	info.PPID = NGAP_PPID
 	err = conn.SetDefaultSentParam(info)
 	if err != nil {
 		return nil, err
@@ -118,7 +119,7 @@ func StartHandleSctp(ran *simulator_context.RanContext) {
 			delete(simulator_context.Simulator_Self().RanPool, ran.RanSctpUri)
 			simulator_message.DelNgapChannel(ran.RanSctpUri)
 			break
-		} else if info == nil || info.PPID != ngapSctp.NGAP_PPID {
+		} else if info == nil || info.PPID != NGAP_PPID {
 			logger.NgapLog.Warnf("Recv SCTP PPID != 60")
 			continue
 		}
