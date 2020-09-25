@@ -1,20 +1,18 @@
 module radio_simulator
 
-go 1.12
+go 1.14
 
 require (
+	bitbucket.org/free5gc-team/MongoDBLibrary v0.0.0-20200915034734-df7bd383fceb
+	bitbucket.org/free5gc-team/UeauCommon v0.0.0-20200915045754-fc6808262820
+	bitbucket.org/free5gc-team/aper v0.0.0-20200915033117-0dcacc1cf3c7
+	bitbucket.org/free5gc-team/milenage v0.0.0-20200915034446-e87f555990e5
+	bitbucket.org/free5gc-team/nas v0.0.0-20200916194209-0698dd234d50
+	bitbucket.org/free5gc-team/ngap v0.0.0-20200915042202-2cf700b6cfe5
+	bitbucket.org/free5gc-team/openapi v0.0.0-20200915035203-9fc3f0e748b4
 	git.cs.nctu.edu.tw/calee/sctp v1.0.0
-	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1
-	github.com/davecgh/go-spew v1.1.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/evanphx/json-patch v4.5.0+incompatible
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/sirupsen/logrus v1.6.0
-	github.com/stretchr/testify v1.3.0
-	github.com/urfave/cli v1.22.2
-	go.mongodb.org/mongo-driver v1.3.1
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/sys v0.0.0-20200724161237-0e2f3a69832c // indirect
-	gopkg.in/yaml.v2 v2.2.2
+	github.com/stretchr/testify v1.6.1
+	go.mongodb.org/mongo-driver v1.4.1
+	gopkg.in/yaml.v2 v2.3.0
 )

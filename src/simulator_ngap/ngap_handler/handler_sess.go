@@ -3,11 +3,12 @@ package ngap_handler
 import (
 	"encoding/binary"
 	"fmt"
-	"radio_simulator/lib/aper"
-	"radio_simulator/lib/ngap/ngapConvert"
-	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_ngap"
+
+	"bitbucket.org/free5gc-team/aper"
+	"bitbucket.org/free5gc-team/ngap/ngapConvert"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
 )
 
 func handlePDUSessionResourceSetupRequestTransfer(sess *simulator_context.SessionContext, b []byte) ([]byte, error) {

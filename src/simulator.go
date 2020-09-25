@@ -2,12 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"radio_simulator/lib/MongoDBLibrary"
 	"radio_simulator/lib/path_util"
 	"radio_simulator/src/factory"
 	"radio_simulator/src/logger"
@@ -16,6 +14,9 @@ import (
 	"radio_simulator/src/simulator_util"
 	"radio_simulator/src/tcp_server"
 	"syscall"
+
+	"bitbucket.org/free5gc-team/MongoDBLibrary"
+	"github.com/sirupsen/logrus"
 )
 
 var config string

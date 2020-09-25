@@ -3,15 +3,16 @@ package simulator_context
 import (
 	"encoding/hex"
 	"fmt"
-	"radio_simulator/lib/UeauCommon"
-	"radio_simulator/lib/milenage"
-	"radio_simulator/lib/nas/nasType"
-	"radio_simulator/lib/nas/security"
-	"radio_simulator/lib/ngap/ngapType"
-	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
 	"regexp"
 	"sync"
+
+	"bitbucket.org/free5gc-team/UeauCommon"
+	"bitbucket.org/free5gc-team/milenage"
+	"bitbucket.org/free5gc-team/nas/nasType"
+	"bitbucket.org/free5gc-team/nas/security"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"bitbucket.org/free5gc-team/openapi/models"
 )
 
 const (
@@ -235,10 +236,16 @@ func (ue *UeContext) DeriveRESstarAndSetKey(RAND []byte) []byte {
 	OPC, _ := hex.DecodeString(authData.Opc)
 	K, _ := hex.DecodeString(authData.K)
 	// Generate MAC_A, MAC_S
-	milenage.F1_Test(OPC, K, RAND, SQN, AMF, MAC_A, MAC_S)
+	if err := milenage.F1(OPC, K, RAND, SQN, AMF, MAC_A, MAC_S); err != nil {
+		logger.ContextLog.Errorln(err)
+		return nil
+	}
 
 	// Generate RES, CK, IK, AK, AKstar
-	milenage.F2345_Test(OPC, K, RAND, RES, CK, IK, AK, AKstar)
+	if err := milenage.F2345(OPC, K, RAND, RES, CK, IK, AK, AKstar); err != nil {
+		logger.ContextLog.Errorln(err)
+		return nil
+	}
 
 	// derive RES*
 	key := append(CK, IK...)

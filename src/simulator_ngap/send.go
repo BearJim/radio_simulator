@@ -2,13 +2,14 @@ package simulator_ngap
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os/exec"
-	"radio_simulator/lib/nas/nasMessage"
-	"radio_simulator/lib/ngap"
-	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
+
+	"bitbucket.org/free5gc-team/nas/nasMessage"
+	"bitbucket.org/free5gc-team/ngap"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"github.com/sirupsen/logrus"
 )
 
 var ngapLog *logrus.Entry
@@ -43,7 +44,6 @@ func SendNGSetupRequest(ran *simulator_context.RanContext) {
 	if pdu.Present != ngapType.NGAPPDUPresentSuccessfulOutcome {
 		logger.NgapLog.Error("NG SetUp Fail!!!!")
 	}
-	return
 }
 
 func SendInitailUeMessage_RegistraionRequest(ran *simulator_context.RanContext, ue *simulator_context.UeContext) {
@@ -96,7 +96,11 @@ func SendUeContextReleaseComplete(ran *simulator_context.RanContext, ue *simulat
 	for _, sess := range ue.PduSession {
 		sess.Remove()
 		if sess.UeIp != "" {
-			exec.Command("ip", "addr", "del", sess.UeIp, "dev", "lo").Output()
+			_, err := exec.Command("ip", "addr", "del", sess.UeIp, "dev", "lo").Output()
+			if err != nil {
+				ngapLog.Errorln(err)
+				return
+			}
 		}
 	}
 

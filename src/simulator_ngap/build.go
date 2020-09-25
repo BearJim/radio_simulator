@@ -2,12 +2,13 @@ package simulator_ngap
 
 import (
 	"encoding/hex"
-	"radio_simulator/lib/aper"
-	"radio_simulator/lib/ngap"
-	"radio_simulator/lib/ngap/ngapConvert"
-	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
+
+	"bitbucket.org/free5gc-team/aper"
+	"bitbucket.org/free5gc-team/ngap"
+	"bitbucket.org/free5gc-team/ngap/ngapConvert"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
 )
 
 // TODO: check test data
@@ -523,7 +524,7 @@ func BuildUEContextReleaseComplete(ue *simulator_context.UeContext) ([]byte, err
 		pDUSessionResourceListCxtRelCpl := ie.Value.PDUSessionResourceListCxtRelCpl
 
 		// PDU Session Resource Item (in PDU Session Resource List)
-		for pduSessionId, _ := range ue.PduSession {
+		for pduSessionId := range ue.PduSession {
 			pDUSessionResourceItemCxtRelCpl := ngapType.PDUSessionResourceItemCxtRelCpl{}
 			pDUSessionResourceItemCxtRelCpl.PDUSessionID.Value = pduSessionId
 			pDUSessionResourceListCxtRelCpl.List = append(pDUSessionResourceListCxtRelCpl.List, pDUSessionResourceItemCxtRelCpl)
@@ -1623,8 +1624,7 @@ func BuildPDUSessionResourceModifyResponse(amfUeNgapID, ranUeNgapID int64) (pdu 
 	pDUSessionResourceModifyResponseItem := ngapType.PDUSessionResourceModifyItemModRes{}
 	pDUSessionResourceModifyResponseItem.PDUSessionID.Value = 10
 	// transfer := GetPDUSessionResourceModifyResponseTransfer()
-	pDUSessionResourceModifyResponseItem.PDUSessionResourceModifyResponseTransfer = new(aper.OctetString)
-	*pDUSessionResourceModifyResponseItem.PDUSessionResourceModifyResponseTransfer = GetPDUSessionResourceModifyResponseTransfer()
+	pDUSessionResourceModifyResponseItem.PDUSessionResourceModifyResponseTransfer = aper.OctetString(GetPDUSessionResourceModifyResponseTransfer())
 
 	pDUSessionResourceModifyListModRes.List = append(pDUSessionResourceModifyListModRes.List, pDUSessionResourceModifyResponseItem)
 
@@ -2429,7 +2429,7 @@ func BuildUplinkRanConfigurationTransfer() (pdu ngapType.NGAPPDU) {
 	// xnTNLConfigurationInfo := sONInformation.SONInformationReply.XnTNLConfigurationInfo
 
 	// Xn TNL Configuration Info [C-ifSONInformationRequest]
-	xnTNLConfigurationInfo := &sONConfigurationTransferUL.XnTNLConfigurationInfo
+	xnTNLConfigurationInfo := sONConfigurationTransferUL.XnTNLConfigurationInfo
 	xnTransportLayerAddresses := &xnTNLConfigurationInfo.XnTransportLayerAddresses
 
 	TLA := ngapType.TransportLayerAddress{}
@@ -3147,8 +3147,8 @@ func BuildCellTrafficTrace(amfUeNgapID, ranUeNgapID int64) (pdu ngapType.NGAPPDU
 
 func buildPDUSessionResourceSetupResponseTransfer(ipv4 string) (data ngapType.PDUSessionResourceSetupResponseTransfer) {
 
-	// QoS Flow per TNL Information
-	qosFlowPerTNLInformation := &data.QosFlowPerTNLInformation
+	// DL QoS Flow per TNL Information
+	qosFlowPerTNLInformation := &data.DLQosFlowPerTNLInformation
 	qosFlowPerTNLInformation.UPTransportLayerInformation.Present = ngapType.UPTransportLayerInformationPresentGTPTunnel
 
 	// UP Transport Layer Information in QoS Flow per TNL Information
@@ -3220,7 +3220,7 @@ func buildPDUSessionResourceNotifyTransfer(qfis []int64, notiCause []uint64, rel
 		data.QosFlowNotifyList = new(ngapType.QosFlowNotifyList)
 	}
 	if len(relQfis) > 0 {
-		data.QosFlowReleasedList = new(ngapType.QosFlowList)
+		data.QosFlowReleasedList = new(ngapType.QosFlowListWithCause)
 	}
 	for i, qfi := range qfis {
 		item := ngapType.QosFlowNotifyItem{
@@ -3234,7 +3234,7 @@ func buildPDUSessionResourceNotifyTransfer(qfis []int64, notiCause []uint64, rel
 		data.QosFlowNotifyList.List = append(data.QosFlowNotifyList.List, item)
 	}
 	for _, qfi := range relQfis {
-		item := ngapType.QosFlowItem{
+		item := ngapType.QosFlowWithCauseItem{
 			QosFlowIdentifier: ngapType.QosFlowIdentifier{
 				Value: qfi,
 			},
@@ -3284,17 +3284,21 @@ func buildPathSwitchRequestTransfer() (data ngapType.PathSwitchRequestTransfer) 
 
 func buildPDUSessionResourceModifyIndicationTransfer() (data ngapType.PDUSessionResourceModifyIndicationTransfer) {
 
-	// DL UP TNL Information
-	data.DLUPTNLInformation = &ngapType.UPTNLInformation{
-		Present: ngapType.UPTNLInformationPresentSingleTNLInformation,
-		SingleTNLInformation: &ngapType.SingleTNLInformation{
-			UPTransportLayerInformation: ngapType.UPTransportLayerInformation{
-				Present: ngapType.UPTransportLayerInformationPresentGTPTunnel,
-				GTPTunnel: &ngapType.GTPTunnel{
-					TransportLayerAddress: ngapConvert.IPAddressToNgap("127.0.0.1", ""),
-					GTPTEID: ngapType.GTPTEID{
-						Value: aper.OctetString("\x00\x00\x00\x01"),
-					},
+	// DL QoS Flow per TNL Information
+	data.DLQosFlowPerTNLInformation = ngapType.QosFlowPerTNLInformation{
+		UPTransportLayerInformation: ngapType.UPTransportLayerInformation{
+			Present: ngapType.UPTransportLayerInformationPresentGTPTunnel,
+			GTPTunnel: &ngapType.GTPTunnel{
+				TransportLayerAddress: ngapConvert.IPAddressToNgap("127.0.0.1", ""),
+				GTPTEID: ngapType.GTPTEID{
+					Value: aper.OctetString("\x00\x00\x00\x01"),
+				},
+			},
+		},
+		AssociatedQosFlowList: ngapType.AssociatedQosFlowList{
+			List: []ngapType.AssociatedQosFlowItem{
+				{
+					QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: 9},
 				},
 			},
 		},
@@ -3357,14 +3361,13 @@ func buildHandoverRequestAcknowledgeTransfer() (data ngapType.HandoverRequestAck
 	upTransportLayerInformation.GTPTunnel.TransportLayerAddress = ngapConvert.IPAddressToNgap("10.200.200.2", "")
 
 	// Qos Flow Setup Response List
-	qosFlowSetupResponseItem := ngapType.QosFlowSetupResponseItemHOReqAck{
-		QosFlowIdentifier: ngapType.QosFlowIdentifier{
-			Value: 1,
+	data.QosFlowSetupResponseList = ngapType.QosFlowListWithDataForwarding{
+		List: []ngapType.QosFlowItemWithDataForwarding{
+			{
+				QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: 1},
+			},
 		},
 	}
-
-	data.QosFlowSetupResponseList.List = append(data.QosFlowSetupResponseList.List, qosFlowSetupResponseItem)
-
 	return
 }
 

@@ -1,11 +1,12 @@
 package ngap_handler
 
 import (
-	"radio_simulator/lib/aper"
-	"radio_simulator/lib/ngap/ngapType"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas"
 	"radio_simulator/src/simulator_ngap"
+
+	"bitbucket.org/free5gc-team/aper"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
 )
 
 func HandleDownlinkNASTransport(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {

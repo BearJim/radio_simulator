@@ -1,12 +1,14 @@
 package simulator_nas
 
 import (
-	"github.com/sirupsen/logrus"
-	"radio_simulator/lib/nas"
-	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_security"
+
+	"bitbucket.org/free5gc-team/nas"
+	"bitbucket.org/free5gc-team/nas/nasMessage"
+
+	"github.com/sirupsen/logrus"
 )
 
 var nasLog *logrus.Entry

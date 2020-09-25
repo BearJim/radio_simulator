@@ -3,12 +3,13 @@ package simulator_nas
 import (
 	"fmt"
 	"io/ioutil"
-	"strings"
-	"strconv"
-	"radio_simulator/lib/nas/nasMessage"
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
 	"radio_simulator/src/simulator_ngap"
+	"strconv"
+	"strings"
+
+	"bitbucket.org/free5gc-team/nas/nasMessage"
 )
 
 func HandleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {

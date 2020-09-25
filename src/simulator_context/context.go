@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
-	"radio_simulator/lib/ngap/ngapType"
-	"radio_simulator/lib/openapi/models"
 	"radio_simulator/src/logger"
+
+	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"bitbucket.org/free5gc-team/openapi/models"
 )
 
 var simContext = Simulator{}
@@ -151,7 +152,6 @@ func (s *Simulator) PDRAlloc() string {
 			return key
 		}
 	}
-	return ""
 }
 
 func (s *Simulator) FARAlloc() string {
@@ -165,7 +165,6 @@ func (s *Simulator) FARAlloc() string {
 			return key
 		}
 	}
-	return ""
 }
 
 // Create new AMF context

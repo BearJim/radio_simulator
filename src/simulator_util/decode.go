@@ -1,8 +1,8 @@
 package simulator_util
 
 import (
-	"radio_simulator/lib/nas"
-	"radio_simulator/lib/ngap/ngapType"
+	"bitbucket.org/free5gc-team/nas"
+	"bitbucket.org/free5gc-team/ngap/ngapType"
 )
 
 func GetNasPdu(msg *ngapType.DownlinkNASTransport) (m *nas.Message) {
