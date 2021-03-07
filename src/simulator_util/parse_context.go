@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"strconv"
 
-	"github.com/jay16213/radio_simulator/lib/path_util"
 	"github.com/jay16213/radio_simulator/src/factory"
 	"github.com/jay16213/radio_simulator/src/logger"
 	"github.com/jay16213/radio_simulator/src/simulator_context"
@@ -48,7 +47,7 @@ func ParseRanContext() {
 }
 func ParseTunDev() {
 	info := factory.SimConfig.TunnelInfo
-	self.Gtp5gTunnelExec = "./" + path_util.ModulePath(info.Gtp5gPath+"/gtp5g-tunnel")
+	self.Gtp5gTunnelExec = fmt.Sprintf("./%s/gtp5g-tunnel", info.Gtp5gPath)
 	self.TunDev = info.TunDev
 	// Add default far=1, action=2(allow)
 	_, err := exec.Command(self.Gtp5gTunnelExec, "add", "far", self.TunDev, "1", "--action", "2").Output()

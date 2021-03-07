@@ -57,7 +57,7 @@ func HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessa
 	ue.RegisterState = simulator_context.RegisterStateRegistered
 
 	fmt.Println(ue.AuthData.SQN)
-	input, _ := ioutil.ReadFile("config/uecfg.conf")
+	input, _ := ioutil.ReadFile("configs/uecfg.conf")
 	lines := strings.Split(string(input), "\n")
 	for i, line := range lines {
 		if strings.Contains(line, "SQN") {
@@ -69,7 +69,7 @@ func HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessa
 		}
 	}
 	output := strings.Join(lines, "\n")
-	ioutil.WriteFile("config/uecfg.conf", []byte(output), 0644)
+	ioutil.WriteFile("configs/uecfg.conf", []byte(output), 0644)
 
 	ue.SendMsg("[REG] SUCCESS\n")
 	return nil

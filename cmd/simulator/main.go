@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/jay16213/radio_simulator/lib/path_util"
 	"github.com/jay16213/radio_simulator/src/factory"
 	"github.com/jay16213/radio_simulator/src/logger"
 	"github.com/jay16213/radio_simulator/src/simulator_context"
@@ -25,7 +24,7 @@ var config string
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()
 
 func Initailize() {
-	flag.StringVar(&config, "simcfg", path_util.ModulePath("github.com/jay16213/radio_simulator/config/rancfg.conf"), "ran simulator config file")
+	flag.StringVar(&config, "simcfg", "./configs/rancfg.conf", "ran simulator config file")
 	flag.Parse()
 
 	factory.InitConfigFactory(config)
