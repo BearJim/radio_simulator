@@ -4,7 +4,7 @@ import (
 	"radio_simulator/src/type_convert"
 	"testing"
 
-	"bitbucket.org/free5gc-team/nas/nasType"
+	"github.com/free5gc/nas/nasType"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"net"
 
-	"bitbucket.org/free5gc-team/aper"
-	"bitbucket.org/free5gc-team/ngap/ngapType"
 	"git.cs.nctu.edu.tw/calee/sctp"
+	"github.com/free5gc/aper"
+	"github.com/free5gc/ngap/ngapType"
 )
 
 const (

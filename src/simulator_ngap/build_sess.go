@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"radio_simulator/src/simulator_context"
 
-	"bitbucket.org/free5gc-team/aper"
-	"bitbucket.org/free5gc-team/ngap/ngapConvert"
-	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"github.com/free5gc/aper"
+	"github.com/free5gc/ngap/ngapConvert"
+	"github.com/free5gc/ngap/ngapType"
 )
 
 func BuildPDUSessionResourceSetupUnsuccessfulTransfer(cause ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) ([]byte, error) {

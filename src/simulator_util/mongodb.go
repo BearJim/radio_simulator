@@ -3,8 +3,8 @@ package simulator_util
 import (
 	"encoding/json"
 
-	"bitbucket.org/free5gc-team/MongoDBLibrary"
-	"bitbucket.org/free5gc-team/openapi/models"
+	"github.com/free5gc/MongoDBLibrary"
+	"github.com/free5gc/openapi/models"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

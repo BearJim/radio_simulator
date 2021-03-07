@@ -7,12 +7,12 @@ import (
 	"regexp"
 	"sync"
 
-	"bitbucket.org/free5gc-team/UeauCommon"
-	"bitbucket.org/free5gc-team/milenage"
-	"bitbucket.org/free5gc-team/nas/nasType"
-	"bitbucket.org/free5gc-team/nas/security"
-	"bitbucket.org/free5gc-team/ngap/ngapType"
-	"bitbucket.org/free5gc-team/openapi/models"
+	"github.com/free5gc/UeauCommon"
+	"github.com/free5gc/milenage"
+	"github.com/free5gc/nas/nasType"
+	"github.com/free5gc/nas/security"
+	"github.com/free5gc/ngap/ngapType"
+	"github.com/free5gc/openapi/models"
 )
 
 const (

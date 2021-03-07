@@ -5,10 +5,10 @@ import (
 	"radio_simulator/src/simulator_context"
 	"radio_simulator/src/simulator_nas/nas_packet"
 
-	"bitbucket.org/free5gc-team/aper"
-	"bitbucket.org/free5gc-team/ngap"
-	"bitbucket.org/free5gc-team/ngap/ngapConvert"
-	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"github.com/free5gc/aper"
+	"github.com/free5gc/ngap"
+	"github.com/free5gc/ngap/ngapConvert"
+	"github.com/free5gc/ngap/ngapType"
 )
 
 // TODO: check test data

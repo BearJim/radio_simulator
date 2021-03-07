@@ -1,8 +1,8 @@
 package simulator_util
 
 import (
-	"bitbucket.org/free5gc-team/nas"
-	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"github.com/free5gc/nas"
+	"github.com/free5gc/ngap/ngapType"
 )
 
 func GetNasPdu(msg *ngapType.DownlinkNASTransport) (m *nas.Message) {

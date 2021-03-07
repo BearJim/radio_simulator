@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"bitbucket.org/free5gc-team/nas/nasMessage"
-	"bitbucket.org/free5gc-team/openapi/models"
+	"github.com/free5gc/nas/nasMessage"
+	"github.com/free5gc/openapi/models"
 )
 
 var stringFormat = regexp.MustCompile(`\S+`)

@@ -15,7 +15,7 @@ import (
 	"radio_simulator/src/tcp_server"
 	"syscall"
 
-	"bitbucket.org/free5gc-team/MongoDBLibrary"
+	"github.com/free5gc/MongoDBLibrary"
 	"github.com/sirupsen/logrus"
 )
 

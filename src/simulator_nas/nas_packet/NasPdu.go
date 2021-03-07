@@ -9,10 +9,10 @@ import (
 	"radio_simulator/src/simulator_nas/nas_security"
 	"radio_simulator/src/type_convert"
 
-	"bitbucket.org/free5gc-team/nas"
-	"bitbucket.org/free5gc-team/nas/nasMessage"
-	"bitbucket.org/free5gc-team/nas/nasType"
-	"bitbucket.org/free5gc-team/openapi/models"
+	"github.com/free5gc/nas"
+	"github.com/free5gc/nas/nasMessage"
+	"github.com/free5gc/nas/nasType"
+	"github.com/free5gc/openapi/models"
 )
 
 const (

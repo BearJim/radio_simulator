@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"radio_simulator/src/logger"
 
-	"bitbucket.org/free5gc-team/ngap/ngapType"
-	"bitbucket.org/free5gc-team/openapi/models"
+	"github.com/free5gc/ngap/ngapType"
+	"github.com/free5gc/openapi/models"
 )
 
 var simContext = Simulator{}

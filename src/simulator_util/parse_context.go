@@ -10,9 +10,9 @@ import (
 	"radio_simulator/src/ue_factory"
 	"strconv"
 
-	"bitbucket.org/free5gc-team/nas/security"
-	"bitbucket.org/free5gc-team/ngap/ngapConvert"
-	"bitbucket.org/free5gc-team/openapi/models"
+	"github.com/free5gc/nas/security"
+	"github.com/free5gc/ngap/ngapConvert"
+	"github.com/free5gc/openapi/models"
 )
 
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()

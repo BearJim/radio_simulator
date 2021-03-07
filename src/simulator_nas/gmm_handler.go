@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"bitbucket.org/free5gc-team/nas/nasMessage"
+	"github.com/free5gc/nas/nasMessage"
 )
 
 func HandleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {

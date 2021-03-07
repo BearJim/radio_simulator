@@ -6,9 +6,9 @@ import (
 	"radio_simulator/src/logger"
 	"radio_simulator/src/simulator_context"
 
-	"bitbucket.org/free5gc-team/nas/nasMessage"
-	"bitbucket.org/free5gc-team/ngap"
-	"bitbucket.org/free5gc-team/ngap/ngapType"
+	"github.com/free5gc/nas/nasMessage"
+	"github.com/free5gc/ngap"
+	"github.com/free5gc/ngap/ngapType"
 	"github.com/sirupsen/logrus"
 )
 
