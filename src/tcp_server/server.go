@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"radio_simulator/src/factory"
-	"radio_simulator/src/logger"
-	"radio_simulator/src/simulator_context"
 	"strings"
 	"sync"
+
+	"github.com/jay16213/radio_simulator/src/factory"
+	"github.com/jay16213/radio_simulator/src/logger"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
 )
 
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()

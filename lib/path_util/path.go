@@ -3,9 +3,10 @@ package path_util
 import (
 	"os"
 	"path/filepath"
-	"radio_simulator/lib/path_util/logger"
 	"runtime"
 	"strings"
+
+	"github.com/jay16213/radio_simulator/lib/path_util/logger"
 )
 
 func ModulePath(path string) string {

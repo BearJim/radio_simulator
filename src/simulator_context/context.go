@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
-	"radio_simulator/src/logger"
+
+	"github.com/jay16213/radio_simulator/src/logger"
 
 	"github.com/free5gc/ngap/ngapType"
 	"github.com/free5gc/openapi/models"

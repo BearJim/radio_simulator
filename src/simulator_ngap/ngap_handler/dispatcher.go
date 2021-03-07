@@ -1,8 +1,8 @@
 package ngap_handler
 
 import (
-	"radio_simulator/src/logger"
-	"radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/logger"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
 
 	"github.com/free5gc/ngap"
 	"github.com/free5gc/ngap/ngapType"

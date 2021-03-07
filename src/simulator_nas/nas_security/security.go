@@ -2,8 +2,9 @@ package nas_security
 
 import (
 	"fmt"
-	"radio_simulator/src/simulator_context"
 	"reflect"
+
+	"github.com/jay16213/radio_simulator/src/simulator_context"
 
 	"github.com/free5gc/nas"
 	"github.com/free5gc/nas/security"

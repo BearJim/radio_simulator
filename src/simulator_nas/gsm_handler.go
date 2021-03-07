@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_nas/nas_packet"
-	"radio_simulator/src/simulator_ngap"
+
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_nas/nas_packet"
+	"github.com/jay16213/radio_simulator/src/simulator_ngap"
 
 	"github.com/free5gc/nas/nasConvert"
 	"github.com/free5gc/nas/nasMessage"

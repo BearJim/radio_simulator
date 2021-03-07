@@ -1,8 +1,9 @@
 package path_util
 
 import (
-	"radio_simulator/lib/path_util/logger"
 	"testing"
+
+	"github.com/jay16213/radio_simulator/lib/path_util/logger"
 )
 
 func TestFree5gcPath(t *testing.T) {

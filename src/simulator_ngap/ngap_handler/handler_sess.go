@@ -3,8 +3,9 @@ package ngap_handler
 import (
 	"encoding/binary"
 	"fmt"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_ngap"
+
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_ngap"
 
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap/ngapConvert"

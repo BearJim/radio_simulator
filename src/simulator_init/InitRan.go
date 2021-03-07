@@ -3,12 +3,13 @@ package simulator_init
 import (
 	"fmt"
 	"net"
-	"radio_simulator/src/logger"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_handler"
-	"radio_simulator/src/simulator_handler/simulator_message"
-	"radio_simulator/src/simulator_ngap"
 	"strings"
+
+	"github.com/jay16213/radio_simulator/src/logger"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_handler"
+	"github.com/jay16213/radio_simulator/src/simulator_handler/simulator_message"
+	"github.com/jay16213/radio_simulator/src/simulator_ngap"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 )

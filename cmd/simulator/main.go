@@ -6,14 +6,15 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"radio_simulator/lib/path_util"
-	"radio_simulator/src/factory"
-	"radio_simulator/src/logger"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_init"
-	"radio_simulator/src/simulator_util"
-	"radio_simulator/src/tcp_server"
 	"syscall"
+
+	"github.com/jay16213/radio_simulator/lib/path_util"
+	"github.com/jay16213/radio_simulator/src/factory"
+	"github.com/jay16213/radio_simulator/src/logger"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_init"
+	"github.com/jay16213/radio_simulator/src/simulator_util"
+	"github.com/jay16213/radio_simulator/src/tcp_server"
 
 	"github.com/free5gc/MongoDBLibrary"
 	"github.com/sirupsen/logrus"
@@ -24,7 +25,7 @@ var config string
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()
 
 func Initailize() {
-	flag.StringVar(&config, "simcfg", path_util.ModulePath("radio_simulator/config/rancfg.conf"), "ran simulator config file")
+	flag.StringVar(&config, "simcfg", path_util.ModulePath("github.com/jay16213/radio_simulator/config/rancfg.conf"), "ran simulator config file")
 	flag.Parse()
 
 	factory.InitConfigFactory(config)

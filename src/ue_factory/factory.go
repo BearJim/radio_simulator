@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"radio_simulator/src/simulator_context"
+
+	"github.com/jay16213/radio_simulator/src/simulator_context"
 
 	"gopkg.in/yaml.v2"
 )

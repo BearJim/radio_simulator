@@ -3,9 +3,10 @@ package simulator_context
 import (
 	"encoding/hex"
 	"fmt"
-	"radio_simulator/src/logger"
 	"regexp"
 	"sync"
+
+	"github.com/jay16213/radio_simulator/src/logger"
 
 	"github.com/free5gc/UeauCommon"
 	"github.com/free5gc/milenage"

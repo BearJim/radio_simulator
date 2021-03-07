@@ -1,7 +1,7 @@
 package factory
 
 import (
-	"radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
 
 	"github.com/free5gc/openapi/models"
 )

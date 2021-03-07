@@ -2,13 +2,14 @@ package tcp_server
 
 import (
 	"fmt"
-	"radio_simulator/src/logger"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_nas/nas_packet"
-	"radio_simulator/src/simulator_ngap"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/jay16213/radio_simulator/src/logger"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_nas/nas_packet"
+	"github.com/jay16213/radio_simulator/src/simulator_ngap"
 
 	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/openapi/models"

@@ -3,11 +3,12 @@ package simulator_nas
 import (
 	"fmt"
 	"io/ioutil"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_nas/nas_packet"
-	"radio_simulator/src/simulator_ngap"
 	"strconv"
 	"strings"
+
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_nas/nas_packet"
+	"github.com/jay16213/radio_simulator/src/simulator_ngap"
 
 	"github.com/free5gc/nas/nasMessage"
 )

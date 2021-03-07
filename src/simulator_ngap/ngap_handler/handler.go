@@ -1,9 +1,9 @@
 package ngap_handler
 
 import (
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_nas"
-	"radio_simulator/src/simulator_ngap"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_nas"
+	"github.com/jay16213/radio_simulator/src/simulator_ngap"
 
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap/ngapType"

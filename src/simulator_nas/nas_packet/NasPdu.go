@@ -5,9 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_nas/nas_security"
-	"radio_simulator/src/type_convert"
+
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_nas/nas_security"
+	"github.com/jay16213/radio_simulator/src/type_convert"
 
 	"github.com/free5gc/nas"
 	"github.com/free5gc/nas/nasMessage"

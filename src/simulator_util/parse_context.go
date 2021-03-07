@@ -3,12 +3,13 @@ package simulator_util
 import (
 	"fmt"
 	"os/exec"
-	"radio_simulator/lib/path_util"
-	"radio_simulator/src/factory"
-	"radio_simulator/src/logger"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/ue_factory"
 	"strconv"
+
+	"github.com/jay16213/radio_simulator/lib/path_util"
+	"github.com/jay16213/radio_simulator/src/factory"
+	"github.com/jay16213/radio_simulator/src/logger"
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/ue_factory"
 
 	"github.com/free5gc/nas/security"
 	"github.com/free5gc/ngap/ngapConvert"

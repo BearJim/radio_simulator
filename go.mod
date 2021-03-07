@@ -1,4 +1,4 @@
-module radio_simulator
+module github.com/jay16213/radio_simulator
 
 go 1.14
 

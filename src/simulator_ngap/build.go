@@ -2,8 +2,9 @@ package simulator_ngap
 
 import (
 	"encoding/hex"
-	"radio_simulator/src/simulator_context"
-	"radio_simulator/src/simulator_nas/nas_packet"
+
+	"github.com/jay16213/radio_simulator/src/simulator_context"
+	"github.com/jay16213/radio_simulator/src/simulator_nas/nas_packet"
 
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap"

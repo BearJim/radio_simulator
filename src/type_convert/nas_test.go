@@ -1,8 +1,9 @@
 package type_convert_test
 
 import (
-	"radio_simulator/src/type_convert"
 	"testing"
+
+	"github.com/jay16213/radio_simulator/src/type_convert"
 
 	"github.com/free5gc/nas/nasType"
 	"github.com/stretchr/testify/assert"

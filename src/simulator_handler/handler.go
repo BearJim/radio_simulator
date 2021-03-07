@@ -1,11 +1,12 @@
 package simulator_handler
 
 import (
-	"github.com/sirupsen/logrus"
-	"radio_simulator/src/logger"
-	"radio_simulator/src/simulator_handler/simulator_message"
-	"radio_simulator/src/simulator_ngap/ngap_handler"
 	"time"
+
+	"github.com/jay16213/radio_simulator/src/logger"
+	"github.com/jay16213/radio_simulator/src/simulator_handler/simulator_message"
+	"github.com/jay16213/radio_simulator/src/simulator_ngap/ngap_handler"
+	"github.com/sirupsen/logrus"
 )
 
 var HandlerLog *logrus.Entry
