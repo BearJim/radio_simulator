@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/jay16213/radio_simulator/src/factory"
-	"github.com/jay16213/radio_simulator/src/logger"
-	"github.com/jay16213/radio_simulator/src/simulator_context"
-	"github.com/jay16213/radio_simulator/src/simulator_init"
-	"github.com/jay16213/radio_simulator/src/simulator_util"
-	"github.com/jay16213/radio_simulator/src/tcp_server"
+	"github.com/jay16213/radio_simulator/pkg/factory"
+	"github.com/jay16213/radio_simulator/pkg/logger"
+	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/jay16213/radio_simulator/pkg/simulator_init"
+	"github.com/jay16213/radio_simulator/pkg/simulator_util"
+	"github.com/jay16213/radio_simulator/pkg/tcp_server"
 
 	"github.com/free5gc/MongoDBLibrary"
 	"github.com/sirupsen/logrus"
