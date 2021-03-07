@@ -31,8 +31,8 @@ echo 'export GOROOT=/usr/local/go' >> ~/.bashrc
 echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> ~/.bashrc
 source ~/.bashrc
 
-# build go src
-./build.sh
+# build simulator
+make
 
 # build gtp tools
 git submodule update --init
