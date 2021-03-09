@@ -15,12 +15,7 @@ func init() {
 	ngapLog = logger.NgapLog
 }
 
-func Dispatch(addr string, msg []byte) {
-	ran, ok := simulator_context.Simulator_Self().RanPool[addr]
-	if !ok {
-		ngapLog.Errorf("Cannot find the coressponding RAN Context\n")
-		return
-	}
+func Dispatch(ran *simulator_context.RanContext, msg []byte) {
 	pdu, err := ngap.Decoder(msg)
 	if err != nil {
 		ngapLog.Errorf("NGAP decode error : %s\n", err)
@@ -50,7 +45,7 @@ func Dispatch(addr string, msg []byte) {
 			ngapLog.Infof("Handle Pdu Session Resource Release Command")
 			HandlePduSessionResourceReleaseCommand(ran, pdu)
 		default:
-			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, initiatingMessage.ProcedureCode.Value)
+			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)", pdu.Present, initiatingMessage.ProcedureCode.Value)
 		}
 	case ngapType.NGAPPDUPresentSuccessfulOutcome:
 		successfulOutcome := pdu.SuccessfulOutcome
@@ -59,9 +54,11 @@ func Dispatch(addr string, msg []byte) {
 			return
 		}
 		switch successfulOutcome.ProcedureCode.Value {
-
+		case ngapType.ProcedureCodeNGSetup:
+			ngapLog.Info("Handle NG Setup Response")
+			HandleNGSetupResponse(ran, pdu)
 		default:
-			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, successfulOutcome.ProcedureCode.Value)
+			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)", pdu.Present, successfulOutcome.ProcedureCode.Value)
 		}
 	case ngapType.NGAPPDUPresentUnsuccessfulOutcome:
 		unsuccessfulOutcome := pdu.UnsuccessfulOutcome
@@ -71,7 +68,7 @@ func Dispatch(addr string, msg []byte) {
 		}
 		switch unsuccessfulOutcome.ProcedureCode.Value {
 		default:
-			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)\n", pdu.Present, unsuccessfulOutcome.ProcedureCode.Value)
+			ngapLog.Warnf("Not implemented(choice:%d, procedureCode:%d)", pdu.Present, unsuccessfulOutcome.ProcedureCode.Value)
 		}
 
 	}

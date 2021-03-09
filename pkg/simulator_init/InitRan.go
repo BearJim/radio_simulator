@@ -5,25 +5,18 @@ import (
 	"net"
 	"strings"
 
+	"github.com/free5gc/ngap"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_handler"
-	"github.com/jay16213/radio_simulator/pkg/simulator_handler/simulator_message"
 	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 )
 
-const NGAP_PPID uint32 = 0x3c000000
-
-func check(err error) {
-	if err != nil {
-		logger.InitLog.Error(err.Error())
-	}
-}
 func getNgapIp(amfIP, ranIP string, amfPort, ranPort int) (amfAddr, ranAddr *sctp.SCTPAddr, err error) {
 	ips := []net.IPAddr{}
-	if ip, err1 := net.ResolveIPAddr("ip", amfIP); err1 != nil {
+	if ip, err1 := net.ResolveIPAddr("ip", "127.0.0.1"); err1 != nil {
 		err = fmt.Errorf("Error resolving address '%s': %v", amfIP, err1)
 		return
 	} else {
@@ -52,12 +45,12 @@ func ConnectToAmf(amfIP, ranIP string, amfPort, ranPort int) (*sctp.SCTPConn, er
 	if err != nil {
 		return nil, err
 	}
-	conn, err := sctp.DialSCTP("sctp", ranAddr, amfAddr)
+	conn, err := sctp.DialSCTPOneToMany("sctp", ranAddr, amfAddr)
 	if err != nil {
 		return nil, err
 	}
 	info, _ := conn.GetDefaultSentParam()
-	info.PPID = NGAP_PPID
+	info.PPID = ngap.PPID
 	err = conn.SetDefaultSentParam(info)
 	if err != nil {
 		return nil, err
@@ -95,36 +88,36 @@ func RanStart(ran *simulator_context.RanContext) {
 	// }
 	// RAN connect to AMF
 	conn, err := ConnectToAmf(amfIp, ranIp, amfPort, ranPort)
-	check(err)
+	if err != nil {
+		logger.InitLog.Error(err.Error())
+		return
+	}
 	ran.SctpConn = conn
-	simulator_ngap.SendNGSetupRequest(ran)
-	// New NGAP Channel
-	simulator_message.AddNgapChannel(ran.RanSctpUri)
+
 	// Listen NGAP Channel
 	err = conn.SubscribeEvents(sctp.SCTP_EVENT_DATA_IO)
 	if err != nil {
 		logger.NgapLog.Errorf("Failed to subscribe SCTP Event: %v", err)
 	}
-	go simulator_handler.Handle(ran.RanSctpUri)
-	go StartHandleSctp(ran)
-
+	msgChan := make(chan []byte, 1024)
+	go simulator_handler.Handle(ran, msgChan)
+	go StartSCTPAssociation(ran.SctpConn, msgChan)
+	simulator_ngap.SendNGSetupRequest(ran)
 }
 
-func StartHandleSctp(ran *simulator_context.RanContext) {
-	defer ran.SctpConn.Close()
+func StartSCTPAssociation(conn *sctp.SCTPConn, msgChan chan []byte) {
+	defer conn.Close()
 	for {
 		buffer := make([]byte, 8192)
-		n, info, err := ran.SctpConn.SCTPRead(buffer)
+		n, info, _, err := conn.SCTPRead(buffer)
 		if err != nil {
-			logger.NgapLog.Debugf("Error %v", err)
-			delete(simulator_context.Simulator_Self().RanPool, ran.RanSctpUri)
-			simulator_message.DelNgapChannel(ran.RanSctpUri)
+			logger.NgapLog.Debugf("Read Error: %v", err)
 			break
-		} else if info == nil || info.PPID != NGAP_PPID {
+		} else if info == nil || info.PPID != ngap.PPID {
 			logger.NgapLog.Warnf("Recv SCTP PPID != 60")
 			continue
 		}
-		simulator_message.SendMessage(ran.RanSctpUri, simulator_message.NGAPMessage{Value: buffer[:n]})
+		msgChan <- buffer[:n]
 	}
 }
 

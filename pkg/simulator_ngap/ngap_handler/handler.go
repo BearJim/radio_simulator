@@ -1,6 +1,7 @@
 package ngap_handler
 
 import (
+	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas"
 	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
@@ -8,6 +9,10 @@ import (
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap/ngapType"
 )
+
+func HandleNGSetupResponse(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
+	// TODO: complete me
+}
 
 func HandleDownlinkNASTransport(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
 	var aMFUENGAPID *ngapType.AMFUENGAPID
@@ -583,6 +588,35 @@ func HandlePduSessionResourceReleaseCommand(ran *simulator_context.RanContext, m
 
 	if nASPDU != nil {
 		simulator_nas.HandleNAS(ue, nASPDU.Value)
+	}
+}
+
+func HandleAMFConfigurationUpdate(ran *simulator_context.RanContext, message *ngapType.NGAPPDU) {
+	logger.NgapLog.Info("Handle AMF Configuration Update")
+
+	if message == nil {
+		ngapLog.Error("NGAP Message is nil")
+		return
+	}
+
+	initiatingMessage := message.InitiatingMessage
+	if initiatingMessage == nil {
+		ngapLog.Error("InitiatingMessage is nil")
+		return
+	}
+
+	amfConfigurationUpdate := initiatingMessage.Value.AMFConfigurationUpdate
+	if amfConfigurationUpdate == nil {
+		ngapLog.Error("pDUSessionResourceReleaseCommand is nil")
+		return
+	}
+
+	for _, ie := range amfConfigurationUpdate.ProtocolIEs.List {
+		switch ie.Id.Value {
+		case ngapType.ProtocolIEIDAMFTNLAssociationToAddList:
+		case ngapType.ProtocolIEIDAMFTNLAssociationToRemoveList:
+		case ngapType.ProtocolIEIDAMFTNLAssociationToUpdateList:
+		}
 	}
 }
 

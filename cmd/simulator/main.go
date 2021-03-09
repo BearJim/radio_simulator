@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -14,31 +14,13 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/simulator_init"
 	"github.com/jay16213/radio_simulator/pkg/simulator_util"
 	"github.com/jay16213/radio_simulator/pkg/tcp_server"
+	"github.com/urfave/cli/v2"
 
 	"github.com/free5gc/MongoDBLibrary"
 	"github.com/sirupsen/logrus"
 )
 
-var config string
-
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()
-
-func Initailize() {
-	flag.StringVar(&config, "simcfg", "./configs/rancfg.conf", "ran simulator config file")
-	flag.Parse()
-
-	factory.InitConfigFactory(config)
-	config := factory.SimConfig
-	if config.Logger.DebugLevel != "" {
-		level, err := logrus.ParseLevel(config.Logger.DebugLevel)
-		if err == nil {
-			logger.SetLogLevel(level)
-		}
-	}
-	logger.SetReportCaller(config.Logger.ReportCaller)
-
-	MongoDBLibrary.SetMongoDB(config.DBName, config.DBUrl)
-}
 
 func Terminate() {
 	logger.SimulatorLog.Infof("Terminating Simulator...")
@@ -88,16 +70,56 @@ func Terminate() {
 }
 
 func main() {
-	Initailize()
+	app := cli.NewApp()
+	app.Name = "Radio Simulator"
+	app.Usage = "5G NG-RAN and UE Simulator"
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "config",
+			Aliases: []string{"c"},
+			Value:   "",
+			Usage:   "Load configuration from `FILE`",
+		},
+	}
+	app.Action = action
+
+	if err := app.Run(os.Args); err != nil {
+		fmt.Printf("Simulator run error: %+v\n", err)
+		os.Exit(1)
+	}
+}
+
+func action(c *cli.Context) error {
+	if c.Bool("help") {
+		cli.ShowAppHelpAndExit(c, 0)
+	}
+
+	ranConfigPath := c.String("config")
+	if ranConfigPath == "" {
+		ranConfigPath = "./configs/rancfg.conf"
+	}
+
+	factory.InitConfigFactory(ranConfigPath)
+
+	if factory.SimConfig.Logger.DebugLevel != "" {
+		level, err := logrus.ParseLevel(factory.SimConfig.Logger.DebugLevel)
+		if err == nil {
+			logger.SetLogLevel(level)
+		}
+	}
+	logger.SetReportCaller(factory.SimConfig.Logger.ReportCaller)
+	MongoDBLibrary.SetMongoDB(factory.SimConfig.DBName, factory.SimConfig.DBUrl)
+
 	simulator_util.ParseRanContext()
 	simulator_util.ParseTunDev()
 
-	path, err := filepath.Abs(filepath.Dir(config))
+	rootPath, err := filepath.Abs(filepath.Dir(ranConfigPath))
 	if err != nil {
 		logger.SimulatorLog.Errorf(err.Error())
 	}
-	simulator_util.ParseUeData(path+"/", factory.SimConfig.UeInfoFile)
+	simulator_util.ParseUeData(rootPath+"/", factory.SimConfig.UeInfoFile)
 	simulator_util.InitUeToDB()
+
 	for _, ran := range self.RanPool {
 		simulator_init.RanStart(ran)
 	}
@@ -114,4 +136,5 @@ func main() {
 	// TCP server for cli test UE
 	tcp_server.StartTcpServer()
 	simulator_util.ClearDB()
+	return nil
 }

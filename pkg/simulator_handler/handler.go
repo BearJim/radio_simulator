@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_handler/simulator_message"
+	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_ngap/ngap_handler"
 	"github.com/sirupsen/logrus"
 )
@@ -17,12 +17,12 @@ func init() {
 	NgapLog = logger.NgapLog
 }
 
-func Handle(laddr string) {
+func Handle(ran *simulator_context.RanContext, msgChan chan []byte) {
 	for {
 		select {
-		case msg, ok := <-simulator_message.SimChannel[laddr]:
+		case msg, ok := <-msgChan:
 			if ok {
-				ngap_handler.Dispatch(laddr, msg.Value)
+				ngap_handler.Dispatch(ran, msg)
 			} else {
 				HandlerLog.Errorln("Channel closed!")
 			}

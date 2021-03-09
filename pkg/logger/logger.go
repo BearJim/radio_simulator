@@ -2,10 +2,11 @@ package logger
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 var log *logrus.Logger
@@ -56,11 +57,9 @@ func init() {
 }
 
 func SetLogLevel(level logrus.Level) {
-	SimulatorLog.Infoln("set log level :", level)
 	log.SetLevel(level)
 }
 
 func SetReportCaller(bool bool) {
-	SimulatorLog.Infoln("set report call :", bool)
 	log.SetReportCaller(bool)
 }

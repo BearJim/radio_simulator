@@ -2,8 +2,10 @@ package simulator_ngap
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 
+	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 
@@ -19,16 +21,8 @@ func init() {
 	ngapLog = logger.NgapLog
 }
 
-func check(err error) {
-	if err != nil {
-		logger.InitLog.Error(err.Error())
-	}
-}
-
 func SendNGSetupRequest(ran *simulator_context.RanContext) {
-	var n int
-	var recvMsg = make([]byte, 2048)
-
+	logger.NgapLog.Info("Send NG Setup Request")
 	// send NGSetupRequest Msg
 	pkt, err := BuildNGSetupRequest(ran)
 	if err != nil {
@@ -36,15 +30,6 @@ func SendNGSetupRequest(ran *simulator_context.RanContext) {
 		return
 	}
 	SendToAmf(ran, pkt)
-
-	// receive NGSetupResponse Msg
-	n, err = ran.SctpConn.Read(recvMsg)
-	check(err)
-	pdu, err := ngap.Decoder(recvMsg[:n])
-	check(err)
-	if pdu.Present != ngapType.NGAPPDUPresentSuccessfulOutcome {
-		logger.NgapLog.Error("NG SetUp Fail!!!!")
-	}
 }
 
 func SendInitailUeMessage_RegistraionRequest(ran *simulator_context.RanContext, ue *simulator_context.UeContext) {
@@ -182,6 +167,20 @@ func SendErrorIndication(ran *simulator_context.RanContext, amfUeNgapId, ranUeNg
 }
 
 func SendToAmf(ran *simulator_context.RanContext, message []byte) {
-	_, err := ran.SctpConn.Write(message)
-	check(err)
+	// TODO: complete one to many interface support
+	logger.NgapLog.Warnf("ParseIP: %+v", net.ParseIP("127.0.0.1").To4())
+	_, err := ran.SctpConn.SCTPWriteTo(message,
+		&sctp.SndRcvInfo{
+			PPID: ngap.PPID,
+		},
+		sctp.SCTPEndpoint{
+			IPAddr: net.IPAddr{
+				IP: net.ParseIP("127.0.0.1"),
+			},
+			Port: 38412,
+		},
+	)
+	if err != nil {
+		logger.InitLog.Error(err)
+	}
 }
