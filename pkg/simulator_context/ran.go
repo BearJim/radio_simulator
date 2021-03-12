@@ -6,7 +6,10 @@ import (
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/free5gc/aper"
+	"github.com/free5gc/ngap/ngapConvert"
 	"github.com/free5gc/ngap/ngapType"
+	"github.com/jay16213/radio_simulator/pkg/factory"
+	"github.com/jay16213/radio_simulator/pkg/simulator_util"
 )
 
 const (
@@ -16,26 +19,23 @@ const (
 type RanContext struct {
 	TEIDGenerator    uint32
 	RanUeIDGenerator int64
-	AMFUri           string
-	RanSctpUri       string
-	RanGtpUri        AddrInfo
-	UpfInfoList      map[string]*UpfInfo
+	AmfSctpEndpoint  factory.SCTPEndpoint
+	RanSctpEndpoint  factory.SCTPEndpoint
+	RanGtpUri        net.UDPAddr
+	UpfInfoList      map[string]*UpfInfo // upf ip as key
+	PlmnID           ngapType.PLMNIdentity
 	Name             string
 	GnbId            aper.BitString
 	UePool           map[int64]*UeContext // ranUeNgapId
 	SessPool         map[uint32]*SessionContext
 	DefaultTAC       string
 	SupportTAList    map[string][]PlmnSupportItem // TAC(hex string) -> PlmnSupportItem
+	AmfPool          map[*sctp.SCTPAddr]*AMFContext
 	SctpConn         *sctp.SCTPConn
 }
 
-type AddrInfo struct {
-	IP   string `yaml:"ip"`
-	Port int    `yaml:"port"`
-}
-
 type UpfInfo struct {
-	Addr    AddrInfo
+	Addr    net.UDPAddr
 	GtpConn *net.UDPConn
 }
 type PlmnSupportItem struct {
@@ -43,8 +43,14 @@ type PlmnSupportItem struct {
 	SNssaiList []ngapType.SNSSAI
 }
 
+func (ran *RanContext) NewAMF(addr *sctp.SCTPAddr) {
+	ran.AmfPool[addr] = &AMFContext{
+		Addr: addr,
+	}
+}
+
 func (ran *RanContext) AttachSession(sess *SessionContext) {
-	sess.DLAddr = ran.RanGtpUri.IP
+	sess.DLAddr = ran.RanGtpUri.IP.String()
 	sess.DLTEID = ran.TEIDAlloc()
 	ran.SessPool[sess.DLTEID] = sess
 }
@@ -108,5 +114,37 @@ func NewRanContext() *RanContext {
 		SessPool:         make(map[uint32]*SessionContext),
 		SupportTAList:    make(map[string][]PlmnSupportItem),
 		UpfInfoList:      make(map[string]*UpfInfo),
+		AmfPool:          make(map[*sctp.SCTPAddr]*AMFContext),
+	}
+}
+
+func (ran *RanContext) LoadConfig(cfg factory.Config) {
+	ran.PlmnID = ngapConvert.PlmnIdToNgap(cfg.GnbId.PlmnId)
+	ran.AmfSctpEndpoint = cfg.AmfSCTPEndpoint
+	ran.RanSctpEndpoint = cfg.RanSctpEndpoint
+	ran.RanGtpUri.IP = cfg.RanGtpUri.IP
+	ran.RanGtpUri.Port = cfg.RanGtpUri.Port
+	ran.Name = cfg.RanName
+	ran.GnbId.BitLength = uint64(cfg.GnbId.BitLength)
+	ran.GnbId.Bytes, _ = hex.DecodeString(cfg.GnbId.Value)
+	for _, upfUri := range cfg.UpfUriList {
+		ran.UpfInfoList[upfUri.IP.String()] = &UpfInfo{
+			Addr: upfUri,
+		}
+	}
+	for _, supportItem := range cfg.SupportTAList {
+		plmnList := []PlmnSupportItem{}
+		for _, item := range supportItem.Plmnlist {
+			plmnItem := PlmnSupportItem{}
+			plmnItem.PlmnId = ngapConvert.PlmnIdToNgap(item.PlmnId)
+			for _, snssai := range item.SNssaiList {
+				sNssaiNgap := ngapConvert.SNssaiToNgap(snssai)
+				plmnItem.SNssaiList = append(plmnItem.SNssaiList, sNssaiNgap)
+			}
+			plmnList = append(plmnList, plmnItem)
+		}
+		tac := simulator_util.TACConfigToHexString(supportItem.Tac)
+		ran.DefaultTAC = tac
+		ran.SupportTAList[tac] = plmnList
 	}
 }

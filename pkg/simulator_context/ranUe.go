@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sync"
 
+	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 
 	"github.com/free5gc/UeauCommon"
@@ -27,6 +28,8 @@ const (
 )
 
 type UeContext struct {
+	AMFEndpoint *sctp.SCTPAddr
+
 	Supi          string `yaml:"supi"`
 	Guti          *nasType.GUTI5G
 	Gpsis         []string                            `yaml:"gpsis"`

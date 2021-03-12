@@ -1,14 +1,11 @@
 package simulator_context
 
 import (
-	"encoding/hex"
 	"fmt"
-	"net"
 	"os/exec"
 
 	"github.com/jay16213/radio_simulator/pkg/logger"
 
-	"github.com/free5gc/ngap/ngapType"
 	"github.com/free5gc/openapi/models"
 )
 
@@ -33,7 +30,7 @@ type Simulator struct {
 	FarPool           map[string]*SessionContext // FARID -> RAN_CONTEXT
 	UeContextPool     map[string]*UeContext      // Supi -> UeTestInfo
 	// GtpConnPool       map[string]*net.UDPConn    // "ranGtpuri,upfUri" -> conn
-	TcpServer       net.Listener
+	// TcpServer       net.Listener
 	FARGenerator    uint64
 	PDRGenerator    uint64
 	TunDev          string
@@ -57,24 +54,6 @@ type UeDBInfo struct {
 // 	syscall.Sendto(s.TunFd, msg, 0, s.TunSockAddr)
 // 	s.TunMtx.Unlock()
 // }
-
-func (s *Simulator) AddRanContext(AmfUri, ranSctpUri, ranName string, ranGtpUri AddrInfo, plmnId ngapType.PLMNIdentity, GnbId string, gnbIdLength int) *RanContext {
-	ran := NewRanContext()
-	ran.AMFUri = AmfUri
-	ran.RanSctpUri = ranSctpUri
-	resRanGtpIP, err := net.ResolveIPAddr("ip", ranGtpUri.IP)
-	if err != nil {
-		logger.ContextLog.Errorf("AddRanContext: ResolveIPAddr(%s) error - %v]", ranGtpUri.IP, err)
-		return nil
-	}
-	ran.RanGtpUri.IP = resRanGtpIP.String()
-	ran.RanGtpUri.Port = ranGtpUri.Port
-	ran.Name = ranName
-	ran.GnbId.BitLength = uint64(gnbIdLength)
-	ran.GnbId.Bytes, _ = hex.DecodeString(GnbId)
-	s.RanPool[ranSctpUri] = ran
-	return ran
-}
 
 func (s *Simulator) AttachSession(sess *SessionContext) {
 	ulAct, dlAct := "mod", "mod"

@@ -7,13 +7,12 @@ import (
 
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
-	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
 
 	"github.com/free5gc/nas/nasConvert"
 	"github.com/free5gc/nas/nasMessage"
 )
 
-func HandlePduSessionEstblishmentAccept(ue *simulator_context.UeContext, request *nasMessage.PDUSessionEstablishmentAccept) error {
+func (c *NASController) HandlePduSessionEstblishmentAccept(ue *simulator_context.UeContext, request *nasMessage.PDUSessionEstablishmentAccept) error {
 
 	nasLog.Infof("UE[%s] Handle PDU Session Establishment Accept", ue.Supi)
 
@@ -44,7 +43,7 @@ func HandlePduSessionEstblishmentAccept(ue *simulator_context.UeContext, request
 	return nil
 }
 
-func HandlePduSessionReleaseCommand(ue *simulator_context.UeContext, request *nasMessage.PDUSessionReleaseCommand) error {
+func (c *NASController) HandlePduSessionReleaseCommand(ue *simulator_context.UeContext, request *nasMessage.PDUSessionReleaseCommand) error {
 
 	nasLog.Infof("UE[%s] Handle PDU Session Release Command", ue.Supi)
 
@@ -58,7 +57,7 @@ func HandlePduSessionReleaseCommand(ue *simulator_context.UeContext, request *na
 	if err != nil {
 		return err
 	}
-	simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+	c.ngMessager.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
 	// Send Nootify Msg to UE
 	sess.SendMsg(fmt.Sprintf("[SESSION] DEL %d SUCCESS\n", pduSessionId))
 	sess.Remove()

@@ -3,6 +3,7 @@ package simulator_ngap
 import (
 	"encoding/hex"
 
+	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 
@@ -330,7 +331,7 @@ func BuildErrorIndication(amfUeNgapId, ranUeNgapId *int64, cause *ngapType.Cause
 	errorIndicationIEs := &errorIndication.ProtocolIEs
 
 	if cause == nil && criticalityDiagnostics == nil {
-		ngapLog.Error("[Build Error Indication] shall contain at least either the Cause or the Criticality Diagnostics")
+		logger.NgapLog.Error("[Build Error Indication] shall contain at least either the Cause or the Criticality Diagnostics")
 	}
 
 	if amfUeNgapId != nil {

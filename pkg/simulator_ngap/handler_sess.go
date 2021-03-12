@@ -1,11 +1,11 @@
-package ngap_handler
+package simulator_ngap
 
 import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
-	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
 
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap/ngapConvert"
@@ -25,7 +25,7 @@ func handlePDUSessionResourceSetupRequestTransfer(sess *simulator_context.Sessio
 
 	if err != nil {
 		cause := buildCause(ngapType.CausePresentProtocol, ngapType.CauseProtocolPresentAbstractSyntaxErrorFalselyConstructedMessage)
-		unsuccessfulTransfer, _ := simulator_ngap.BuildPDUSessionResourceSetupUnsuccessfulTransfer(*cause, nil)
+		unsuccessfulTransfer, _ := BuildPDUSessionResourceSetupUnsuccessfulTransfer(*cause, nil)
 		return unsuccessfulTransfer, fmt.Errorf("PduSession Transfer IE format Error")
 	}
 
@@ -55,7 +55,7 @@ func handlePDUSessionResourceSetupRequestTransfer(sess *simulator_context.Sessio
 	if len(iesCriticalityDiagnostics.List) > 0 {
 		cause := buildCause(ngapType.CausePresentProtocol, ngapType.CauseProtocolPresentAbstractSyntaxErrorFalselyConstructedMessage)
 		criticalityDiagnostics := buildCriticalityDiagnostics(nil, nil, nil, &iesCriticalityDiagnostics)
-		unsuccessfulTransfer, _ := simulator_ngap.BuildPDUSessionResourceSetupUnsuccessfulTransfer(*cause, &criticalityDiagnostics)
+		unsuccessfulTransfer, _ := BuildPDUSessionResourceSetupUnsuccessfulTransfer(*cause, &criticalityDiagnostics)
 		return unsuccessfulTransfer, fmt.Errorf("PduSession Transfer IE format Error")
 	}
 
@@ -65,7 +65,7 @@ func handlePDUSessionResourceSetupRequestTransfer(sess *simulator_context.Sessio
 	default:
 		err = fmt.Errorf("Pdu Session Type has not support for non-ipv4 case yet")
 		cause := buildCause(ngapType.CausePresentRadioNetwork, ngapType.CauseRadioNetworkPresentRadioResourcesNotAvailable)
-		unsuccessfulTransfer, _ := simulator_ngap.BuildPDUSessionResourceSetupUnsuccessfulTransfer(*cause, nil)
+		unsuccessfulTransfer, _ := BuildPDUSessionResourceSetupUnsuccessfulTransfer(*cause, nil)
 		return unsuccessfulTransfer, err
 	}
 
@@ -87,9 +87,9 @@ func handlePDUSessionResourceSetupRequestTransfer(sess *simulator_context.Sessio
 	// sess.NewGtpHeader(0, 0, 0)
 	sess.Mtx.Unlock()
 
-	successfulTransfer, err := simulator_ngap.BuildPDUSessionResourceSetupResponseTransfer(sess)
+	successfulTransfer, err := BuildPDUSessionResourceSetupResponseTransfer(sess)
 	if err != nil {
-		ngapLog.Errorf("Encode PDUSessionResourceSetupResponseTransfer Error: %+v\n", err)
+		logger.NgapLog.Errorf("Encode PDUSessionResourceSetupResponseTransfer Error: %+v\n", err)
 	}
 	return successfulTransfer, nil
 }
@@ -100,6 +100,6 @@ func handlePDUSessionResourceReleaseCommandTransfer(sess *simulator_context.Sess
 
 	err := aper.UnmarshalWithParams(b, &transfer, "valueExt")
 
-	successfulTransfer, _ := simulator_ngap.BuildPDUSessionResourceReleaseResponseTransfer()
+	successfulTransfer, _ := BuildPDUSessionResourceReleaseResponseTransfer()
 	return successfulTransfer, err
 }

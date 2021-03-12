@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jay16213/radio_simulator/pkg/factory"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 )
@@ -16,25 +15,24 @@ import (
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()
 var mtx sync.Mutex
 
-func StartTcpServer() {
-	var err error
-	srvAddr := factory.SimConfig.TcpUri
-	self.TcpServer, err = net.Listen("tcp", srvAddr)
+func StartApiServer(addr string) net.Listener {
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.TcpServerLog.Error(err.Error())
 	}
-	defer self.TcpServer.Close()
-	logger.TcpServerLog.Infof("TCP server start and listening on %s.", srvAddr)
+	defer listener.Close()
+	logger.TcpServerLog.Infof("TCP server start and listening on %s.", addr)
 
-	for {
-		conn, err := self.TcpServer.Accept()
-		if err != nil {
-			logger.TcpServerLog.Infof("TCP server closed")
-			return
-		}
-		raddr := conn.RemoteAddr().String()
-		go handleUeConnection(raddr, conn)
-	}
+	// for {
+	// 	conn, err := self.TcpServer.Accept()
+	// 	if err != nil {
+	// 		logger.TcpServerLog.Infof("TCP server closed")
+	// 		return nil
+	// 	}
+	// 	raddr := conn.RemoteAddr().String()
+	// 	go handleUeConnection(raddr, conn)
+	// }
+	return listener
 }
 
 func handleUeConnection(raddr string, conn net.Conn) {

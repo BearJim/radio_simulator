@@ -9,7 +9,6 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
-	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
 
 	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/openapi/models"
@@ -114,7 +113,7 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 			// Send Registration Request
 			ue.AttachRan(ran)
 			ue.RegisterState = simulator_context.RegisterStateRegistering
-			simulator_ngap.SendInitailUeMessage_RegistraionRequest(ran, ue)
+			// simulator_ngap.SendInitailUeMessage_RegistraionRequest(ran, ue)
 		}
 		msg = ReadChannelMsg(ue, raddr)
 	case "dereg":
@@ -122,13 +121,13 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 			msg = "[DEREG] SUCCESS\n"
 		} else {
 			// Send Deregistration Request
-			nasPdu, err := nas_packet.GetDeregistrationRequest(ue, 0) //normoal release
+			_, err := nas_packet.GetDeregistrationRequest(ue, 0) //normoal release
 			if err != nil {
 				logger.TcpServerLog.Error(err.Error())
 				msg = "[DEREG] FAIL\n"
 				break
 			}
-			simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+			// simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
 			msg = ReadChannelMsg(ue, raddr)
 		}
 	case "sess":
@@ -176,13 +175,13 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 					msg = fmt.Sprintf("[SESSION] ADD %d FAIL\n", pduSessionId)
 					break
 				}
-				nasPdu, err := nas_packet.GetUlNasTransport_PduSessionEstablishmentRequest(ue, pduSessionId, nasMessage.ULNASTransportRequestTypeInitialRequest, dnn, &snssai, gsmPdu)
+				_, err = nas_packet.GetUlNasTransport_PduSessionEstablishmentRequest(ue, pduSessionId, nasMessage.ULNASTransportRequestTypeInitialRequest, dnn, &snssai, gsmPdu)
 				if err != nil {
 					logger.TcpServerLog.Error(err.Error())
 					msg = fmt.Sprintf("[SESSION] ADD %d FAIL\n", pduSessionId)
 					break
 				}
-				simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+				// simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
 				sess := ue.AddPduSession(pduSessionId, dnn, snssai)
 				msg = ReadSessChannelMsg(sess)
 				break
@@ -200,13 +199,13 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 			} else {
 				// TODO: Send Pdu Session Release
 				pduSessionId := uint8(id)
-				nasPdu, err := nas_packet.GetUlNasTransport_PduSessionCommonData(ue, pduSessionId, nas_packet.PDUSesRelReq)
+				_, err := nas_packet.GetUlNasTransport_PduSessionCommonData(ue, pduSessionId, nas_packet.PDUSesRelReq)
 				if err != nil {
 					logger.TcpServerLog.Error(err.Error())
 					msg = fmt.Sprintf("[SESSION] DEL %d FAIL\n", pduSessionId)
 					break
 				}
-				simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
+				// simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
 				msg = ReadSessChannelMsg(sess)
 			}
 		default:

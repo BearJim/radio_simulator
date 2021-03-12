@@ -2,19 +2,10 @@ package simulator_util
 
 import (
 	"fmt"
-	"os/exec"
 	"strconv"
-
-	"github.com/jay16213/radio_simulator/pkg/factory"
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
-	"github.com/jay16213/radio_simulator/pkg/ue_factory"
-
-	"github.com/free5gc/nas/security"
-	"github.com/free5gc/ngap/ngapConvert"
-	"github.com/free5gc/openapi/models"
 )
 
+/*
 var self *simulator_context.Simulator = simulator_context.Simulator_Self()
 
 func ParseRanContext() {
@@ -45,6 +36,7 @@ func ParseRanContext() {
 		}
 	}
 }
+
 func ParseTunDev() {
 	info := factory.SimConfig.TunnelInfo
 	self.Gtp5gTunnelExec = fmt.Sprintf("./%s/gtp5g-tunnel", info.Gtp5gPath)
@@ -105,10 +97,10 @@ func ParseUeData(configDirPath string, fileList []string) {
 		self.UeContextPool[ue.Supi] = ue
 	}
 }
+
 func InitUeToDB() {
 	for supi, ue := range self.UeContextPool {
 		//for _, ue := range self.UeContextPool {
-		/*
 			amDate := models.AccessAndMobilitySubscriptionData{
 				Gpsis: ue.Gpsis,
 				Nssai: &ue.Nssai,
@@ -116,7 +108,6 @@ func InitUeToDB() {
 			amPolicy := models.AmPolicyData{
 				SubscCats: ue.SubscCats,
 			}
-		*/
 		auths := ue.AuthData
 		authsSubs := models.AuthenticationSubscription{
 			AuthenticationMethod:          models.AuthMethod(auths.AuthMethod),
@@ -155,7 +146,7 @@ func ClearDB() {
 		DelSmfSelectionSubscriptionDataFromMongoDB(supi, ue.ServingPlmnId)
 	}
 }
-
+*/
 func TACConfigToHexString(intString string) (hexString string) {
 	tmp, _ := strconv.ParseUint(intString, 10, 32)
 	hexString = fmt.Sprintf("%06x", tmp)

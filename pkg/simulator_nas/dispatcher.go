@@ -1,6 +1,7 @@
 package simulator_nas
 
 import (
+	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_security"
@@ -23,7 +24,23 @@ func checkMsgError(err error, msg string) {
 	}
 }
 
-func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
+type NASController struct {
+	ngMessager NGMessager
+}
+
+func NewController() *NASController {
+	return &NASController{}
+}
+
+func (c *NASController) SetNGMessager(messager NGMessager) {
+	c.ngMessager = messager
+}
+
+type NGMessager interface {
+	SendUplinkNasTransport(*sctp.SCTPAddr, *simulator_context.UeContext, []byte)
+}
+
+func (c *NASController) HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 
 	if ue == nil {
 		nasLog.Error("Ue is nil")
@@ -45,9 +62,9 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 		}
 		switch msg.GsmMessage.GetMessageType() {
 		case nas.MsgTypePDUSessionEstablishmentAccept:
-			checkMsgError(HandlePduSessionEstblishmentAccept(ue, msg.GsmMessage.PDUSessionEstablishmentAccept), "PduSessionEstblishmentAccept")
+			checkMsgError(c.HandlePduSessionEstblishmentAccept(ue, msg.GsmMessage.PDUSessionEstablishmentAccept), "PduSessionEstblishmentAccept")
 		case nas.MsgTypePDUSessionReleaseCommand:
-			checkMsgError(HandlePduSessionReleaseCommand(ue, msg.GsmMessage.PDUSessionReleaseCommand), "PduSessionReleaseCommand")
+			checkMsgError(c.HandlePduSessionReleaseCommand(ue, msg.GsmMessage.PDUSessionReleaseCommand), "PduSessionReleaseCommand")
 		default:
 			nasLog.Errorf("Unknown GsmMessage[%d]\n", msg.GsmMessage.GetMessageType())
 		}
@@ -63,15 +80,15 @@ func HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
 
 	switch msg.GmmMessage.GetMessageType() {
 	case nas.MsgTypeAuthenticationRequest:
-		checkMsgError(HandleAuthenticationRequest(ue, msg.GmmMessage.AuthenticationRequest), "AuthenticationRequest")
+		checkMsgError(c.HandleAuthenticationRequest(ue, msg.GmmMessage.AuthenticationRequest), "AuthenticationRequest")
 	case nas.MsgTypeSecurityModeCommand:
-		checkMsgError(HandleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
+		checkMsgError(c.HandleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
 	case nas.MsgTypeRegistrationAccept:
-		checkMsgError(HandleRegistrationAccept(ue, msg.GmmMessage.RegistrationAccept), "RegistrationAccept")
+		checkMsgError(c.HandleRegistrationAccept(ue, msg.GmmMessage.RegistrationAccept), "RegistrationAccept")
 	case nas.MsgTypeDeregistrationAcceptUEOriginatingDeregistration:
-		checkMsgError(HandleDeregistrationAccept(ue, msg.GmmMessage.DeregistrationAcceptUEOriginatingDeregistration), "DeregistraionAccept")
+		checkMsgError(c.HandleDeregistrationAccept(ue, msg.GmmMessage.DeregistrationAcceptUEOriginatingDeregistration), "DeregistraionAccept")
 	case nas.MsgTypeDLNASTransport:
-		checkMsgError(HandleDLNASTransport(ue, msg.GmmMessage.DLNASTransport), "DLNASTransport")
+		checkMsgError(c.HandleDLNASTransport(ue, msg.GmmMessage.DLNASTransport), "DLNASTransport")
 	default:
 		nasLog.Errorf("Unknown GmmMessage[%d]\n", msg.GmmMessage.GetMessageType())
 	}

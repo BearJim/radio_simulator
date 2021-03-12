@@ -2,7 +2,6 @@ package simulator_ngap
 
 import (
 	"fmt"
-	"net"
 	"os/exec"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
@@ -10,70 +9,61 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 
 	"github.com/free5gc/nas/nasMessage"
-	"github.com/free5gc/ngap"
 	"github.com/free5gc/ngap/ngapType"
-	"github.com/sirupsen/logrus"
 )
 
-var ngapLog *logrus.Entry
-
-func init() {
-	ngapLog = logger.NgapLog
-}
-
-func SendNGSetupRequest(ran *simulator_context.RanContext) {
+func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 	logger.NgapLog.Info("Send NG Setup Request")
 	// send NGSetupRequest Msg
-	pkt, err := BuildNGSetupRequest(ran)
+	pkt, err := BuildNGSetupRequest(c.ran.Context())
 	if err != nil {
-		ngapLog.Errorf("Build NGSetUp failed : %s", err.Error())
+		logger.NgapLog.Errorf("Build NGSetUp failed : %s", err.Error())
 		return
 	}
-	SendToAmf(ran, pkt)
+	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func SendInitailUeMessage_RegistraionRequest(ran *simulator_context.RanContext, ue *simulator_context.UeContext) {
-	ngapLog.Info("[RAN] Initail Ue Message (Initail Registration Request)")
+func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
+	logger.NgapLog.Info("[RAN] Initail Ue Message (Initail Registration Request)")
 	pkt, err := BuildInitialUEMessage(ue, nasMessage.RegistrationType5GSInitialRegistration, "")
 	if err != nil {
-		ngapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
+		logger.NgapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
 		return
 	}
-	SendToAmf(ran, pkt)
+	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func SendUplinkNasTransport(ran *simulator_context.RanContext, ue *simulator_context.UeContext, nasPdu []byte) {
+func (c *NGController) SendUplinkNasTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
 
-	ngapLog.Info("[RAN] Send Uplink Nas Transport")
+	logger.NgapLog.Info("[RAN] Send Uplink Nas Transport")
 
 	pkt, err := BuildUplinkNasTransport(ue, nasPdu)
 	if err != nil {
-		ngapLog.Errorf("Build Uplink Nas Transport failed : %s", err.Error())
+		logger.NgapLog.Errorf("Build Uplink Nas Transport failed : %s", err.Error())
 		return
 	}
-	SendToAmf(ran, pkt)
+	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func SendIntialContextSetupResponse(ran *simulator_context.RanContext, ue *simulator_context.UeContext, pduSessionIds []string) {
+func (c *NGController) SendIntialContextSetupResponse(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, pduSessionIds []string) {
 
-	ngapLog.Info("[RAN] Send Intial Context Setup Response")
+	logger.NgapLog.Info("[RAN] Send Intial Context Setup Response")
 
 	pkt, err := BuildInitialContextSetupResponse(ue, pduSessionIds, nil)
 	if err != nil {
-		ngapLog.Errorf("Build Uplink Nas Transport failed : %s", err.Error())
+		logger.NgapLog.Errorf("Build Uplink Nas Transport failed : %s", err.Error())
 		return
 	}
-	SendToAmf(ran, pkt)
-
+	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func SendUeContextReleaseComplete(ran *simulator_context.RanContext, ue *simulator_context.UeContext) {
+func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
 
-	ngapLog.Info("[RAN] Send Ue Context Release Complete")
+	logger.NgapLog.Info("[RAN] Send Ue Context Release Complete")
 
 	pkt, err := BuildUEContextReleaseComplete(ue)
 	if err != nil {
-		ngapLog.Errorf("Build Ue Context Release Complete failed : %s", err.Error())
+		logger.NgapLog.Errorf("Build Ue Context Release Complete failed : %s", err.Error())
 		return
 	}
 
@@ -84,34 +74,34 @@ func SendUeContextReleaseComplete(ran *simulator_context.RanContext, ue *simulat
 		if sess.UeIp != "" {
 			_, err := exec.Command("ip", "addr", "del", sess.UeIp, "dev", "lo").Output()
 			if err != nil {
-				ngapLog.Errorln(err)
+				logger.NgapLog.Errorln(err)
 				return
 			}
 		}
 	}
 
-	SendToAmf(ran, pkt)
+	c.ran.SendToAMF(endpoint, pkt)
 	if ue.RegisterState == simulator_context.RegisterStateDeregitered {
 		// Complete Deregistration
 		ue.SendMsg("[DEREG] SUCCESS\n")
 	}
 }
 
-func SendPDUSessionResourceSetupResponse(
-	ran *simulator_context.RanContext,
+func (c *NGController) SendPDUSessionResourceSetupResponse(
+	endpoint *sctp.SCTPAddr,
 	ue *simulator_context.UeContext,
 	responseList *ngapType.PDUSessionResourceSetupListSURes,
 	failedListSURes *ngapType.PDUSessionResourceFailedToSetupListSURes) {
 
-	ngapLog.Infoln("[RAN] Send PDU Session Resource Setup Response")
+	logger.NgapLog.Infoln("[RAN] Send PDU Session Resource Setup Response")
 
 	pkt, err := BuildPDUSessionResourceSetupResponse(ue, responseList, failedListSURes)
 	if err != nil {
-		ngapLog.Errorf("Build PDU Session Resource Setup Response failed : %+v", err)
+		logger.NgapLog.Errorf("Build PDU Session Resource Setup Response failed : %+v", err)
 		return
 	}
 
-	SendToAmf(ran, pkt)
+	c.ran.SendToAMF(endpoint, pkt)
 	// Send Callback To Tcp Client
 	if responseList != nil {
 		for _, item := range responseList.List {
@@ -132,55 +122,51 @@ func SendPDUSessionResourceSetupResponse(
 	}
 }
 
-func SendPDUSessionResourceReleaseResponse(
-	ran *simulator_context.RanContext,
+func (c *NGController) SendPDUSessionResourceReleaseResponse(
+	endpoint *sctp.SCTPAddr,
 	ue *simulator_context.UeContext,
 	relList ngapType.PDUSessionResourceReleasedListRelRes,
 	diagnostics *ngapType.CriticalityDiagnostics) {
 
-	ngapLog.Infoln("[EAN] Send PDU Session Resource Release Response")
+	logger.NgapLog.Infoln("[EAN] Send PDU Session Resource Release Response")
 
 	if len(relList.List) < 1 {
-		ngapLog.Errorln("PDUSessionResourceReleasedListRelRes is nil. This message shall contain at least one Item")
+		logger.NgapLog.Errorln("PDUSessionResourceReleasedListRelRes is nil. This message shall contain at least one Item")
 		return
 	}
 
 	pkt, err := BuildPDUSessionResourceReleaseResponse(ue, relList, diagnostics)
 	if err != nil {
-		ngapLog.Errorf("Build PDU Session Resource Release Response failed : %+v", err)
+		logger.NgapLog.Errorf("Build PDU Session Resource Release Response failed : %+v", err)
 		return
 	}
 
-	SendToAmf(ran, pkt)
+	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func SendErrorIndication(ran *simulator_context.RanContext, amfUeNgapId, ranUeNgapId *int64, cause *ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) {
+func (c *NGController) SendErrorIndication(endpoint *sctp.SCTPAddr, amfUeNgapId, ranUeNgapId *int64, cause *ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) {
 
-	ngapLog.Info("[AMF] Send Error Indication")
+	logger.NgapLog.Info("[AMF] Send Error Indication")
 
 	pkt, err := BuildErrorIndication(amfUeNgapId, ranUeNgapId, cause, criticalityDiagnostics)
 	if err != nil {
-		ngapLog.Errorf("Build ErrorIndication failed : %s", err.Error())
+		logger.NgapLog.Errorf("Build ErrorIndication failed : %s", err.Error())
 		return
 	}
-	SendToAmf(ran, pkt)
+	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func SendToAmf(ran *simulator_context.RanContext, message []byte) {
+/*
+func (c *NGController) SendToAmf(ran *simulator_context.RanContext, endpoint *sctp.SCTPAddr, message []byte) {
 	// TODO: complete one to many interface support
-	logger.NgapLog.Warnf("ParseIP: %+v", net.ParseIP("127.0.0.1").To4())
-	_, err := ran.SctpConn.SCTPWriteTo(message,
+	_, err := ran.SctpConn.SCTPSendTo(message,
 		&sctp.SndRcvInfo{
 			PPID: ngap.PPID,
 		},
-		sctp.SCTPEndpoint{
-			IPAddr: net.IPAddr{
-				IP: net.ParseIP("127.0.0.1"),
-			},
-			Port: 38412,
-		},
+		endpoint.ToSockaddr(0),
 	)
 	if err != nil {
 		logger.InitLog.Error(err)
 	}
 }
+*/
