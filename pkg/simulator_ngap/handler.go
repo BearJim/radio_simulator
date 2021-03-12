@@ -643,19 +643,29 @@ func (c *NGController) HandleAMFConfigurationUpdate(endpoint *sctp.SCTPAddr, mes
 		}
 	}
 
+	amfTNLAssociationSetupList := ngapType.AMFTNLAssociationSetupList{}
 	for _, item := range amfTNLAssociationToAddList.List {
 		ipv4Addr, _ := ngapConvert.IPAddressToString(*item.AMFTNLAssociationAddress.EndpointIPAddress)
-		if err := c.ran.Connect(&sctp.SCTPAddr{
+		sctpAddr := &sctp.SCTPAddr{
 			IPAddrs: []net.IPAddr{
 				{IP: net.ParseIP(ipv4Addr)},
 			},
 			Port: 38412,
-		}); err != nil {
+		}
+		if err := c.ran.Connect(sctpAddr); err != nil {
 			logger.NgapLog.Error(err)
 		} else {
-			logger.NgapLog.Infof("Add additional TNL association with AMF (addr: %s)", ipv4Addr)
+			logger.NgapLog.Infof("establish additional TNL association with AMF success (addr: %s)", ipv4Addr)
+			setupItem := ngapType.AMFTNLAssociationSetupItem{
+				AMFTNLAssociationAddress: ngapType.CPTransportLayerInformation{
+					Present:           ngapType.CPTransportLayerInformationPresentEndpointIPAddress,
+					EndpointIPAddress: item.AMFTNLAssociationAddress.EndpointIPAddress,
+				},
+			}
+			amfTNLAssociationSetupList.List = append(amfTNLAssociationSetupList.List, setupItem)
 		}
 	}
+	c.SendAMFConfigurationUpdateAcknowledge(endpoint, &amfTNLAssociationSetupList)
 }
 
 func buildCriticalityDiagnostics(

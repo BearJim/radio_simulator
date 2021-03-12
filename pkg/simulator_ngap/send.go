@@ -156,17 +156,13 @@ func (c *NGController) SendErrorIndication(endpoint *sctp.SCTPAddr, amfUeNgapId,
 	c.ran.SendToAMF(endpoint, pkt)
 }
 
-/*
-func (c *NGController) SendToAmf(ran *simulator_context.RanContext, endpoint *sctp.SCTPAddr, message []byte) {
-	// TODO: complete one to many interface support
-	_, err := ran.SctpConn.SCTPSendTo(message,
-		&sctp.SndRcvInfo{
-			PPID: ngap.PPID,
-		},
-		endpoint.ToSockaddr(0),
-	)
+func (c *NGController) SendAMFConfigurationUpdateAcknowledge(endpoint *sctp.SCTPAddr, setupList *ngapType.AMFTNLAssociationSetupList) {
+	logger.NgapLog.Info("Send AMF Configuration Update Acknowledge")
+
+	pkt, err := BuildAMFConfigurationUpdateAcknowledge(setupList)
 	if err != nil {
-		logger.InitLog.Error(err)
+		logger.NgapLog.Errorf("Build AMFConfigurationUpdateAcknowledge failed: %+v", err)
+		return
 	}
+	c.ran.SendToAMF(endpoint, pkt)
 }
-*/

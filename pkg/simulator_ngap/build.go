@@ -2753,8 +2753,8 @@ func BuildUERadioCapabilityInfoIndication() (pdu ngapType.NGAPPDU) {
 	return
 }
 
-func BuildAMFConfigurationUpdateAcknowledge() (pdu ngapType.NGAPPDU) {
-
+func BuildAMFConfigurationUpdateAcknowledge(setupList *ngapType.AMFTNLAssociationSetupList) ([]byte, error) {
+	pdu := ngapType.NGAPPDU{}
 	pdu.Present = ngapType.NGAPPDUPresentSuccessfulOutcome
 	pdu.SuccessfulOutcome = new(ngapType.SuccessfulOutcome)
 
@@ -2768,55 +2768,43 @@ func BuildAMFConfigurationUpdateAcknowledge() (pdu ngapType.NGAPPDU) {
 	AMFConfigurationUpdateAcknowledge := successfulOutcome.Value.AMFConfigurationUpdateAcknowledge
 	AMFConfigurationUpdateAcknowledgeIEs := &AMFConfigurationUpdateAcknowledge.ProtocolIEs
 
-	//	AMF TNL Association Setup List
-	ie := ngapType.AMFConfigurationUpdateAcknowledgeIEs{}
-	ie.Id.Value = ngapType.ProtocolIEIDAMFTNLAssociationSetupList
-	ie.Criticality.Value = ngapType.CriticalityPresentIgnore
-	ie.Value.Present = ngapType.AMFConfigurationUpdateAcknowledgeIEsPresentAMFTNLAssociationSetupList
-	ie.Value.AMFTNLAssociationSetupList = new(ngapType.AMFTNLAssociationSetupList)
-
-	aMFTNLAssociationSetupList := ie.Value.AMFTNLAssociationSetupList
-
-	//	AMF TNL Association Setup Item
-	aMFTNLAssociationSetupItem := ngapType.AMFTNLAssociationSetupItem{}
-	aMFTNLAssociationSetupItem.AMFTNLAssociationAddress.Present = ngapType.CPTransportLayerInformationPresentEndpointIPAddress
-	aMFTNLAssociationSetupItem.AMFTNLAssociationAddress.EndpointIPAddress = new(ngapType.TransportLayerAddress)
-	aMFTNLAssociationSetupItem.AMFTNLAssociationAddress.EndpointIPAddress.Value = aper.BitString{
-		Bytes:     []byte{0x12, 0x34, 0x56, 0x78},
-		BitLength: 32,
+	// AMF TNL Association Setup List
+	if setupList != nil {
+		ie := ngapType.AMFConfigurationUpdateAcknowledgeIEs{}
+		ie.Id.Value = ngapType.ProtocolIEIDAMFTNLAssociationSetupList
+		ie.Criticality.Value = ngapType.CriticalityPresentIgnore
+		ie.Value.Present = ngapType.AMFConfigurationUpdateAcknowledgeIEsPresentAMFTNLAssociationSetupList
+		ie.Value.AMFTNLAssociationSetupList = setupList
+		AMFConfigurationUpdateAcknowledgeIEs.List = append(AMFConfigurationUpdateAcknowledgeIEs.List, ie)
 	}
-
-	aMFTNLAssociationSetupList.List = append(aMFTNLAssociationSetupList.List, aMFTNLAssociationSetupItem)
-	AMFConfigurationUpdateAcknowledgeIEs.List = append(AMFConfigurationUpdateAcknowledgeIEs.List, ie)
 
 	//	AMF TNL Association Failed to Setup List (optional)
-	ie = ngapType.AMFConfigurationUpdateAcknowledgeIEs{}
-	ie.Id.Value = ngapType.ProtocolIEIDAMFTNLAssociationFailedToSetupList
-	ie.Criticality.Value = ngapType.CriticalityPresentIgnore
-	ie.Value.Present = ngapType.AMFConfigurationUpdateAcknowledgeIEsPresentAMFTNLAssociationFailedToSetupList
-	ie.Value.Present = ngapType.AMFConfigurationUpdateAcknowledgeIEsPresentAMFTNLAssociationFailedToSetupList
-	ie.Value.AMFTNLAssociationFailedToSetupList = new(ngapType.TNLAssociationList)
+	// ie = ngapType.AMFConfigurationUpdateAcknowledgeIEs{}
+	// ie.Id.Value = ngapType.ProtocolIEIDAMFTNLAssociationFailedToSetupList
+	// ie.Criticality.Value = ngapType.CriticalityPresentIgnore
+	// ie.Value.Present = ngapType.AMFConfigurationUpdateAcknowledgeIEsPresentAMFTNLAssociationFailedToSetupList
+	// ie.Value.Present = ngapType.AMFConfigurationUpdateAcknowledgeIEsPresentAMFTNLAssociationFailedToSetupList
+	// ie.Value.AMFTNLAssociationFailedToSetupList = new(ngapType.TNLAssociationList)
 
-	aMFTNLAssociationFailedToSetupList := ie.Value.AMFTNLAssociationFailedToSetupList
+	// aMFTNLAssociationFailedToSetupList := ie.Value.AMFTNLAssociationFailedToSetupList
 
-	//	TNLAssociationItem
-	tNLAssociationItem := ngapType.TNLAssociationItem{}
-	tNLAssociationItem.Cause.Present = ngapType.CausePresentMisc
-	tNLAssociationItem.Cause.Misc = new(ngapType.CauseMisc)
-	tNLAssociationItem.Cause.Misc.Value = ngapType.CauseMiscPresentUnspecified
-	tNLAssociationItem.TNLAssociationAddress.Present = ngapType.CPTransportLayerInformationPresentEndpointIPAddress
-	tNLAssociationItem.TNLAssociationAddress.EndpointIPAddress = new(ngapType.TransportLayerAddress)
-	tNLAssociationItem.TNLAssociationAddress.EndpointIPAddress.Value = aper.BitString{
-		Bytes:     []byte{0x12, 0x34, 0x56, 0x78},
-		BitLength: 32,
-	}
+	// //	TNLAssociationItem
+	// tNLAssociationItem := ngapType.TNLAssociationItem{}
+	// tNLAssociationItem.Cause.Present = ngapType.CausePresentMisc
+	// tNLAssociationItem.Cause.Misc = new(ngapType.CauseMisc)
+	// tNLAssociationItem.Cause.Misc.Value = ngapType.CauseMiscPresentUnspecified
+	// tNLAssociationItem.TNLAssociationAddress.Present = ngapType.CPTransportLayerInformationPresentEndpointIPAddress
+	// tNLAssociationItem.TNLAssociationAddress.EndpointIPAddress = new(ngapType.TransportLayerAddress)
+	// tNLAssociationItem.TNLAssociationAddress.EndpointIPAddress.Value = aper.BitString{
+	// 	Bytes:     []byte{0x12, 0x34, 0x56, 0x78},
+	// 	BitLength: 32,
+	// }
 
-	aMFTNLAssociationFailedToSetupList.List = append(aMFTNLAssociationFailedToSetupList.List, tNLAssociationItem)
-	AMFConfigurationUpdateAcknowledgeIEs.List = append(AMFConfigurationUpdateAcknowledgeIEs.List, ie)
+	// aMFTNLAssociationFailedToSetupList.List = append(aMFTNLAssociationFailedToSetupList.List, tNLAssociationItem)
+	// AMFConfigurationUpdateAcknowledgeIEs.List = append(AMFConfigurationUpdateAcknowledgeIEs.List, ie)
 
 	//	Criticality Diagnostics (optional)
-
-	return
+	return ngap.Encoder(pdu)
 }
 
 func BuildAMFConfigurationUpdate(amfName string, guamiList []ngapType.ServedGUAMIItem, plmnList []ngapType.PLMNSupportItem, amfRelativeCapacity int64,
