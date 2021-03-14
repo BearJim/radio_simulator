@@ -1,11 +1,14 @@
 package ran
 
 import (
+	"errors"
 	"net"
+	"sync"
 	"syscall"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/free5gc/ngap"
+	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/factory"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
@@ -13,18 +16,23 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc"
 )
 
 var DefaultConfigPath = "configs/rancfg.yaml"
 
 type RanApp struct {
-	cfg       *factory.Config
-	apiServer net.Listener
+	// config information read from file
+	cfg *factory.Config
 
+	// ran context
 	primaryAMFEndpoint *sctp.SCTPAddr
 	ngController       *simulator_ngap.NGController
 	ctx                *simulator_context.RanContext
 	sctpConn           *sctp.SCTPConn
+
+	// api server provided by grpc
+	grpcServer *grpc.Server
 }
 
 func New() *RanApp {
@@ -47,14 +55,18 @@ func (r *RanApp) Initialize(c *cli.Context) error {
 	} else {
 		r.cfg = config
 	}
+
+	r.ctx = simulator_context.NewRanContext()
+	r.ctx.LoadConfig(*r.cfg)
 	r.setLogLevel()
 	return nil
 }
 
 func (r *RanApp) Run() {
+	wg := sync.WaitGroup{}
+
 	logger.InitLog.Info("Start running RAN")
-	r.ctx = simulator_context.NewRanContext()
-	r.ctx.LoadConfig(*r.cfg)
+
 	// RAN connect to UPF
 	// for _, upf := range ran.UpfInfoList {
 	// upf.GtpConn, err = connectToUpf(ran.RanGtpUri.IP, upf.Addr.IP, ran.RanGtpUri.Port, upf.Addr.Port)
@@ -62,6 +74,7 @@ func (r *RanApp) Run() {
 	// simulator_context.Simulator_Self().GtpConnPool[fmt.Sprintf("%s,%s", ran.RanGtpUri.IP, upf.Addr.IP)] = upf.GtpConn
 	// go StartHandleGtp(upf)
 	// }
+
 	// RAN connect to AMF
 	conn, err := r.connectToAmf()
 	if err != nil {
@@ -72,7 +85,29 @@ func (r *RanApp) Run() {
 	nasController := simulator_nas.NewController()
 	r.ngController = simulator_ngap.NewController(r, nasController)
 	nasController.SetNGMessager(r.ngController)
-	r.StartSCTPAssociation()
+
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		r.StartSCTPAssociation()
+	}(&wg)
+
+	// init API service
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		listener, err := net.Listen("tcp", r.cfg.TcpUri)
+		if err != nil {
+			logger.InitLog.Fatalf("listen error: %v", err)
+		}
+		r.grpcServer = grpc.NewServer()
+		api.RegisterAPIServiceServer(r.grpcServer, &apiService{ranApp: r})
+		if err := r.grpcServer.Serve(listener); err != nil {
+			logger.InitLog.Fatalf("api server error: %v", err)
+		}
+	}(&wg)
+
+	wg.Wait()
 }
 
 func (r *RanApp) connectToAmf() (*sctp.SCTPConn, error) {
@@ -128,6 +163,9 @@ func (r *RanApp) connectToAmf() (*sctp.SCTPConn, error) {
 }
 
 func (r *RanApp) Connect(endpoint *sctp.SCTPAddr) error {
+	if r.sctpConn == nil {
+		return errors.New("sctp connection is nil")
+	}
 	return r.sctpConn.Connect(endpoint)
 }
 
@@ -187,10 +225,8 @@ func (r *RanApp) Terminate() {
 	// 	ran.SctpConn.Close()
 	// }
 
-	logger.SimulatorLog.Infof("Close API Server...")
-	if r.apiServer != nil {
-		r.apiServer.Close()
-	}
+	logger.SimulatorLog.Infof("Close gRPC API Server")
+	r.grpcServer.Stop()
 
 	logger.SimulatorLog.Infof("Clean Ue IP Addr in IP tables")
 

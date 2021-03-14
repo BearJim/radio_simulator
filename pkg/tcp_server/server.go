@@ -18,10 +18,10 @@ var mtx sync.Mutex
 func StartApiServer(addr string) net.Listener {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		logger.TcpServerLog.Error(err.Error())
+		logger.ApiLog.Error(err.Error())
 	}
 	defer listener.Close()
-	logger.TcpServerLog.Infof("TCP server start and listening on %s.", addr)
+	logger.ApiLog.Infof("TCP server start and listening on %s.", addr)
 
 	// for {
 	// 	conn, err := self.TcpServer.Accept()
@@ -37,7 +37,7 @@ func StartApiServer(addr string) net.Listener {
 
 func handleUeConnection(raddr string, conn net.Conn) {
 
-	logger.TcpServerLog.Infof("Client connected from: " + raddr)
+	logger.ApiLog.Infof("Client connected from: " + raddr)
 	conn.Write([]byte("Please Enter Supi:\n"))
 	supi := new(string)
 	// Make a buffer to hold incoming data.
@@ -47,10 +47,10 @@ func handleUeConnection(raddr string, conn net.Conn) {
 		if err != nil {
 
 			if err == io.EOF {
-				logger.TcpServerLog.Infoln("Disconned from ", raddr)
+				logger.ApiLog.Infoln("Disconned from ", raddr)
 				break
 			} else {
-				logger.TcpServerLog.Infoln("Error reading:", err.Error())
+				logger.ApiLog.Infoln("Error reading:", err.Error())
 				break
 			}
 		}

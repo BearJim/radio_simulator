@@ -15,9 +15,8 @@ var UtilLog *logrus.Entry
 var InitLog *logrus.Entry
 var NgapLog *logrus.Entry
 var GtpLog *logrus.Entry
-var HandlerLog *logrus.Entry
 var NasLog *logrus.Entry
-var TcpServerLog *logrus.Entry
+var ApiLog *logrus.Entry
 var ContextLog *logrus.Entry
 
 func init() {
@@ -45,15 +44,14 @@ func init() {
 		},
 	}
 
-	SimulatorLog = log.WithFields(logrus.Fields{"SimulatorLog": "SimulatorLog"})
-	NgapLog = log.WithFields(logrus.Fields{"SimulatorLog": "NgapLog"})
-	GtpLog = log.WithFields(logrus.Fields{"SimulatorLog": "GtpLog"})
-	HandlerLog = log.WithFields(logrus.Fields{"SimulatorLog": "HandlerLog"})
-	InitLog = log.WithFields(logrus.Fields{"SimulatorLog": "InitLog"})
-	UtilLog = log.WithFields(logrus.Fields{"SimulatorLog": "UtilLog"})
-	NasLog = log.WithFields(logrus.Fields{"SimulatorLog": "NasLog"})
-	TcpServerLog = log.WithFields(logrus.Fields{"SimulatorLog": "TcpServerLog"})
-	ContextLog = log.WithFields(logrus.Fields{"SimulatorLog": "ContextLog"})
+	SimulatorLog = log.WithFields(logrus.Fields{"RAN": "Simulator"})
+	NgapLog = log.WithFields(logrus.Fields{"RAN": "NGAP"})
+	GtpLog = log.WithFields(logrus.Fields{"RAN": "GTP"})
+	InitLog = log.WithFields(logrus.Fields{"RAN": "Init"})
+	UtilLog = log.WithFields(logrus.Fields{"RAN": "Util"})
+	NasLog = log.WithFields(logrus.Fields{"RAN": "NAS"})
+	ApiLog = log.WithFields(logrus.Fields{"RAN": "API"})
+	ContextLog = log.WithFields(logrus.Fields{"RAN": "Context"})
 }
 
 func SetLogLevel(level logrus.Level) {

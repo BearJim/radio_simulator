@@ -11,10 +11,13 @@ require (
 	github.com/free5gc/nas v1.0.0
 	github.com/free5gc/ngap v1.0.1
 	github.com/free5gc/openapi v1.0.0
+	github.com/golang/protobuf v1.4.3
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.3.0
 	go.mongodb.org/mongo-driver v1.4.4
+	google.golang.org/grpc v1.35.0
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

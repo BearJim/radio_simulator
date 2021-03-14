@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option go_package = "github.com/jay16213/radio_simulator/pkg/api";
+
+message UEContext {
+    string supi = 1;
+    string guti = 2;
+    string cm_state = 3;
+    string rm_state = 4;
+    uint32 nas_downlink_count = 5;
+    uint32 nas_uplink_count = 6;
+    string ue_security_capability = 7;
+}
+
+message MMContext {
+    string access_type = 1;
+    uint32 nas_downlink_count = 2;
+    uint32 nas_uplink_count = 3;
+    string ue_security_capability = 4;
+    repeated Snssai allowed_nssai = 5;
+}
+
+message Snssai {
+    int32 sst = 1;
+    string sd = 2;
+}
+
+enum StatusCode {
+    OK = 0;
+    ERROR = 1;
+}
+
+
+message GetUEsParams {}
+
+message GetUEsResponse {
+    repeated UEContext ue_contexts = 1;
+}
+
+message DescribeUEParams {}
+
+message DescribeUEResponse {
+    UEContext ue_context = 1;
+}
+
+message RegisterParams {
+    string supi = 1;
+    string ran_id = 2;
+}
+
+message RegisterResponse {
+    StatusCode result = 1;
+}
+
+message DeregisterParams {
+    string supi = 1;
+}
+
+message DeregisterResponse {
+    StatusCode result = 1;
+}
+
+service APIService {
+    rpc GetUEs(GetUEsParams) returns(GetUEsResponse);
+    rpc DescribeUE(DescribeUEParams) returns(DescribeUEResponse);
+    rpc Register(RegisterParams) returns(RegisterResponse);
+    rpc Deregister(DeregisterParams) returns(DeregisterResponse);
+    // rpc Idle();
+    // rpc Connect();
+    // rpc AddPduSession();
+    // rpc DeletePduSession();
+}
+
