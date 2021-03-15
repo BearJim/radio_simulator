@@ -2,6 +2,12 @@
 
 ## CLI Commands
 
+### connect \<url\>
+- describe: connect to the api server of RAN
+
+### get rans
+- describe: get all the RANs in brief
+
 ### get ues
 - describe: get all the UEs in brief
 - output example
