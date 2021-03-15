@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	git.cs.nctu.edu.tw/calee/sctp v1.0.0
-	github.com/c-bata/go-prompt v0.2.6
 	github.com/free5gc/MongoDBLibrary v1.0.0
 	github.com/free5gc/UeauCommon v1.0.0
 	github.com/free5gc/aper v1.0.0

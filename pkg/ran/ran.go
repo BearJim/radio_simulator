@@ -5,6 +5,7 @@ import (
 	"net"
 	"sync"
 	"syscall"
+	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/free5gc/ngap"
@@ -56,6 +57,11 @@ func (r *RanApp) Initialize(c *cli.Context) error {
 		r.cfg = config
 	}
 
+	apiAddr := c.String("apiaddr")
+	if apiAddr != "" {
+		r.cfg.TcpUri = apiAddr
+	}
+
 	r.ctx = simulator_context.NewRanContext()
 	r.ctx.LoadConfig(*r.cfg)
 	r.setLogLevel()
@@ -100,6 +106,7 @@ func (r *RanApp) Run() {
 		if err != nil {
 			logger.InitLog.Fatalf("listen error: %v", err)
 		}
+		logger.ApiLog.Infof("API server listening on %+v", listener.Addr())
 		r.grpcServer = grpc.NewServer()
 		api.RegisterAPIServiceServer(r.grpcServer, &apiService{ranApp: r})
 		if err := r.grpcServer.Serve(listener); err != nil {
@@ -141,21 +148,21 @@ func (r *RanApp) connectToAmf() (*sctp.SCTPConn, error) {
 		}
 	}()
 
-	// conn := sctp.NewSCTPConn(sock, nil)
-	// if err = sctp.SCTPBind(sock, ranAddr, sctp.SCTP_BINDX_ADD_ADDR); err != nil {
-	// 	return nil, err
-	// }
-	logger.InitLog.Infof("Connecting to sctp addr: %+v", r.primaryAMFEndpoint)
-	conn, err := sctp.DialSCTPOneToMany("sctp", ranAddr, r.primaryAMFEndpoint)
-	if err != nil {
+	conn := sctp.NewSCTPConn(sock, nil)
+	if err = sctp.SCTPBind(sock, ranAddr, sctp.SCTP_BINDX_ADD_ADDR); err != nil {
 		return nil, err
 	}
+	// logger.InitLog.Infof("Connecting to sctp addr: %+v", r.primaryAMFEndpoint)
+	// conn, err := sctp.DialSCTPOneToMany("sctp", ranAddr, r.primaryAMFEndpoint)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	info, _ := conn.GetDefaultSentParam()
 	info.PPID = ngap.PPID
 	if err = conn.SetDefaultSentParam(info); err != nil {
 		return nil, err
 	}
-	err = conn.SubscribeEvents(sctp.SCTP_EVENT_DATA_IO)
+	err = conn.SubscribeEvents(sctp.SCTP_EVENT_DATA_IO | sctp.SCTP_EVENT_ASSOCIATION)
 	if err != nil {
 		logger.NgapLog.Errorf("Failed to subscribe SCTP Event: %v", err)
 	}
@@ -190,21 +197,54 @@ func (r *RanApp) StartSCTPAssociation() {
 
 	for {
 		buf := make([]byte, 8192)
-		n, info, _, endpoint, err := r.sctpConn.SCTPReadFrom(buf)
+		n, info, noti, endpoint, err := r.sctpConn.SCTPReadFrom(buf)
 		if err != nil {
 			logger.NgapLog.Debugf("Read Error: %v", err)
 			break
 		}
-		if info == nil || info.PPID != ngap.PPID {
-			logger.NgapLog.Warnf("Recv SCTP PPID != 60")
-			if info != nil {
-				logger.NgapLog.Warnf("info: %+v", info)
-			} else {
-				logger.NgapLog.Error("info is nil")
+		if noti != nil {
+			switch noti.Type() {
+			case sctp.SCTP_ASSOC_CHANGE:
+				logger.NgapLog.Infof("SCTP_ASSOC_CHANGE notification")
+				event := noti.(*sctp.SCTPAssocChangeEvent)
+				switch event.State() {
+				case sctp.SCTP_COMM_UP:
+					logger.NgapLog.Infof("SCTP state is SCTP_COMM_UP")
+				case sctp.SCTP_RESTART:
+					logger.NgapLog.Infof("SCTP state is SCTP_RESTART")
+				case sctp.SCTP_COMM_LOST:
+					logger.NgapLog.Infof("SCTP state is SCTP_COMM_LOST, %+v", endpoint)
+					for {
+						addr := sctp.SockaddrToSCTPAddr(endpoint)
+						if err := r.Connect(addr); err != nil {
+							logger.NgapLog.Warnf("try to  reconnect to %s...", addr)
+							time.Sleep(3 * time.Second)
+						} else {
+							break
+						}
+					}
+					// ran.Remove()
+				case sctp.SCTP_SHUTDOWN_COMP:
+					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP, close the connection")
+					// ran.Remove()
+				case sctp.SCTP_CANT_STR_ASSOC:
+					logger.NgapLog.Infof("SCTP state is SCTP_CANT_STR_ASSOC")
+				default:
+					logger.NgapLog.Warnf("SCTP state[%+v] is not handled", event.State())
+				}
 			}
-			continue
+		} else {
+			if info == nil || info.PPID != ngap.PPID {
+				logger.NgapLog.Warnf("Recv SCTP PPID != 60")
+				if info != nil {
+					logger.NgapLog.Warnf("info: %+v", info)
+				} else {
+					logger.NgapLog.Error("info is nil")
+				}
+				continue
+			}
+			r.ngController.Dispatch(sctp.SockaddrToSCTPAddr(endpoint), buf[:n])
 		}
-		r.ngController.Dispatch(sctp.SockaddrToSCTPAddr(endpoint), buf[:n])
 	}
 }
 

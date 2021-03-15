@@ -31,19 +31,19 @@ enum StatusCode {
 }
 
 
-message GetUEsParams {}
+message GetUEsRequest {}
 
 message GetUEsResponse {
     repeated UEContext ue_contexts = 1;
 }
 
-message DescribeUEParams {}
+message DescribeUERequest {}
 
 message DescribeUEResponse {
     UEContext ue_context = 1;
 }
 
-message RegisterParams {
+message RegisterRequest {
     string supi = 1;
     string ran_id = 2;
 }
@@ -52,7 +52,7 @@ message RegisterResponse {
     StatusCode result = 1;
 }
 
-message DeregisterParams {
+message DeregisterRequest {
     string supi = 1;
 }
 
@@ -60,11 +60,18 @@ message DeregisterResponse {
     StatusCode result = 1;
 }
 
+message DescribeRANRequest {}
+
+message DescribeRANResponse {
+    string name = 1;
+};
+
 service APIService {
-    rpc GetUEs(GetUEsParams) returns(GetUEsResponse);
-    rpc DescribeUE(DescribeUEParams) returns(DescribeUEResponse);
-    rpc Register(RegisterParams) returns(RegisterResponse);
-    rpc Deregister(DeregisterParams) returns(DeregisterResponse);
+    rpc DescribeRAN (DescribeRANRequest) returns (DescribeRANResponse);
+    rpc GetUEs(GetUEsRequest) returns(GetUEsResponse);
+    rpc DescribeUE(DescribeUERequest) returns(DescribeUEResponse);
+    rpc Register(RegisterRequest) returns(RegisterResponse);
+    rpc Deregister(DeregisterRequest) returns(DeregisterResponse);
     // rpc Idle();
     // rpc Connect();
     // rpc AddPduSession();

@@ -8,6 +8,8 @@
 ### get rans
 - describe: get all the RANs in brief
 
+### describe ran \<ran name\>
+
 ### get ues
 - describe: get all the UEs in brief
 - output example

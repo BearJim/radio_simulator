@@ -6,39 +6,34 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"text/tabwriter"
 	"time"
 
-	"github.com/c-bata/go-prompt"
+	"github.com/jay16213/radio_simulator/pkg/api"
 	"google.golang.org/grpc"
 )
 
 type Simulator struct {
 	cc      *exec.Cmd
-	process *os.Process
-	gClient []*grpc.ClientConn
-}
-
-func completer(d prompt.Document) []prompt.Suggest {
-	s := []prompt.Suggest{
-		{Text: "get ues", Description: "Store the username and age"},
-		{Text: "describe ue", Description: "Store the article text posted by user"},
-		{Text: "comments", Description: "Store the text commented to articles"},
-	}
-	return prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), true)
+	RanPool map[string]api.APIServiceClient // RanSctpUri -> RAN_CONTEXT
+	// UeContextPool map[string]*UeContext  // Supi -> UeTestInfo
 }
 
 func main() {
-	s := &Simulator{}
-
+	s := &Simulator{
+		RanPool: make(map[string]api.APIServiceClient),
+	}
 	s.StartNewRan()
 	time.Sleep(100 * time.Millisecond)
 	runCli(s)
 }
 
 func runCli(s *Simulator) {
+	var cmd string
 	for {
-		cmd := prompt.Input("> ", completer)
+		fmt.Printf("> ")
+		fmt.Scanln(&cmd)
 		s.executor(cmd)
 	}
 }
@@ -47,35 +42,52 @@ func (s *Simulator) StartNewRan() {
 	c := exec.Command("./bin/simulator")
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
+	c.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
 	if err := c.Start(); err != nil {
-		fmt.Printf("ran error: %+v\n", err)
-		return
+		fmt.Printf("run error: %+v\n", err)
 	} else {
-		fmt.Printf("ran run with pid %d\n", c.Process.Pid)
-		go func() {
-			if err := c.Wait(); err != nil {
-				if ee, ok := err.(*exec.ExitError); ok && ee.ProcessState.Success() {
-					fmt.Println("ran down")
-				} else {
-					fmt.Printf("wait error: %+v\n", err)
-				}
-			}
-		}()
+		fmt.Printf("c.Run err is nil\n")
 	}
 	s.cc = c
 }
 
+func (s *Simulator) NewRANClient(client api.APIServiceClient, ranName string) {
+	if _, ok := s.RanPool[ranName]; ok {
+		fmt.Printf("duplicate ran name %s\n", ranName)
+	} else {
+		s.RanPool[ranName] = client
+	}
+}
+
 func (s *Simulator) executor(command string) {
 	if strings.HasPrefix(command, "connect") {
-		addr := "127.0.0.1:9999"
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
-		if err != nil {
-			fmt.Printf("connect %s error: %+v\n", addr, err)
+		tokens := strings.Split(command, " ")
+		if len(tokens) < 2 {
+			fmt.Println("command error")
 			return
 		}
-		defer conn.Close()
+		tokens = tokens[1:] // cut "connect"
+		for _, addr := range tokens {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
+			if err != nil {
+				fmt.Printf("connect %s error: %+v\n", addr, err)
+				return
+			}
+
+			client := api.NewAPIServiceClient(conn)
+			resp, err := client.DescribeRAN(context.Background(), &api.DescribeRANRequest{})
+			if err != nil {
+				fmt.Printf("DescribeRAN: %+v\n", err)
+				return
+			}
+			s.NewRANClient(client, resp.Name)
+			fmt.Printf("Connect to RAN %s\n", resp.Name)
+		}
 	}
 
 	if command == "get ues" {
@@ -88,10 +100,9 @@ func (s *Simulator) executor(command string) {
 	}
 
 	if command == "exit" {
-		if err := s.cc.Process.Signal(os.Interrupt); err != nil {
+		if err := s.cc.Process.Signal(syscall.SIGTERM); err != nil {
 			fmt.Printf("Signal: %+v\n", err)
 		}
-		fmt.Printf("Exit simctl\n")
 		os.Exit(0)
 	}
 }

@@ -21,6 +21,12 @@ func main() {
 			Value:   "",
 			Usage:   "Load configuration from `FILE`",
 		},
+		&cli.StringFlag{
+			Name:    "apiaddr",
+			Aliases: []string{"a"},
+			Value:   "",
+			Usage:   "set API server address (ip:port) to `ADDRESS`",
+		},
 	}
 	app.Action = action
 
