@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"syscall"
 	"text/tabwriter"
 	"time"
@@ -29,10 +31,10 @@ type ranApiURL struct {
 }
 
 type Simulator struct {
-	cc            *exec.Cmd
-	dbClient      *MongoDBLibrary.Client
-	RanPool       map[string]api.APIServiceClient         // RanSctpUri -> RAN_CONTEXT
-	UeContextPool map[string]*simulator_context.UeContext // Supi -> UeTestInfo
+	cc       *exec.Cmd
+	dbClient *MongoDBLibrary.Client
+	RanPool  map[string]api.APIServiceClient // RanSctpUri -> RAN_CONTEXT
+	// UeContextPool map[string]*simulator_context.UeContext // Supi -> UeTestInfo
 }
 
 func New(dbName string, dbUrl string) (*Simulator, error) {
@@ -42,9 +44,9 @@ func New(dbName string, dbUrl string) (*Simulator, error) {
 	}
 
 	s := &Simulator{
-		RanPool:       make(map[string]api.APIServiceClient),
-		UeContextPool: make(map[string]*simulator_context.UeContext),
-		dbClient:      client,
+		RanPool: make(map[string]api.APIServiceClient),
+		// UeContextPool: make(map[string]*simulator_context.UeContext),
+		dbClient: client,
 	}
 
 	// cur, err := s.dbClient.Database().Collection("ranAPIList").Find(context.TODO(), bson.D{})
@@ -122,7 +124,9 @@ func (s *Simulator) GetRANs() {
 	}
 }
 
-func (s *Simulator) ParseUEData(rootPath string, fileList []string) {
+// ParseUEData read UE contexts from files then return a slice of *UeContext
+func (s *Simulator) ParseUEData(rootPath string, fileList []string) []*simulator_context.UeContext {
+	var ueContexts []*simulator_context.UeContext
 	for _, ueInfoFile := range fileList {
 		fileName := rootPath + ueInfoFile
 		ue := ue_factory.InitUeContextFactory(fileName)
@@ -147,13 +151,14 @@ func (s *Simulator) ParseUEData(rootPath string, fileList []string) {
 		case "NEA3":
 			ue.CipheringAlg = security.AlgCiphering128NEA3
 		}
-		s.UeContextPool[ue.Supi] = ue
+		ueContexts = append(ueContexts, ue)
 	}
+	return ueContexts
 }
 
-func (s *Simulator) InsertUEContextToDB() {
+func (s *Simulator) InsertUEContextToDB(ueContexts []*simulator_context.UeContext) {
 	upsert := true
-	for _, ue := range s.UeContextPool {
+	for _, ue := range ueContexts {
 		result, err := s.dbClient.Database().Collection("ue").UpdateOne(context.TODO(), bson.M{"supi": ue.Supi},
 			bson.M{"$set": ue}, &options.UpdateOptions{Upsert: &upsert})
 		if err != nil {
@@ -161,6 +166,16 @@ func (s *Simulator) InsertUEContextToDB() {
 		} else {
 			fmt.Printf("UpdateOne success: %+v\n", result)
 		}
+	}
+}
+
+func (s *Simulator) UdpateUE(ue *simulator_context.UeContext) {
+	result, err := s.dbClient.Database().Collection("ue").UpdateOne(context.TODO(), bson.M{"supi": ue.Supi},
+		bson.M{"$set": ue})
+	if err != nil {
+		fmt.Printf("UpdateOne error: %+v\n", err)
+	} else {
+		fmt.Printf("UpdateOne success: %+v\n", result)
 	}
 }
 
@@ -203,7 +218,6 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 		fmt.Printf("ran not found\n")
 		return
 	}
-
 	regResult, err := apiClient.Register(context.TODO(), &api.RegisterRequest{
 		Supi:         ue.Supi,
 		ServingPlmn:  ue.ServingPlmnId,
@@ -225,6 +239,35 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 	} else {
 		fmt.Printf("register fail\n")
 	}
+
+	s.SubscribeUELog(apiClient, &ue)
+
+	// update SQN when trigger registration
+	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
+	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
+	s.UdpateUE(&ue)
+}
+
+func (s *Simulator) SubscribeUELog(client api.APIServiceClient, ue *simulator_context.UeContext) {
+	stream, err := client.SubscribeLog(context.TODO(), &api.LogStreamingRequest{Supi: ue.Supi})
+	if err != nil {
+		fmt.Printf("subscribe ue log error: %+v\n", err)
+	}
+
+	go func() {
+		for {
+			resp, err := stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					fmt.Printf("recv ue log error: %+v\n", err)
+					break
+				}
+			}
+			fmt.Println(resp.LogMessage)
+		}
+	}()
 }
 
 func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
@@ -234,7 +277,21 @@ func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
 		return
 	}
 
-	for supi, ue := range s.UeContextPool {
+	// find all UE and upload to free5gc database
+	cur, err := s.dbClient.Database().Collection("ue").Find(context.TODO(), bson.D{})
+	if err != nil && err != mongo.ErrNoDocuments {
+		fmt.Printf("Find UE error: %+v\n", err)
+		return
+	}
+	defer cur.Close(context.TODO())
+	for cur.Next(context.TODO()) {
+		var ue simulator_context.UeContext
+		err := cur.Decode(&ue)
+		if err != nil {
+			fmt.Printf("decode ue error: %+v\n", err)
+			continue
+		}
+
 		amData := models.AccessAndMobilitySubscriptionData{
 			Gpsis: ue.Gpsis,
 			Nssai: &ue.Nssai,
@@ -262,10 +319,10 @@ func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
 				OpValue: auths.Op,
 			}
 		}
-		InsertAuthSubscriptionToMongoDB(dbClient, supi, authsSubs)
+		InsertAuthSubscriptionToMongoDB(dbClient, ue.Supi, authsSubs)
 		InsertAccessAndMobilitySubscriptionDataToMongoDB(dbClient, ue.Supi, amData, ue.ServingPlmnId)
-		InsertSmfSelectionSubscriptionDataToMongoDB(dbClient, supi, ue.SmfSelData, ue.ServingPlmnId)
-		InsertAmPolicyDataToMongoDB(dbClient, supi, amPolicy)
+		InsertSmfSelectionSubscriptionDataToMongoDB(dbClient, ue.Supi, ue.SmfSelData, ue.ServingPlmnId)
+		InsertAmPolicyDataToMongoDB(dbClient, ue.Supi, amPolicy)
 	}
 }
 

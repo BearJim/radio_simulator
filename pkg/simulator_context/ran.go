@@ -127,6 +127,15 @@ func (ran *RanContext) NewUE(supi string) *UeContext {
 	return ue
 }
 
+func (ran *RanContext) FindUEBySupi(supi string) *UeContext {
+	for _, ue := range ran.UePool {
+		if ue.Supi == supi {
+			return ue
+		}
+	}
+	return nil
+}
+
 func (ran *RanContext) LoadConfig(cfg factory.Config) {
 	ran.PlmnID = ngapConvert.PlmnIdToNgap(cfg.GnbId.PlmnId)
 	ran.AmfSctpEndpoint = cfg.AmfSCTPEndpoint

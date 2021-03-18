@@ -22,8 +22,8 @@ func main() {
 	}
 
 	rootPath := "./configs/"
-	sim.ParseUEData(rootPath, []string{"uecfg.yaml"})
-	sim.InsertUEContextToDB()
+	ueContexts := sim.ParseUEData(rootPath, []string{"uecfg.yaml"})
+	sim.InsertUEContextToDB(ueContexts)
 
 	// s.StartNewRan()
 	time.Sleep(100 * time.Millisecond)

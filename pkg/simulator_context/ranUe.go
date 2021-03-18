@@ -57,8 +57,8 @@ type UeContext struct {
 	// related Context
 	Ran     *RanContext
 	RmState string `bson:"rmState"`
-	// For TCP Client
-	// TcpChannelMsg map[string]chan string
+	// For API Usage
+	ApiNotifyChan chan string `bson:"-"`
 	// TcpConn       map[string]net.Conn // supi -> UeTcpClient
 }
 
@@ -104,12 +104,11 @@ type QosFlow struct {
 
 func NewUeContext() *UeContext {
 	return &UeContext{
-		PduSession:  make(map[int64]*SessionContext),
-		AmfUeNgapId: AmfNgapIdUnspecified,
-		RanUeNgapId: RanNgapIdUnspecified,
-		RmState:     RegisterStateDeregitered,
-		// TcpChannelMsg: make(map[string]chan string),
-		// TcpConn:       make(map[string]net.Conn),
+		PduSession:    make(map[int64]*SessionContext),
+		AmfUeNgapId:   AmfNgapIdUnspecified,
+		RanUeNgapId:   RanNgapIdUnspecified,
+		RmState:       RegisterStateDeregitered,
+		ApiNotifyChan: make(chan string, 100),
 	}
 }
 
@@ -195,13 +194,7 @@ func (s *SessionContext) GetTunnelMsg() string {
 }
 
 func (ue *UeContext) SendMsg(msg string) {
-	// for _, channel := range ue.TcpChannelMsg {
-	// 	select {
-	// 	case channel <- msg:
-	// 	default:
-	// 		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
-	// 	}
-	// }
+	ue.ApiNotifyChan <- msg
 }
 
 func (ue *UeContext) AttachRan(ran *RanContext) {

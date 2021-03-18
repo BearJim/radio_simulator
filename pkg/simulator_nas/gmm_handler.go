@@ -2,9 +2,7 @@ package simulator_nas
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strconv"
-	"strings"
 
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
@@ -55,23 +53,9 @@ func (c *NASController) HandleRegistrationAccept(ue *simulator_context.UeContext
 	}
 	c.ngMessager.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
 	ue.RmState = simulator_context.RegisterStateRegistered
-
-	fmt.Println(ue.AuthData.SQN)
-	input, _ := ioutil.ReadFile("configs/uecfg.conf")
-	lines := strings.Split(string(input), "\n")
-	for i, line := range lines {
-		if strings.Contains(line, "SQN") {
-			//noSpace := strings.Replace(lines[i], " ", "", -1)
-			//num, _ := strconv.ParseInt(strings.Split(noSpace, ":")[1], 16, 64)
-			num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
-			ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
-			lines[i] = fmt.Sprintf("  SQN: %s", ue.AuthData.SQN)
-		}
-	}
-	output := strings.Join(lines, "\n")
-	ioutil.WriteFile("configs/uecfg.conf", []byte(output), 0644)
-
-	ue.SendMsg("[REG] SUCCESS\n")
+	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
+	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
+	ue.SendMsg("[REG] SUCCESS")
 	return nil
 }
 func (c *NASController) HandleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {

@@ -75,12 +75,22 @@ message DescribeRANResponse {
     string name = 1;
 };
 
+message LogStreamingRequest {
+    string supi = 1;
+}
+
+message LogStreamingResponse {
+    string log_message = 1;
+}
+
+
 service APIService {
     rpc DescribeRAN (DescribeRANRequest) returns (DescribeRANResponse);
     rpc GetUEs(GetUEsRequest) returns(GetUEsResponse);
     rpc DescribeUE(DescribeUERequest) returns(DescribeUEResponse);
     rpc Register(RegisterRequest) returns(RegisterResponse);
     rpc Deregister(DeregisterRequest) returns(DeregisterResponse);
+    rpc SubscribeLog(LogStreamingRequest) returns (stream LogStreamingResponse);
     // rpc Idle();
     // rpc Connect();
     // rpc AddPduSession();

@@ -23,6 +23,7 @@ type APIServiceClient interface {
 	DescribeUE(ctx context.Context, in *DescribeUERequest, opts ...grpc.CallOption) (*DescribeUEResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	Deregister(ctx context.Context, in *DeregisterRequest, opts ...grpc.CallOption) (*DeregisterResponse, error)
+	SubscribeLog(ctx context.Context, in *LogStreamingRequest, opts ...grpc.CallOption) (APIService_SubscribeLogClient, error)
 }
 
 type aPIServiceClient struct {
@@ -78,6 +79,38 @@ func (c *aPIServiceClient) Deregister(ctx context.Context, in *DeregisterRequest
 	return out, nil
 }
 
+func (c *aPIServiceClient) SubscribeLog(ctx context.Context, in *LogStreamingRequest, opts ...grpc.CallOption) (APIService_SubscribeLogClient, error) {
+	stream, err := c.cc.NewStream(ctx, &APIService_ServiceDesc.Streams[0], "/APIService/SubscribeLog", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &aPIServiceSubscribeLogClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type APIService_SubscribeLogClient interface {
+	Recv() (*LogStreamingResponse, error)
+	grpc.ClientStream
+}
+
+type aPIServiceSubscribeLogClient struct {
+	grpc.ClientStream
+}
+
+func (x *aPIServiceSubscribeLogClient) Recv() (*LogStreamingResponse, error) {
+	m := new(LogStreamingResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // APIServiceServer is the server API for APIService service.
 // All implementations must embed UnimplementedAPIServiceServer
 // for forward compatibility
@@ -87,6 +120,7 @@ type APIServiceServer interface {
 	DescribeUE(context.Context, *DescribeUERequest) (*DescribeUEResponse, error)
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error)
+	SubscribeLog(*LogStreamingRequest, APIService_SubscribeLogServer) error
 	mustEmbedUnimplementedAPIServiceServer()
 }
 
@@ -108,6 +142,9 @@ func (UnimplementedAPIServiceServer) Register(context.Context, *RegisterRequest)
 }
 func (UnimplementedAPIServiceServer) Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Deregister not implemented")
+}
+func (UnimplementedAPIServiceServer) SubscribeLog(*LogStreamingRequest, APIService_SubscribeLogServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeLog not implemented")
 }
 func (UnimplementedAPIServiceServer) mustEmbedUnimplementedAPIServiceServer() {}
 
@@ -212,6 +249,27 @@ func _APIService_Deregister_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _APIService_SubscribeLog_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LogStreamingRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(APIServiceServer).SubscribeLog(m, &aPIServiceSubscribeLogServer{stream})
+}
+
+type APIService_SubscribeLogServer interface {
+	Send(*LogStreamingResponse) error
+	grpc.ServerStream
+}
+
+type aPIServiceSubscribeLogServer struct {
+	grpc.ServerStream
+}
+
+func (x *aPIServiceSubscribeLogServer) Send(m *LogStreamingResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // APIService_ServiceDesc is the grpc.ServiceDesc for APIService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +298,12 @@ var APIService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _APIService_Deregister_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeLog",
+			Handler:       _APIService_SubscribeLog_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "pkg/api/api.proto",
 }

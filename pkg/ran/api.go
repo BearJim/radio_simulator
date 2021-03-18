@@ -6,7 +6,6 @@ import (
 
 	"github.com/free5gc/nas/security"
 	"github.com/jay16213/radio_simulator/pkg/api"
-	"github.com/jay16213/radio_simulator/pkg/logger"
 )
 
 type apiService struct {
@@ -71,14 +70,29 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	case "NIA3":
 		ue.IntegrityAlg = security.AlgIntegrity128NIA3
 	}
-	logger.ApiLog.Warnf("fuck int: %d, cipher: %d", ue.IntegrityAlg, ue.CipheringAlg)
 	// amf selection
 	ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 	// TODO: read register result
-	return nil, errors.New("Not implemented")
+	return &api.RegisterResponse{Result: api.StatusCode_OK}, nil
 }
 
 func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest) (*api.DeregisterResponse, error) {
 	return nil, errors.New("Not implemented")
+}
+
+func (a *apiService) SubscribeLog(req *api.LogStreamingRequest, stream api.APIService_SubscribeLogServer) error {
+	supi := req.GetSupi()
+	ue := a.ranApp.Context().FindUEBySupi(supi)
+	if ue == nil {
+		return errors.New("UE not found")
+	}
+
+	resp := &api.LogStreamingResponse{}
+	for {
+		resp.LogMessage = <-ue.ApiNotifyChan
+		if err := stream.Send(resp); err != nil {
+			return err
+		}
+	}
 }

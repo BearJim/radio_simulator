@@ -5,8 +5,6 @@ import (
 	"os/exec"
 
 	"github.com/jay16213/radio_simulator/pkg/logger"
-
-	"github.com/free5gc/openapi/models"
 )
 
 var simContext = Simulator{}
@@ -39,14 +37,6 @@ type Simulator struct {
 	// TunFd             int
 	// TunSockAddr       syscall.Sockaddr
 	// ListenRawConn     *ipv4.RawConn
-}
-
-type UeDBInfo struct {
-	AmDate     models.AccessAndMobilitySubscriptionData
-	SmfSelData models.SmfSelectionSubscriptionData
-	AmPolicy   models.AmPolicyData
-	AuthsSubs  models.AuthenticationSubscription
-	PlmnId     string
 }
 
 // func (s *Simulator) SendToTunDev(msg []byte) {
