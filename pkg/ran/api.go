@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/free5gc/nas/security"
 	"github.com/jay16213/radio_simulator/pkg/api"
+	"github.com/jay16213/radio_simulator/pkg/logger"
 )
 
 type apiService struct {
@@ -26,7 +28,7 @@ func (a *apiService) GetUEs(ctx context.Context, req *api.GetUEsRequest) (*api.G
 			Supi: ue.Supi,
 			// Guti: ue.Guti,
 			// CmState: ue.,
-			RmState:          ue.RegisterState,
+			RmState:          ue.RmState,
 			NasUplinkCount:   ue.ULCount.Get(),
 			NasDownlinkCount: ue.DLCount.Get(),
 		})
@@ -40,8 +42,41 @@ func (a *apiService) DescribeUE(ctx context.Context, req *api.DescribeUERequest)
 }
 
 func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*api.RegisterResponse, error) {
+	ue := a.ranApp.Context().NewUE(req.Supi)
+	ue.Supi = req.Supi
+	ue.ServingPlmnId = req.ServingPlmn
+	ue.AuthData.AuthMethod = req.AuthMethod
+	ue.AuthData.K = req.K
+	ue.AuthData.Opc = req.Opc
+	ue.AuthData.Op = req.Op
+	ue.AuthData.AMF = req.Amf
+	ue.AuthData.SQN = req.Sqn
+	switch req.CipheringAlg {
+	case "NEA0":
+		ue.CipheringAlg = security.AlgCiphering128NEA0
+	case "NEA1":
+		ue.CipheringAlg = security.AlgCiphering128NEA1
+	case "NEA2":
+		ue.CipheringAlg = security.AlgCiphering128NEA2
+	case "NEA3":
+		ue.CipheringAlg = security.AlgCiphering128NEA3
+	}
+	switch req.IntegrityAlg {
+	case "NIA0":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA0
+	case "NIA1":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA1
+	case "NIA2":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA2
+	case "NIA3":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA3
+	}
+	logger.ApiLog.Warnf("fuck int: %d, cipher: %d", ue.IntegrityAlg, ue.CipheringAlg)
+	// amf selection
+	ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
+	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
+	// TODO: read register result
 	return nil, errors.New("Not implemented")
-
 }
 
 func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest) (*api.DeregisterResponse, error) {

@@ -34,7 +34,7 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 		}
 
 		// TODO: Support for ue has nas connection in both accessType
-		if err = security.NASEncrypt(ue.EncAlg, ue.KnasEnc, ue.ULCount.Get(), security.Bearer3GPP,
+		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.Get(), security.Bearer3GPP,
 			security.DirectionUplink, payload); err != nil {
 			return
 		}
@@ -42,7 +42,7 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 		payload = append([]byte{sequenceNumber}, payload[:]...)
 		mac32 := make([]byte, 4)
 
-		mac32, err = security.NASMacCalculate(ue.IntAlg, ue.KnasInt, ue.ULCount.Get(), security.Bearer3GPP, security.DirectionUplink, payload)
+		mac32, err = security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.ULCount.Get(), security.Bearer3GPP, security.DirectionUplink, payload)
 		if err != nil {
 			return
 		}
@@ -74,12 +74,12 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 	if securityHeaderType == nas.SecurityHeaderTypePlainNas {
 		err = msg.PlainNasDecode(&payload)
 		return
-	} else if ue.IntAlg == security.AlgIntegrity128NIA0 {
+	} else if ue.IntegrityAlg == security.AlgIntegrity128NIA0 {
 		fmt.Println("decode payload is ", payload)
 		// remove header
 		payload = payload[3:]
 
-		if err = security.NASEncrypt(ue.EncAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
+		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
 			security.DirectionDownlink, payload); err != nil {
 			return nil, err
 		}
@@ -96,8 +96,8 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 				return nil, err
 			}
 			if command := msg.GmmMessage.SecurityModeCommand; command != nil {
-				ue.EncAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfCipheringAlgorithm()
-				ue.IntAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfIntegrityProtectionAlgorithm()
+				ue.CipheringAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfCipheringAlgorithm()
+				ue.IntegrityAlg = command.SelectedNASSecurityAlgorithms.GetTypeOfIntegrityProtectionAlgorithm()
 				ue.DerivateAlgKey()
 			} else {
 				return nil, fmt.Errorf("Integrity Protected With New 5G Nas Security is not Security command")
@@ -116,7 +116,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		}
 		ue.DLCount.SetSQN(sequenceNumber)
 
-		mac32, err := security.NASMacCalculate(ue.IntAlg, ue.KnasInt, ue.DLCount.Get(), security.Bearer3GPP,
+		mac32, err := security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.DLCount.Get(), security.Bearer3GPP,
 			security.DirectionDownlink, payload)
 		if err != nil {
 			return nil, err
@@ -133,7 +133,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		// TODO: Support for ue has nas connection in both accessType
 		if securityHeaderType != nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext &&
 			securityHeaderType != nas.SecurityHeaderTypeIntegrityProtected {
-			if err = security.NASEncrypt(ue.EncAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
+			if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
 				security.DirectionDownlink, payload); err != nil {
 				return nil, err
 			}

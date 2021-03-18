@@ -21,8 +21,8 @@ func (c *NASController) HandleAuthenticationRequest(ue *simulator_context.UeCont
 	}
 	ue.NgKsi = request.GetNasKeySetIdentifiler()
 	rand := request.GetRANDValue()
-	resStat := ue.DeriveRESstarAndSetKey(rand[:])
-	nasPdu := nas_packet.GetAuthenticationResponse(resStat, "")
+	resStar := ue.DeriveRESstarAndSetKey(rand[:])
+	nasPdu := nas_packet.GetAuthenticationResponse(resStar, "")
 	c.ngMessager.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
 	return nil
 }
@@ -54,7 +54,7 @@ func (c *NASController) HandleRegistrationAccept(ue *simulator_context.UeContext
 		return err
 	}
 	c.ngMessager.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
-	ue.RegisterState = simulator_context.RegisterStateRegistered
+	ue.RmState = simulator_context.RegisterStateRegistered
 
 	fmt.Println(ue.AuthData.SQN)
 	input, _ := ioutil.ReadFile("configs/uecfg.conf")
@@ -78,7 +78,7 @@ func (c *NASController) HandleDeregistrationAccept(ue *simulator_context.UeConte
 
 	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
 
-	ue.RegisterState = simulator_context.RegisterStateDeregitered
+	ue.RmState = simulator_context.RegisterStateDeregitered
 	return nil
 }
 

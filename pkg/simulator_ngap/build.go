@@ -514,7 +514,7 @@ func BuildUEContextReleaseComplete(ue *simulator_context.UeContext) ([]byte, err
 	uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
 	// Information on Recommended Cells and RAN Nodes for Paging (optional)
 
-	if ue.RegisterState != simulator_context.RegisterStateDeregitered {
+	if ue.RmState != simulator_context.RegisterStateDeregitered {
 		// TODO: N2Release - send exist pdu Session info to release
 		// PDU Session Resource List
 		ie = ngapType.UEContextReleaseCompleteIEs{}

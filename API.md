@@ -5,6 +5,9 @@
 ### connect \<url\>
 - describe: connect to the api server of RAN
 
+### upload \<url\>
+- describe: upload all UEs to free5gc DB
+
 ### get rans
 - describe: get all the RANs in brief
 

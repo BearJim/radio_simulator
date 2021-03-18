@@ -3,6 +3,7 @@ package simulator_util
 import (
 	"fmt"
 	"net"
+	"strconv"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 )
@@ -21,4 +22,10 @@ func IPsToSCTPAddr(ipAddrs []string, port int) (*sctp.SCTPAddr, error) {
 		Port:    port,
 	}
 	return sctpAddr, nil
+}
+
+func TACConfigToHexString(intString string) (hexString string) {
+	tmp, _ := strconv.ParseUint(intString, 10, 32)
+	hexString = fmt.Sprintf("%06x", tmp)
+	return
 }

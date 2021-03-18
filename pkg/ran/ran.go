@@ -40,6 +40,10 @@ func New() *RanApp {
 	return &RanApp{}
 }
 
+func (r *RanApp) NGController() *simulator_ngap.NGController {
+	return r.ngController
+}
+
 func (r *RanApp) Context() *simulator_context.RanContext {
 	return r.ctx
 }
@@ -149,9 +153,6 @@ func (r *RanApp) connectToAmf() (*sctp.SCTPConn, error) {
 	}()
 
 	conn := sctp.NewSCTPConn(sock, nil)
-	if err = sctp.SCTPBind(sock, ranAddr, sctp.SCTP_BINDX_ADD_ADDR); err != nil {
-		return nil, err
-	}
 	// logger.InitLog.Infof("Connecting to sctp addr: %+v", r.primaryAMFEndpoint)
 	// conn, err := sctp.DialSCTPOneToMany("sctp", ranAddr, r.primaryAMFEndpoint)
 	// if err != nil {
@@ -165,6 +166,14 @@ func (r *RanApp) connectToAmf() (*sctp.SCTPConn, error) {
 	err = conn.SubscribeEvents(sctp.SCTP_EVENT_DATA_IO | sctp.SCTP_EVENT_ASSOCIATION)
 	if err != nil {
 		logger.NgapLog.Errorf("Failed to subscribe SCTP Event: %v", err)
+	}
+
+	if err = sctp.SCTPBind(sock, ranAddr, sctp.SCTP_BINDX_ADD_ADDR); err != nil {
+		return nil, err
+	}
+
+	if err = syscall.Listen(sock, 100); err != nil {
+		return nil, err
 	}
 	return conn, nil
 }
@@ -209,7 +218,27 @@ func (r *RanApp) StartSCTPAssociation() {
 				event := noti.(*sctp.SCTPAssocChangeEvent)
 				switch event.State() {
 				case sctp.SCTP_COMM_UP:
-					logger.NgapLog.Infof("SCTP state is SCTP_COMM_UP")
+					// logger.NgapLog.Infof("SCTP state is SCTP_COMM_UP: %d", event.AssocID())
+					// c, err := r.sctpConn.PeelOff(int(event.AssocID()))
+					// if err != nil {
+					// 	logger.NgapLog.Errorf("PeelOff: %+v", err)
+					// } else {
+					// 	in, e := c.GetDefaultSentParam()
+					// 	if e != nil {
+					// 		logger.NgapLog.Errorf("PeelOff GetDefaultSentParam: %+v", e)
+					// 	} else {
+					// 		logger.NgapLog.Warnf("PeelOff GetDefaultSentParam: %+v", in)
+					// 	}
+					// 	b := make([]byte, 8192)
+					// 	nn, info, _, err2 := c.SCTPRead(b)
+					// 	if err2 != nil {
+					// 		logger.NgapLog.Errorf("PeelOff SCTPRead: %+v", err2)
+					// 	} else {
+					// 		logger.NgapLog.Warnf("PeelOff info: %+v", info)
+					// 		r.ngController.Dispatch(sctp.SockaddrToSCTPAddr(endpoint), b[:nn])
+					// 	}
+					// 	c.Close()
+					// }
 				case sctp.SCTP_RESTART:
 					logger.NgapLog.Infof("SCTP state is SCTP_RESTART")
 				case sctp.SCTP_COMM_LOST:

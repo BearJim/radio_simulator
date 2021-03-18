@@ -88,7 +88,7 @@ func GetRegistrationRequestWith5GMM(ue *simulator_context.UeContext, registratio
 	registrationRequest.UESecurityCapability = &nasType.UESecurityCapability{
 		Iei:    nasMessage.RegistrationRequestUESecurityCapabilityType,
 		Len:    8,
-		Buffer: type_convert.UeSecurityCap(ue.IntAlg, ue.EncAlg),
+		Buffer: type_convert.UeSecurityCap(ue.IntegrityAlg, ue.CipheringAlg),
 	}
 	registrationRequest.RequestedNSSAI = requestedNSSAI
 	registrationRequest.UplinkDataStatus = uplinkDataStatus
@@ -729,7 +729,7 @@ func GetDeregistrationRequest(ue *simulator_context.UeContext, switchOff uint8) 
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeDeregistrationRequestUEOriginatingDeregistration)
 
-	if ue.RegisterState == simulator_context.RegisterStateRegistered {
+	if ue.RmState == simulator_context.RegisterStateRegistered {
 		m.SecurityHeader = nas.SecurityHeader{
 			ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
 			SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,

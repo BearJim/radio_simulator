@@ -30,50 +30,50 @@ const (
 type UeContext struct {
 	AMFEndpoint *sctp.SCTPAddr
 
-	Supi          string `yaml:"supi"`
+	Supi          string `yaml:"supi" bson:"supi"`
 	Guti          *nasType.GUTI5G
-	Gpsis         []string                            `yaml:"gpsis"`
-	Nssai         models.Nssai                        `yaml:"nssai"`
-	UeAmbr        UeAmbr                              `yaml:"ueAmbr"`
-	SmfSelData    models.SmfSelectionSubscriptionData `yaml:"smfSelData"`
-	AuthData      AuthData                            `yaml:"auths"`
-	SubscCats     []string                            `yaml:"subscCats,omitempty"`
-	ServingPlmnId string                              `yaml:"servingPlmn"`
+	Gpsis         []string                            `yaml:"gpsis" bson:"gpsis"`
+	Nssai         models.Nssai                        `yaml:"nssai" bson:"nssai"`
+	UeAmbr        UeAmbr                              `yaml:"ueAmbr" bson:"ueAmbr"`
+	SmfSelData    models.SmfSelectionSubscriptionData `yaml:"smfSelData" bson:"smfSelectionSubscriptionData"`
+	AuthData      AuthData                            `yaml:"auths" bson:"authData"`
+	SubscCats     []string                            `yaml:"subscCats,omitempty" bson:"subscCats"`
+	ServingPlmnId string                              `yaml:"servingPlmn" bson:"servingPlmn"`
 	RanUeNgapId   int64
 	AmfUeNgapId   int64
 	// security
-	ULCount          security.Count
-	DLCount          security.Count
-	CipheringAlgOrig string `yaml:"cipherAlg"`
-	IntegrityAlgOrig string `yaml:"integrityAlg"`
-	EncAlg           uint8
-	IntAlg           uint8
-	KnasEnc          [16]uint8
-	KnasInt          [16]uint8
-	Kamf             []uint8
-	NgKsi            uint8
+	ULCount         security.Count `bson:"uplinkCount,omitempty"`
+	DLCount         security.Count `bson:"downlinkCount,omitempty"`
+	CipheringAlgStr string         `yaml:"cipherAlg" bson:"cipherAlgStr"`
+	IntegrityAlgStr string         `yaml:"integrityAlg" bson:"integrityAlgStr"`
+	CipheringAlg    uint8          `bson:"cipherAlg"`
+	IntegrityAlg    uint8          `bson:"integrityAlg"`
+	KnasEnc         [16]uint8
+	KnasInt         [16]uint8
+	Kamf            []uint8
+	NgKsi           uint8
 	// PduSession
 	PduSession map[int64]*SessionContext
 	// related Context
-	Ran           *RanContext
-	RegisterState string
+	Ran     *RanContext
+	RmState string `bson:"rmState"`
 	// For TCP Client
-	TcpChannelMsg map[string]chan string
+	// TcpChannelMsg map[string]chan string
 	// TcpConn       map[string]net.Conn // supi -> UeTcpClient
 }
 
 type UeAmbr struct {
-	Upink    string `yaml:"uplink"`
-	DownLink string `yaml:"downlink"`
+	UpLink   string `yaml:"uplink" bson:"uplink"`
+	DownLink string `yaml:"downlink" bson:"downlink"`
 }
 
 type AuthData struct {
-	AuthMethod string `yaml:"authMethod"`
-	K          string `yaml:"K"`
-	Opc        string `yaml:"Opc,omitempty"`
-	Op         string `yaml:"Op,omitempty"`
-	AMF        string `yaml:"AMF"`
-	SQN        string `yaml:"SQN"`
+	AuthMethod string `yaml:"authMethod" bson:"authMethod"`
+	K          string `yaml:"K" bson:"K"`
+	Opc        string `yaml:"Opc,omitempty" bson:"Opc"`
+	Op         string `yaml:"Op,omitempty" bson:"Op"`
+	AMF        string `yaml:"AMF" bson:"AMF"`
+	SQN        string `yaml:"SQN" bson:"SQN"`
 }
 
 type SessionContext struct {
@@ -104,11 +104,11 @@ type QosFlow struct {
 
 func NewUeContext() *UeContext {
 	return &UeContext{
-		PduSession:    make(map[int64]*SessionContext),
-		AmfUeNgapId:   AmfNgapIdUnspecified,
-		RanUeNgapId:   RanNgapIdUnspecified,
-		RegisterState: RegisterStateDeregitered,
-		TcpChannelMsg: make(map[string]chan string),
+		PduSession:  make(map[int64]*SessionContext),
+		AmfUeNgapId: AmfNgapIdUnspecified,
+		RanUeNgapId: RanNgapIdUnspecified,
+		RmState:     RegisterStateDeregitered,
+		// TcpChannelMsg: make(map[string]chan string),
 		// TcpConn:       make(map[string]net.Conn),
 	}
 }
@@ -195,13 +195,13 @@ func (s *SessionContext) GetTunnelMsg() string {
 }
 
 func (ue *UeContext) SendMsg(msg string) {
-	for _, channel := range ue.TcpChannelMsg {
-		select {
-		case channel <- msg:
-		default:
-			logger.ContextLog.Warnf("Can't send Msg to Tcp client")
-		}
-	}
+	// for _, channel := range ue.TcpChannelMsg {
+	// 	select {
+	// 	case channel <- msg:
+	// 	default:
+	// 		logger.ContextLog.Warnf("Can't send Msg to Tcp client")
+	// 	}
+	// }
 }
 
 func (ue *UeContext) AttachRan(ran *RanContext) {
@@ -295,7 +295,7 @@ func (ue *UeContext) DerivateAlgKey() {
 	// Security Key
 	P0 := []byte{security.NNASEncAlg}
 	L0 := UeauCommon.KDFLen(P0)
-	P1 := []byte{ue.EncAlg}
+	P1 := []byte{ue.CipheringAlg}
 	L1 := UeauCommon.KDFLen(P1)
 
 	kenc := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)
@@ -304,7 +304,7 @@ func (ue *UeContext) DerivateAlgKey() {
 	// Integrity Key
 	P0 = []byte{security.NNASIntAlg}
 	L0 = UeauCommon.KDFLen(P0)
-	P1 = []byte{ue.IntAlg}
+	P1 = []byte{ue.IntegrityAlg}
 	L1 = UeauCommon.KDFLen(P1)
 
 	kint := UeauCommon.GetKDFValue(ue.Kamf, UeauCommon.FC_FOR_ALGORITHM_KEY_DERIVATION, P0, L0, P1, L1)

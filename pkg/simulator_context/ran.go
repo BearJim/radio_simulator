@@ -118,6 +118,15 @@ func NewRanContext() *RanContext {
 	}
 }
 
+func (ran *RanContext) NewUE(supi string) *UeContext {
+	ue := NewUeContext()
+	ue.Ran = ran
+	ran.UePool[ran.RanUeIDGenerator] = ue
+	ue.RanUeNgapId = ran.RanUeIDGenerator
+	ran.RanUeIDGenerator++
+	return ue
+}
+
 func (ran *RanContext) LoadConfig(cfg factory.Config) {
 	ran.PlmnID = ngapConvert.PlmnIdToNgap(cfg.GnbId.PlmnId)
 	ran.AmfSctpEndpoint = cfg.AmfSCTPEndpoint

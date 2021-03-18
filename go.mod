@@ -21,4 +21,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace git.cs.nctu.edu.tw/calee/sctp => /home/jay/thesis/sctp
+replace (
+	git.cs.nctu.edu.tw/calee/sctp => /home/jay/thesis/sctp
+	github.com/free5gc/MongoDBLibrary => /home/jay/thesis/MongoDBLibrary
+)

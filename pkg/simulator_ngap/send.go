@@ -81,7 +81,7 @@ func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue 
 	}
 
 	c.ran.SendToAMF(endpoint, pkt)
-	if ue.RegisterState == simulator_context.RegisterStateDeregitered {
+	if ue.RmState == simulator_context.RegisterStateDeregitered {
 		// Complete Deregistration
 		ue.SendMsg("[DEREG] SUCCESS\n")
 	}

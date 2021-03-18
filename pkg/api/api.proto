@@ -45,7 +45,16 @@ message DescribeUEResponse {
 
 message RegisterRequest {
     string supi = 1;
-    string ran_id = 2;
+    string ciphering_alg = 2;
+    string integrity_alg = 3;
+    // auth data
+    string auth_method = 4;
+    string k = 5;
+    string opc = 6;
+    string op = 7;
+    string amf = 8;
+    string sqn = 9;
+    string servingPlmn = 10;
 }
 
 message RegisterResponse {

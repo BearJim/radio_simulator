@@ -51,4 +51,4 @@ listenIp: 127.0.0.2
 logger:
 # network function
   debugLevel: debug
-  ReportCaller: true
+  ReportCaller: false

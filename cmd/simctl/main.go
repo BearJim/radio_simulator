@@ -1,108 +1,95 @@
 package main
 
 import (
-	"context"
+	"bufio"
 	"fmt"
+	"io"
 	"os"
-	"os/exec"
 	"strings"
-	"syscall"
-	"text/tabwriter"
 	"time"
 
-	"github.com/jay16213/radio_simulator/pkg/api"
-	"google.golang.org/grpc"
+	"github.com/jay16213/radio_simulator/pkg/simulator"
 )
 
-type Simulator struct {
-	cc      *exec.Cmd
-	RanPool map[string]api.APIServiceClient // RanSctpUri -> RAN_CONTEXT
-	// UeContextPool map[string]*UeContext  // Supi -> UeTestInfo
-}
+var sim *simulator.Simulator
 
 func main() {
-	s := &Simulator{
-		RanPool: make(map[string]api.APIServiceClient),
+	if s, err := simulator.New("simulator", "mongodb://localhost:27017"); err != nil {
+		fmt.Printf("Init error: %+v\n", err)
+		os.Exit(1)
+	} else {
+		sim = s
 	}
-	s.StartNewRan()
+
+	rootPath := "./configs/"
+	sim.ParseUEData(rootPath, []string{"uecfg.yaml"})
+	sim.InsertUEContextToDB()
+
+	// s.StartNewRan()
 	time.Sleep(100 * time.Millisecond)
-	runCli(s)
+	runCli(sim)
 }
 
-func runCli(s *Simulator) {
-	var cmd string
+func runCli(s *simulator.Simulator) {
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Printf("> ")
-		fmt.Scanln(&cmd)
-		s.executor(cmd)
+		line, _, err := reader.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+		executor(string(line))
 	}
 }
 
-func (s *Simulator) StartNewRan() {
-	c := exec.Command("./bin/simulator")
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	c.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
-
-	if err := c.Start(); err != nil {
-		fmt.Printf("run error: %+v\n", err)
-	} else {
-		fmt.Printf("c.Run err is nil\n")
-	}
-	s.cc = c
-}
-
-func (s *Simulator) NewRANClient(client api.APIServiceClient, ranName string) {
-	if _, ok := s.RanPool[ranName]; ok {
-		fmt.Printf("duplicate ran name %s\n", ranName)
-	} else {
-		s.RanPool[ranName] = client
-	}
-}
-
-func (s *Simulator) executor(command string) {
+func executor(command string) {
 	if strings.HasPrefix(command, "connect") {
-		tokens := strings.Split(command, " ")
-		if len(tokens) < 2 {
+		tokens := tokenize(command)
+		if len(tokens) < 1 {
 			fmt.Println("command error")
 			return
 		}
-		tokens = tokens[1:] // cut "connect"
-		for _, addr := range tokens {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
-			if err != nil {
-				fmt.Printf("connect %s error: %+v\n", addr, err)
-				return
-			}
 
-			client := api.NewAPIServiceClient(conn)
-			resp, err := client.DescribeRAN(context.Background(), &api.DescribeRANRequest{})
-			if err != nil {
-				fmt.Printf("DescribeRAN: %+v\n", err)
-				return
+		for _, addr := range tokens {
+			if name, err := sim.ConnectToRAN(addr); err != nil {
+				fmt.Printf("connect %s error: %+v\n", addr, err)
+			} else {
+				fmt.Printf("Connect to %s (name: %s)\n", addr, name)
 			}
-			s.NewRANClient(client, resp.Name)
-			fmt.Printf("Connect to RAN %s\n", resp.Name)
 		}
 	}
 
-	if command == "get ues" {
-		writer := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', tabwriter.AlignRight)
-		fmt.Fprintln(writer, "SUPI\tCM-STATE\tRM-STATE\tSERVING-RAN")
-		fmt.Fprintln(writer, "imsi-2089300000003\tIDLE\tRegistered\tran-1 (127.0.0.1:38412)")
-		fmt.Fprintln(writer, "imsi-2089300000004\tConnected\tRegistered\tran-1 (127.0.0.1:38412)")
-		fmt.Fprintln(writer, "imsi-2089300000005\tIDLE\tDeregistered\tran-2 (127.0.0.2:38412)")
-		writer.Flush()
+	if strings.HasPrefix(command, "reg") {
+		tokens := tokenize(command)
+		if len(tokens) != 2 {
+			fmt.Println("command error")
+			return
+		}
+
+		sim.UeRegister(tokens[0], tokens[1])
+	}
+
+	if strings.HasPrefix(command, "upload") {
+		tokens := tokenize(command)
+		if len(tokens) != 1 {
+			fmt.Println("command error")
+			return
+		}
+		sim.UploadUEProfile("free5gc", tokens[0])
+	}
+
+	if command == "get" {
+		sim.GetUEs()
 	}
 
 	if command == "exit" {
-		if err := s.cc.Process.Signal(syscall.SIGTERM); err != nil {
-			fmt.Printf("Signal: %+v\n", err)
-		}
 		os.Exit(0)
 	}
+}
+
+func tokenize(cmd string) []string {
+	tokens := strings.Split(cmd, " ")
+	return tokens[1:]
 }

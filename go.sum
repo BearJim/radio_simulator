@@ -64,11 +64,8 @@ github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7
 github.com/evanphx/json-patch v4.9.0+incompatible h1:kLcOMZeuLAJvL2BPWLMIj5oaZQobrkAqrL+WFZwQses=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/free5gc/CommonConsumerTestData v1.0.0/go.mod h1:zhv32NDxa/HWukKeEZV0b4uE2Yl+gBkycfp81HqUo4A=
-github.com/free5gc/MongoDBLibrary v1.0.0 h1:+CN5t3G9AvI4iv7azq46KUK4VWYsprbR7OHBqVM9XSo=
-github.com/free5gc/MongoDBLibrary v1.0.0/go.mod h1:0TSgWaO+5KyIrylML6jbHqtgoJJKpHGiXHPFdHXXPts=
 github.com/free5gc/UeauCommon v1.0.0 h1:ykhHNOcGpk6hLpVrGcMuKBbc+PgSmrwxCELnyFH9xKs=
 github.com/free5gc/UeauCommon v1.0.0/go.mod h1:Ly9JlJN4c1uCALizCmEha1Nu78ibQjbpQvSrt04nGfw=
-github.com/free5gc/amf v1.3.0 h1:TJeIC3Md2R6sDw7tjmwYi+4p1qcT6ff8fVM+85QB+0k=
 github.com/free5gc/aper v1.0.0 h1:EuKAQ2EL5wykcmaJsoIeExLwr97HhQJOiG7qvqSkjZM=
 github.com/free5gc/aper v1.0.0/go.mod h1:L1R91VwLpAIh/kx/hOWXwgBQp3ZZflRHHKCYmfeGegU=
 github.com/free5gc/http2_util v1.0.0/go.mod h1:GN2BCD8IINjtnAKYGwe+dEeTBRFEv4lQnZblFIIhbdE=
@@ -418,8 +415,6 @@ golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20201130171929-760e229fe7c5/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201211090839-8ad439b19e0f h1:QdHQnPce6K4XQewki9WNbG5KOROuDzqO3NaYjI1cXJ0=
 golang.org/x/sys v0.0.0-20201211090839-8ad439b19e0f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20210314195730-07df6a141424 h1:+39ahH47SWi1PhMRAHfIrm8f69HRZ5K2koXH6dmO8TQ=
-golang.org/x/sys v0.0.0-20210314195730-07df6a141424/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
