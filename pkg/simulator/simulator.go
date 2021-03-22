@@ -3,6 +3,7 @@ package simulator
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -34,7 +35,6 @@ type Simulator struct {
 	cc       *exec.Cmd
 	dbClient *MongoDBLibrary.Client
 	RanPool  map[string]api.APIServiceClient // RanSctpUri -> RAN_CONTEXT
-	// UeContextPool map[string]*simulator_context.UeContext // Supi -> UeTestInfo
 }
 
 func New(dbName string, dbUrl string) (*Simulator, error) {
@@ -88,7 +88,7 @@ func (s *Simulator) StartNewRan() {
 }
 
 func (s *Simulator) ConnectToRAN(addr string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -196,7 +196,7 @@ func (s *Simulator) GetUEs() {
 			fmt.Printf("decode ue error: %+v\n", err)
 			continue
 		}
-		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", ue.Supi, "IDLE", ue.RmState, "unknown")
+		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", ue.Supi, "IDLE", ue.RmState, ue.ServingRan)
 	}
 	writer.Flush()
 }
@@ -218,7 +218,13 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 		fmt.Printf("ran not found\n")
 		return
 	}
-	regResult, err := apiClient.Register(context.TODO(), &api.RegisterRequest{
+
+	ue.ServingRan = ranName
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+	defer cancel()
+
+	regResult, err := apiClient.Register(ctx, &api.RegisterRequest{
 		Supi:         ue.Supi,
 		ServingPlmn:  ue.ServingPlmnId,
 		CipheringAlg: ue.CipheringAlgStr,
@@ -234,13 +240,12 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 		fmt.Printf("register error: %+v\n", err)
 		return
 	}
-	if regResult.Result == api.StatusCode_OK {
-		fmt.Printf("register success\n")
-	} else {
-		fmt.Printf("register fail\n")
-	}
 
-	s.SubscribeUELog(apiClient, &ue)
+	if regResult.GetStatusCode() == api.StatusCode_ERROR {
+		fmt.Printf("registration start failed: %s\n", regResult.GetBody())
+	} else {
+		fmt.Printf("registration success\n")
+	}
 
 	// update SQN when trigger registration
 	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
@@ -248,7 +253,35 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 	s.UdpateUE(&ue)
 }
 
-func (s *Simulator) SubscribeUELog(client api.APIServiceClient, ue *simulator_context.UeContext) {
+func (s *Simulator) UeDeregister(supi string) {
+	ue, err := s.findUE(supi)
+	if err != nil {
+		fmt.Printf("find UE: %+v", err)
+		return
+	}
+
+	apiClient, ok := s.RanPool[ue.ServingRan]
+	if !ok {
+		fmt.Printf("ran not found\n")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+	defer cancel()
+
+	result, err := apiClient.Deregister(ctx, &api.DeregisterRequest{Supi: ue.Supi})
+	if err != nil {
+		fmt.Printf("deregister error: %+v\n", err)
+		return
+	}
+	if result.GetStatusCode() == api.StatusCode_ERROR {
+		fmt.Printf("Deregistration start failed: %s\n", result.GetBody())
+	} else {
+		fmt.Println("Deregistration success")
+	}
+}
+
+func (s *Simulator) SubscribeUELog(client api.APIServiceClient, ue *simulator_context.UeContext, closeMsg []string) {
 	stream, err := client.SubscribeLog(context.TODO(), &api.LogStreamingRequest{Supi: ue.Supi})
 	if err != nil {
 		fmt.Printf("subscribe ue log error: %+v\n", err)
@@ -259,13 +292,23 @@ func (s *Simulator) SubscribeUELog(client api.APIServiceClient, ue *simulator_co
 			resp, err := stream.Recv()
 			if err != nil {
 				if err == io.EOF {
-					break
+					fmt.Println("close ue log streaming")
+					return
 				} else {
 					fmt.Printf("recv ue log error: %+v\n", err)
-					break
+					return
 				}
 			}
 			fmt.Println(resp.LogMessage)
+			// for _, msg := range closeMsg {
+			// 	if resp.LogMessage == msg {
+			// 		if err := stream.CloseSend(); err != nil {
+			// 			fmt.Printf("CloseSend error: %+v\n", err)
+			// 		}
+			// 		fmt.Println("close log streaming")
+			// 		return
+			// 	}
+			// }
 		}
 	}()
 }
@@ -323,6 +366,26 @@ func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
 		InsertAccessAndMobilitySubscriptionDataToMongoDB(dbClient, ue.Supi, amData, ue.ServingPlmnId)
 		InsertSmfSelectionSubscriptionDataToMongoDB(dbClient, ue.Supi, ue.SmfSelData, ue.ServingPlmnId)
 		InsertAmPolicyDataToMongoDB(dbClient, ue.Supi, amPolicy)
+	}
+}
+
+func (s *Simulator) findUE(supi string) (*simulator_context.UeContext, error) {
+	result := s.dbClient.Database().Collection("ue").FindOne(context.TODO(), bson.M{"supi": supi})
+	if result == nil || result.Err() == mongo.ErrNoDocuments {
+		return nil, errors.New("UE not found")
+	}
+	var ue simulator_context.UeContext
+	if err := result.Decode(&ue); err != nil {
+		return nil, fmt.Errorf("decode ue error: %+v\n", err)
+	}
+	return &ue, nil
+}
+
+func (s *Simulator) updateUE(ue *simulator_context.UeContext) {
+	_, err := s.dbClient.Database().Collection("ue").UpdateOne(context.Background(), bson.M{"supi": ue.Supi},
+		bson.M{"$set": ue})
+	if err != nil {
+		fmt.Printf("update UE error")
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 
@@ -55,7 +56,7 @@ func (c *NASController) HandleRegistrationAccept(ue *simulator_context.UeContext
 	ue.RmState = simulator_context.RegisterStateRegistered
 	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
 	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
-	ue.SendMsg("[REG] SUCCESS")
+	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgRegisterSuccess)
 	return nil
 }
 func (c *NASController) HandleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {

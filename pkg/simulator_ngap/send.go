@@ -5,6 +5,7 @@ import (
 	"os/exec"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
+	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 
@@ -24,7 +25,7 @@ func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 }
 
 func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
-	logger.NgapLog.Info("[RAN] Initail Ue Message (Initail Registration Request)")
+	logger.NgapLog.Info("Send Initail Ue Message (Initail Registration Request)")
 	pkt, err := BuildInitialUEMessage(ue, nasMessage.RegistrationType5GSInitialRegistration, "")
 	if err != nil {
 		logger.NgapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
@@ -35,7 +36,7 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 
 func (c *NGController) SendUplinkNasTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
 
-	logger.NgapLog.Info("[RAN] Send Uplink Nas Transport")
+	logger.NgapLog.Info("Send Uplink NAS Transport")
 
 	pkt, err := BuildUplinkNasTransport(ue, nasPdu)
 	if err != nil {
@@ -59,7 +60,7 @@ func (c *NGController) SendIntialContextSetupResponse(endpoint *sctp.SCTPAddr, u
 
 func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
 
-	logger.NgapLog.Info("[RAN] Send Ue Context Release Complete")
+	logger.NgapLog.Info("Send Ue Context Release Complete")
 
 	pkt, err := BuildUEContextReleaseComplete(ue)
 	if err != nil {
@@ -83,7 +84,7 @@ func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue 
 	c.ran.SendToAMF(endpoint, pkt)
 	if ue.RmState == simulator_context.RegisterStateDeregitered {
 		// Complete Deregistration
-		ue.SendMsg("[DEREG] SUCCESS\n")
+		ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgDeregisterSuccess)
 	}
 }
 
@@ -93,7 +94,7 @@ func (c *NGController) SendPDUSessionResourceSetupResponse(
 	responseList *ngapType.PDUSessionResourceSetupListSURes,
 	failedListSURes *ngapType.PDUSessionResourceFailedToSetupListSURes) {
 
-	logger.NgapLog.Infoln("[RAN] Send PDU Session Resource Setup Response")
+	logger.NgapLog.Infoln("Send PDU Session Resource Setup Response")
 
 	pkt, err := BuildPDUSessionResourceSetupResponse(ue, responseList, failedListSURes)
 	if err != nil {
@@ -128,7 +129,7 @@ func (c *NGController) SendPDUSessionResourceReleaseResponse(
 	relList ngapType.PDUSessionResourceReleasedListRelRes,
 	diagnostics *ngapType.CriticalityDiagnostics) {
 
-	logger.NgapLog.Infoln("[EAN] Send PDU Session Resource Release Response")
+	logger.NgapLog.Infoln("Send PDU Session Resource Release Response")
 
 	if len(relList.List) < 1 {
 		logger.NgapLog.Errorln("PDUSessionResourceReleasedListRelRes is nil. This message shall contain at least one Item")
@@ -146,7 +147,7 @@ func (c *NGController) SendPDUSessionResourceReleaseResponse(
 
 func (c *NGController) SendErrorIndication(endpoint *sctp.SCTPAddr, amfUeNgapId, ranUeNgapId *int64, cause *ngapType.Cause, criticalityDiagnostics *ngapType.CriticalityDiagnostics) {
 
-	logger.NgapLog.Info("[AMF] Send Error Indication")
+	logger.NgapLog.Info("Send Error Indication")
 
 	pkt, err := BuildErrorIndication(amfUeNgapId, ranUeNgapId, cause, criticalityDiagnostics)
 	if err != nil {

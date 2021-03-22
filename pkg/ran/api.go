@@ -3,9 +3,12 @@ package ran
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/free5gc/nas/security"
 	"github.com/jay16213/radio_simulator/pkg/api"
+	"github.com/jay16213/radio_simulator/pkg/logger"
+	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 )
 
 type apiService struct {
@@ -73,12 +76,28 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	// amf selection
 	ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
-	// TODO: read register result
-	return &api.RegisterResponse{Result: api.StatusCode_OK}, nil
+
+	// wait result
+	result := <-ue.ApiNotifyChan
+	return &api.RegisterResponse{StatusCode: result.Status, Body: result.Message}, nil
 }
 
 func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest) (*api.DeregisterResponse, error) {
-	return nil, errors.New("Not implemented")
+	ue := a.ranApp.ctx.FindUEBySupi(req.GetSupi())
+	if ue == nil {
+		return nil, fmt.Errorf("UE not found (supi: %s)", req.GetSupi())
+	}
+
+	nasPdu, err := nas_packet.GetDeregistrationRequest(ue, 0) //normoal release
+	if err != nil {
+		logger.ApiLog.Error(err.Error())
+		return &api.DeregisterResponse{StatusCode: api.StatusCode_ERROR}, nil
+	}
+	a.ranApp.ngController.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
+
+	// wait result
+	result := <-ue.ApiNotifyChan
+	return &api.DeregisterResponse{StatusCode: result.Status, Body: result.Message}, nil
 }
 
 func (a *apiService) SubscribeLog(req *api.LogStreamingRequest, stream api.APIService_SubscribeLogServer) error {
@@ -88,11 +107,13 @@ func (a *apiService) SubscribeLog(req *api.LogStreamingRequest, stream api.APISe
 		return errors.New("UE not found")
 	}
 
-	resp := &api.LogStreamingResponse{}
-	for {
-		resp.LogMessage = <-ue.ApiNotifyChan
-		if err := stream.Send(resp); err != nil {
-			return err
-		}
-	}
+	// resp := &api.LogStreamingResponse{}
+	// for {
+	// 	resp.LogMessage = <-ue.ApiNotifyChan
+	// 	if err := stream.Send(""); err != nil {
+	// 		logger.ApiLog.Errorf("err: %+v", err)
+	// 		return err
+	// 	}
+	// }
+	return errors.New("Not implemented")
 }

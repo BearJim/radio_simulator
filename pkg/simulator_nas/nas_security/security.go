@@ -10,14 +10,12 @@ import (
 	"github.com/free5gc/nas/security"
 )
 
-func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContextAvailable bool, newSecurityContext bool) (payload []byte, err error) {
+func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContextAvailable bool, newSecurityContext bool) ([]byte, error) {
 	if ue == nil {
-		err = fmt.Errorf("ue is nil")
-		return
+		return nil, fmt.Errorf("ue is nil")
 	}
 	if msg == nil {
-		err = fmt.Errorf("Nas Message is empty")
-		return
+		return nil, fmt.Errorf("Nas Message is empty")
 	}
 	if !securityContextAvailable {
 		return msg.PlainNasEncode()
@@ -28,23 +26,22 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 		}
 
 		sequenceNumber := ue.ULCount.SQN()
-		payload, err = msg.PlainNasEncode()
+		payload, err := msg.PlainNasEncode()
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		// TODO: Support for ue has nas connection in both accessType
 		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.Get(), security.Bearer3GPP,
 			security.DirectionUplink, payload); err != nil {
-			return
+			return nil, err
 		}
 		// add sequece number
 		payload = append([]byte{sequenceNumber}, payload[:]...)
-		mac32 := make([]byte, 4)
 
-		mac32, err = security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.ULCount.Get(), security.Bearer3GPP, security.DirectionUplink, payload)
+		mac32, err := security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.ULCount.Get(), security.Bearer3GPP, security.DirectionUplink, payload)
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		// Add mac value
@@ -55,8 +52,8 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 
 		// Increase UL Count
 		ue.ULCount.AddOne()
+		return payload, nil
 	}
-	return
 }
 
 func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payload []byte) (msg *nas.Message, err error) {

@@ -92,7 +92,4 @@ func (c *NASController) HandleNAS(ue *simulator_context.UeContext, nasPdu []byte
 	default:
 		nasLog.Errorf("Unknown GmmMessage[%d]\n", msg.GmmMessage.GetMessageType())
 	}
-
-	return
-
 }

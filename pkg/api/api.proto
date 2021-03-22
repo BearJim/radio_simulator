@@ -54,11 +54,12 @@ message RegisterRequest {
     string op = 7;
     string amf = 8;
     string sqn = 9;
-    string servingPlmn = 10;
+    string serving_plmn = 10;
 }
 
 message RegisterResponse {
-    StatusCode result = 1;
+    StatusCode status_code = 1;
+    string body = 2;
 }
 
 message DeregisterRequest {
@@ -66,7 +67,8 @@ message DeregisterRequest {
 }
 
 message DeregisterResponse {
-    StatusCode result = 1;
+    StatusCode status_code = 1;
+    string body = 2;
 }
 
 message DescribeRANRequest {}

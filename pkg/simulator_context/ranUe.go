@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
+	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 
 	"github.com/free5gc/UeauCommon"
@@ -27,9 +28,17 @@ const (
 	RegisterStateDeregitered = "DEREGISTERED"
 )
 
+const (
+	MsgRegisterSuccess   = "Registration success"
+	MsgRegisterFail      = "Registration fail"
+	MsgDeregisterSuccess = "Deregistration success"
+	MsgDeregisterFail    = "Deregistration fail"
+)
+
 type UeContext struct {
 	AMFEndpoint *sctp.SCTPAddr
 
+	ServingRan    string `bson:"servingRan"` // serving RAN name
 	Supi          string `yaml:"supi" bson:"supi"`
 	Guti          *nasType.GUTI5G
 	Gpsis         []string                            `yaml:"gpsis" bson:"gpsis"`
@@ -58,8 +67,13 @@ type UeContext struct {
 	Ran     *RanContext
 	RmState string `bson:"rmState"`
 	// For API Usage
-	ApiNotifyChan chan string `bson:"-"`
+	ApiNotifyChan chan ApiNotification `bson:"-"`
 	// TcpConn       map[string]net.Conn // supi -> UeTcpClient
+}
+
+type ApiNotification struct {
+	Status  api.StatusCode
+	Message string
 }
 
 type UeAmbr struct {
@@ -108,7 +122,7 @@ func NewUeContext() *UeContext {
 		AmfUeNgapId:   AmfNgapIdUnspecified,
 		RanUeNgapId:   RanNgapIdUnspecified,
 		RmState:       RegisterStateDeregitered,
-		ApiNotifyChan: make(chan string, 100),
+		ApiNotifyChan: make(chan ApiNotification, 100),
 	}
 }
 
@@ -193,8 +207,8 @@ func (s *SessionContext) GetTunnelMsg() string {
 	return msg
 }
 
-func (ue *UeContext) SendMsg(msg string) {
-	ue.ApiNotifyChan <- msg
+func (ue *UeContext) SendAPINotification(status api.StatusCode, msg string) {
+	ue.ApiNotifyChan <- ApiNotification{Status: status, Message: msg}
 }
 
 func (ue *UeContext) AttachRan(ran *RanContext) {

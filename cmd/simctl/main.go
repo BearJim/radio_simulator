@@ -21,10 +21,6 @@ func main() {
 		sim = s
 	}
 
-	rootPath := "./configs/"
-	ueContexts := sim.ParseUEData(rootPath, []string{"uecfg.yaml"})
-	sim.InsertUEContextToDB(ueContexts)
-
 	// s.StartNewRan()
 	time.Sleep(100 * time.Millisecond)
 	runCli(sim)
@@ -61,14 +57,28 @@ func executor(command string) {
 		}
 	}
 
+	if strings.HasPrefix(command, "load") {
+		rootPath := "./configs/"
+		ueContexts := sim.ParseUEData(rootPath, []string{"uecfg.yaml"})
+		sim.InsertUEContextToDB(ueContexts)
+	}
+
 	if strings.HasPrefix(command, "reg") {
 		tokens := tokenize(command)
 		if len(tokens) != 2 {
 			fmt.Println("command error")
 			return
 		}
-
 		sim.UeRegister(tokens[0], tokens[1])
+	}
+
+	if strings.HasPrefix(command, "dereg") {
+		tokens := tokenize(command)
+		if len(tokens) != 1 {
+			fmt.Println("command error")
+			return
+		}
+		sim.UeDeregister(tokens[0])
 	}
 
 	if strings.HasPrefix(command, "upload") {
