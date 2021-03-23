@@ -124,6 +124,7 @@ func (ran *RanContext) NewUE(supi string) *UeContext {
 	ran.UePool[ran.RanUeIDGenerator] = ue
 	ue.RanUeNgapId = ran.RanUeIDGenerator
 	ran.RanUeIDGenerator++
+	ue.CmState = CmStateConnected
 	return ue
 }
 

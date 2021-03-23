@@ -31,16 +31,28 @@ func (a *apiService) GetUEs(ctx context.Context, req *api.GetUEsRequest) (*api.G
 			// Guti: ue.Guti,
 			// CmState: ue.,
 			RmState:          ue.RmState,
-			NasUplinkCount:   ue.ULCount.Get(),
-			NasDownlinkCount: ue.DLCount.Get(),
+			NasUplinkCount:   ue.ULCount.ToUint32(),
+			NasDownlinkCount: ue.DLCount.ToUint32(),
 		})
 	}
 	return resp, nil
 }
 
 func (a *apiService) DescribeUE(ctx context.Context, req *api.DescribeUERequest) (*api.DescribeUEResponse, error) {
-	return nil, errors.New("Not implemented")
+	ue := a.ranApp.Context().FindUEBySupi(req.GetSupi())
+	if ue == nil {
+		return nil, fmt.Errorf("UE not found (supi: %s)", req.GetSupi())
+	}
 
+	return &api.DescribeUEResponse{UeContext: &api.UEContext{
+		Supi:             ue.Supi,
+		RmState:          ue.RmState,
+		CmState:          ue.CmState,
+		AmfUeNgapId:      ue.AmfUeNgapId,
+		RanUeNgapId:      ue.RanUeNgapId,
+		NasUplinkCount:   ue.ULCount.ToUint32(),
+		NasDownlinkCount: ue.DLCount.ToUint32(),
+	}}, nil
 }
 
 func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*api.RegisterResponse, error) {
@@ -79,7 +91,15 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 
 	// wait result
 	result := <-ue.ApiNotifyChan
-	return &api.RegisterResponse{StatusCode: result.Status, Body: result.Message}, nil
+	return &api.RegisterResponse{StatusCode: result.Status, Body: result.Message, UeContext: &api.UEContext{
+		Supi:             ue.Supi,
+		RmState:          ue.RmState,
+		CmState:          ue.CmState,
+		NasUplinkCount:   ue.ULCount.ToUint32(),
+		NasDownlinkCount: ue.DLCount.ToUint32(),
+		AmfUeNgapId:      ue.AmfUeNgapId,
+		RanUeNgapId:      ue.RanUeNgapId,
+	}}, nil
 }
 
 func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest) (*api.DeregisterResponse, error) {

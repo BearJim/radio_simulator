@@ -1,4 +1,4 @@
-dbName: free5gc
+dbName: simulator
 dbUrl: mongodb://127.0.0.1:27017
 gtp5gTunnelInfo:
   tunDev: rantun
@@ -35,7 +35,7 @@ taiList:
         sd: 010203
       - sst: 1
         sd: 112233
-tcpUri: 0.0.0.0:9999
+apiServerAddr: 127.0.0.1:9999
 ueInfoFile:
   - uecfg.conf
 tunDev: uetun

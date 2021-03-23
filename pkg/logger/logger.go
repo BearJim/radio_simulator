@@ -10,7 +10,7 @@ import (
 )
 
 var log *logrus.Logger
-var SimulatorLog *logrus.Entry
+var AppLog *logrus.Entry
 var UtilLog *logrus.Entry
 var InitLog *logrus.Entry
 var NgapLog *logrus.Entry
@@ -44,7 +44,7 @@ func init() {
 		},
 	}
 
-	SimulatorLog = log.WithFields(logrus.Fields{"RAN": "Simulator"})
+	AppLog = log.WithFields(logrus.Fields{"RAN": "App"})
 	NgapLog = log.WithFields(logrus.Fields{"RAN": "NGAP"})
 	GtpLog = log.WithFields(logrus.Fields{"RAN": "GTP"})
 	InitLog = log.WithFields(logrus.Fields{"RAN": "Init"})

@@ -26,15 +26,13 @@ import (
 )
 
 type ranApiURL struct {
-	name string `bson:"name"`
-	pid  int    `bson:"pid"`
-	url  string `bson:"url"`
+	Name string `bson:"name"`
+	Url  string `bson:"url"`
 }
 
 type Simulator struct {
 	cc       *exec.Cmd
 	dbClient *MongoDBLibrary.Client
-	RanPool  map[string]api.APIServiceClient // RanSctpUri -> RAN_CONTEXT
 }
 
 func New(dbName string, dbUrl string) (*Simulator, error) {
@@ -44,7 +42,7 @@ func New(dbName string, dbUrl string) (*Simulator, error) {
 	}
 
 	s := &Simulator{
-		RanPool: make(map[string]api.APIServiceClient),
+		// RanPool: make(map[string]api.APIServiceClient),
 		// UeContextPool: make(map[string]*simulator_context.UeContext),
 		dbClient: client,
 	}
@@ -87,95 +85,51 @@ func (s *Simulator) StartNewRan() {
 	s.cc = c
 }
 
-func (s *Simulator) ConnectToRAN(addr string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return "", err
-	}
-
-	client := api.NewAPIServiceClient(conn)
-	resp, err := client.DescribeRAN(context.Background(), &api.DescribeRANRequest{})
-	if err != nil {
-		return "", err
-	}
-	s.NewRANClient(client, resp.Name)
-	return resp.Name, nil
-}
-
-func (s *Simulator) NewRANClient(client api.APIServiceClient, ranName string) {
-	if _, ok := s.RanPool[ranName]; ok {
-		fmt.Printf("duplicate ran name %s\n", ranName)
-	} else {
-		s.RanPool[ranName] = client
-	}
-}
-
 func (s *Simulator) GetRANs() {
-	for ranName, ranClient := range s.RanPool {
-		resp, err := ranClient.DescribeRAN(context.TODO(), &api.DescribeRANRequest{})
-		if err != nil {
-			fmt.Printf("fetch %s error: %+v\n", ranName, err)
-			continue
-		}
+	// for ranName, ranClient := range s.RanPool {
+	// 	resp, err := ranClient.DescribeRAN(context.TODO(), &api.DescribeRANRequest{})
+	// 	if err != nil {
+	// 		fmt.Printf("fetch %s error: %+v\n", ranName, err)
+	// 		continue
+	// 	}
 
-		fmt.Printf("resp: %+v", resp.Name)
-	}
+	// 	fmt.Printf("resp: %+v", resp.Name)
+	// }
 }
 
 // ParseUEData read UE contexts from files then return a slice of *UeContext
-func (s *Simulator) ParseUEData(rootPath string, fileList []string) []*simulator_context.UeContext {
+func (s *Simulator) ParseUEData(filePath string) []*simulator_context.UeContext {
 	var ueContexts []*simulator_context.UeContext
-	for _, ueInfoFile := range fileList {
-		fileName := rootPath + ueInfoFile
-		ue := ue_factory.InitUeContextFactory(fileName)
-		switch ue.IntegrityAlgStr {
-		case "NIA0":
-			ue.IntegrityAlg = security.AlgIntegrity128NIA0
-		case "NIA1":
-			ue.IntegrityAlg = security.AlgIntegrity128NIA1
-		case "NIA2":
-			ue.IntegrityAlg = security.AlgIntegrity128NIA2
-		case "NIA3":
-			ue.IntegrityAlg = security.AlgIntegrity128NIA3
-		}
 
-		switch ue.CipheringAlgStr {
-		case "NEA0":
-			ue.CipheringAlg = security.AlgCiphering128NEA0
-		case "NEA1":
-			ue.CipheringAlg = security.AlgCiphering128NEA1
-		case "NEA2":
-			ue.CipheringAlg = security.AlgCiphering128NEA2
-		case "NEA3":
-			ue.CipheringAlg = security.AlgCiphering128NEA3
-		}
-		ueContexts = append(ueContexts, ue)
+	ue := ue_factory.InitUeContextFactory(filePath)
+	switch ue.IntegrityAlgStr {
+	case "NIA0":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA0
+	case "NIA1":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA1
+	case "NIA2":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA2
+	case "NIA3":
+		ue.IntegrityAlg = security.AlgIntegrity128NIA3
 	}
+
+	switch ue.CipheringAlgStr {
+	case "NEA0":
+		ue.CipheringAlg = security.AlgCiphering128NEA0
+	case "NEA1":
+		ue.CipheringAlg = security.AlgCiphering128NEA1
+	case "NEA2":
+		ue.CipheringAlg = security.AlgCiphering128NEA2
+	case "NEA3":
+		ue.CipheringAlg = security.AlgCiphering128NEA3
+	}
+	ueContexts = append(ueContexts, ue)
 	return ueContexts
 }
 
 func (s *Simulator) InsertUEContextToDB(ueContexts []*simulator_context.UeContext) {
-	upsert := true
 	for _, ue := range ueContexts {
-		result, err := s.dbClient.Database().Collection("ue").UpdateOne(context.TODO(), bson.M{"supi": ue.Supi},
-			bson.M{"$set": ue}, &options.UpdateOptions{Upsert: &upsert})
-		if err != nil {
-			fmt.Printf("UpdateOne error: %+v\n", err)
-		} else {
-			fmt.Printf("UpdateOne success: %+v\n", result)
-		}
-	}
-}
-
-func (s *Simulator) UdpateUE(ue *simulator_context.UeContext) {
-	result, err := s.dbClient.Database().Collection("ue").UpdateOne(context.TODO(), bson.M{"supi": ue.Supi},
-		bson.M{"$set": ue})
-	if err != nil {
-		fmt.Printf("UpdateOne error: %+v\n", err)
-	} else {
-		fmt.Printf("UpdateOne success: %+v\n", result)
+		s.updateUE(ue)
 	}
 }
 
@@ -196,26 +150,60 @@ func (s *Simulator) GetUEs() {
 			fmt.Printf("decode ue error: %+v\n", err)
 			continue
 		}
-		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", ue.Supi, "IDLE", ue.RmState, ue.ServingRan)
+		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", ue.Supi, ue.CmState, ue.RmState, ue.ServingRan)
 	}
 	writer.Flush()
 }
 
-func (s *Simulator) UeRegister(supi string, ranName string) {
-	result := s.dbClient.Database().Collection("ue").FindOne(context.TODO(), bson.M{"supi": supi})
-	if result == nil || result.Err() == mongo.ErrNoDocuments {
-		fmt.Printf("UE not found\n")
-		return
-	}
-	var ue simulator_context.UeContext
-	if err := result.Decode(&ue); err != nil {
-		fmt.Printf("decode ue error: %+v\n", err)
+func (s *Simulator) DescribeUE(supi string) {
+	ue, err := s.findUE(supi)
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	apiClient, ok := s.RanPool[ranName]
-	if !ok {
-		fmt.Printf("ran not found\n")
+	client, err := s.connectToRan(ue.ServingRan)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	resp, err := client.DescribeUE(context.TODO(), &api.DescribeUERequest{Supi: ue.Supi})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	ueCtx := resp.GetUeContext()
+	// ue.Guti
+	ue.AmfUeNgapId = ueCtx.AmfUeNgapId
+	ue.RanUeNgapId = ueCtx.RanUeNgapId
+	ue.DLCount = security.Count(ueCtx.NasDownlinkCount)
+	ue.ULCount = security.Count(ueCtx.NasUplinkCount)
+	ue.RmState = ueCtx.RmState
+	ue.CmState = ueCtx.CmState
+
+	s.updateUE(ue)
+
+	fmt.Printf("SUPI: %s\n", ue.Supi)
+	fmt.Printf("AmfUeNgapId: %d\n", ue.AmfUeNgapId)
+	fmt.Printf("RanUeNgapId: %d\n", ue.RanUeNgapId)
+	fmt.Printf("DLCount: %d\n", ue.DLCount)
+	fmt.Printf("ULCount: %d\n", ue.ULCount)
+	fmt.Printf("RmState: %s\n", ue.RmState)
+	fmt.Printf("CmState: %s\n", ue.CmState)
+}
+
+func (s *Simulator) UeRegister(supi string, ranName string) {
+	ue, err := s.findUE(supi)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	apiClient, err := s.connectToRan(ranName)
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
@@ -245,24 +233,31 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 		fmt.Printf("registration start failed: %s\n", regResult.GetBody())
 	} else {
 		fmt.Printf("registration success\n")
+		resultUe := regResult.GetUeContext()
+		ue.RmState = resultUe.GetRmState()
+		ue.CmState = resultUe.GetCmState()
+		ue.AmfUeNgapId = resultUe.GetAmfUeNgapId()
+		ue.RanUeNgapId = resultUe.GetRanUeNgapId()
+		ue.DLCount = security.Count(resultUe.GetNasDownlinkCount())
+		ue.ULCount = security.Count(resultUe.GetNasUplinkCount())
 	}
 
 	// update SQN when trigger registration
 	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
 	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
-	s.UdpateUE(&ue)
+	s.updateUE(ue)
 }
 
 func (s *Simulator) UeDeregister(supi string) {
 	ue, err := s.findUE(supi)
 	if err != nil {
-		fmt.Printf("find UE: %+v", err)
+		fmt.Println(err)
 		return
 	}
 
-	apiClient, ok := s.RanPool[ue.ServingRan]
-	if !ok {
-		fmt.Printf("ran not found\n")
+	apiClient, err := s.connectToRan(ue.ServingRan)
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
@@ -314,6 +309,7 @@ func (s *Simulator) SubscribeUELog(client api.APIServiceClient, ue *simulator_co
 }
 
 func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
+	// connect to free5gc DB
 	dbClient, err := MongoDBLibrary.New(dbName, dbUrl)
 	if err != nil {
 		fmt.Printf("connect db error: %+v\n", err)
@@ -322,8 +318,12 @@ func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
 
 	// find all UE and upload to free5gc database
 	cur, err := s.dbClient.Database().Collection("ue").Find(context.TODO(), bson.D{})
-	if err != nil && err != mongo.ErrNoDocuments {
-		fmt.Printf("Find UE error: %+v\n", err)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			fmt.Println("No UE found in DB")
+		} else {
+			fmt.Printf("Find UE error: %+v\n", err)
+		}
 		return
 	}
 	defer cur.Close(context.TODO())
@@ -369,10 +369,34 @@ func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
 	}
 }
 
+func (s *Simulator) connectToRan(ranName string) (api.APIServiceClient, error) {
+	result := s.dbClient.Database().Collection("ran").FindOne(context.TODO(), bson.M{"name": ranName})
+	if result == nil || result.Err() == mongo.ErrNoDocuments {
+		return nil, fmt.Errorf("RAN not found (name: %s)", ranName)
+	}
+	var ranApi ranApiURL
+	if err := result.Decode(&ranApi); err != nil {
+		return nil, fmt.Errorf("decode ue error: %+v\n", err)
+	}
+
+	fmt.Printf("Connect to %s (%s)...\n", ranApi.Name, ranApi.Url)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, ranApi.Url, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, errors.New("connection timeout")
+		} else {
+			return nil, err
+		}
+	}
+	return api.NewAPIServiceClient(conn), nil
+}
+
 func (s *Simulator) findUE(supi string) (*simulator_context.UeContext, error) {
 	result := s.dbClient.Database().Collection("ue").FindOne(context.TODO(), bson.M{"supi": supi})
 	if result == nil || result.Err() == mongo.ErrNoDocuments {
-		return nil, errors.New("UE not found")
+		return nil, fmt.Errorf("UE not found (supi: %s)", supi)
 	}
 	var ue simulator_context.UeContext
 	if err := result.Decode(&ue); err != nil {
@@ -382,10 +406,13 @@ func (s *Simulator) findUE(supi string) (*simulator_context.UeContext, error) {
 }
 
 func (s *Simulator) updateUE(ue *simulator_context.UeContext) {
+	upsert := true
 	_, err := s.dbClient.Database().Collection("ue").UpdateOne(context.Background(), bson.M{"supi": ue.Supi},
-		bson.M{"$set": ue})
+		bson.M{"$set": ue}, &options.UpdateOptions{Upsert: &upsert})
 	if err != nil {
-		fmt.Printf("update UE error")
+		fmt.Printf("update UE error: %+v\n", err)
+	} else {
+		fmt.Printf("UE profile updated (supi: %s)\n", ue.Supi)
 	}
 }
 

@@ -1,105 +1,164 @@
 package main
 
 import (
-	"bufio"
+	"errors"
 	"fmt"
-	"io"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/jay16213/radio_simulator/pkg/simulator"
+	"github.com/spf13/cobra"
 )
 
-var sim *simulator.Simulator
+// flags
+var simulatorDBUrl string
+
+var rootCmd = &cobra.Command{
+	Use:     "simctl",
+	Short:   "simctl - cli for Radio Simulator",
+	Version: "v0.0.1",
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVar(&simulatorDBUrl, "db", "mongodb://127.0.0.1:27017", "Database URL for simulator")
+	rootCmd.AddCommand(uploadCommand())
+	rootCmd.AddCommand(loadCommand())
+	rootCmd.AddCommand(getCommand())
+	rootCmd.AddCommand(describeCommand())
+	rootCmd.AddCommand(registerCommand())
+	rootCmd.AddCommand(deregisterCommand())
+}
 
 func main() {
-	if s, err := simulator.New("simulator", "mongodb://localhost:27017"); err != nil {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func uploadCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "upload",
+		Short:   "upload all UEs to free5gc DB",
+		Example: "upload mongodb://127.0.0.1:27017",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errors.New("should provide the url of free5gc DB")
+			}
+			return nil
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.UploadUEProfile("free5gc", args[0])
+		},
+	}
+	return cmd
+}
+
+func getCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "get",
+		Short:   "get information of RAN or UEs",
+		Example: "get ues",
+	}
+	getUEs := &cobra.Command{
+		Use:   "ues",
+		Args:  cobra.NoArgs,
+		Short: "get information of all UEs",
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.GetUEs()
+		},
+	}
+	getRANs := &cobra.Command{
+		Use:   "rans",
+		Args:  cobra.NoArgs,
+		Short: "get information of all RANs",
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.GetRANs()
+		},
+	}
+	cmd.AddCommand(getUEs, getRANs)
+	return cmd
+}
+
+func describeCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "describe [ue|ran] [<SUPI>|<RanName>]",
+		Short:   "describe the detail information of RAN or UE",
+		Example: "describe ue imsi-2089300000003",
+	}
+	describeUE := &cobra.Command{
+		Use:   "ue <SUPI>",
+		Args:  cobra.ExactArgs(1),
+		Short: "get the detail information of UE with SUPI",
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.DescribeUE(args[0])
+		},
+	}
+	// getRANs := &cobra.Command{
+	// 	Use:   "rans",
+	// 	Args:  cobra.NoArgs,
+	// 	Short: "get information of all RANs",
+	// 	Run: func(cmd *cobra.Command, args []string) {
+	// 		s := initSimulator(simulatorDBUrl)
+	// 		s.GetRANs()
+	// 	},
+	// }
+	cmd.AddCommand(describeUE)
+	return cmd
+}
+
+func registerCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "reg <SUPI> <RanName>",
+		Short:   "trigger initial registration procedure for UE with SUPI via RanName",
+		Example: "reg imsi-2089300000003 ran1",
+		Args:    cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.UeRegister(args[0], args[1])
+		},
+	}
+	return cmd
+}
+
+func deregisterCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "dereg <SUPI>",
+		Short:   "trigger deregistration procedure for UE with SUPI",
+		Example: "reg imsi-2089300000003",
+		Args:    cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.UeDeregister(args[0])
+		},
+	}
+	return cmd
+}
+
+func loadCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "load <file path>",
+		Short:   "load UE context from FILE",
+		Example: "load config/uecfg.yaml",
+		Args:    cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			ueContexts := s.ParseUEData(args[0])
+			s.InsertUEContextToDB(ueContexts)
+		},
+	}
+	return cmd
+}
+
+func initSimulator(dbUrl string) *simulator.Simulator {
+	// logger. ("db: %s\n", dbUrl)
+	s, err := simulator.New("simulator", dbUrl)
+	if err != nil {
 		fmt.Printf("Init error: %+v\n", err)
 		os.Exit(1)
-	} else {
-		sim = s
 	}
-
-	// s.StartNewRan()
-	time.Sleep(100 * time.Millisecond)
-	runCli(sim)
-}
-
-func runCli(s *simulator.Simulator) {
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Printf("> ")
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-		}
-		executor(string(line))
-	}
-}
-
-func executor(command string) {
-	if strings.HasPrefix(command, "connect") {
-		tokens := tokenize(command)
-		if len(tokens) < 1 {
-			fmt.Println("command error")
-			return
-		}
-
-		for _, addr := range tokens {
-			if name, err := sim.ConnectToRAN(addr); err != nil {
-				fmt.Printf("connect %s error: %+v\n", addr, err)
-			} else {
-				fmt.Printf("Connect to %s (name: %s)\n", addr, name)
-			}
-		}
-	}
-
-	if strings.HasPrefix(command, "load") {
-		rootPath := "./configs/"
-		ueContexts := sim.ParseUEData(rootPath, []string{"uecfg.yaml"})
-		sim.InsertUEContextToDB(ueContexts)
-	}
-
-	if strings.HasPrefix(command, "reg") {
-		tokens := tokenize(command)
-		if len(tokens) != 2 {
-			fmt.Println("command error")
-			return
-		}
-		sim.UeRegister(tokens[0], tokens[1])
-	}
-
-	if strings.HasPrefix(command, "dereg") {
-		tokens := tokenize(command)
-		if len(tokens) != 1 {
-			fmt.Println("command error")
-			return
-		}
-		sim.UeDeregister(tokens[0])
-	}
-
-	if strings.HasPrefix(command, "upload") {
-		tokens := tokenize(command)
-		if len(tokens) != 1 {
-			fmt.Println("command error")
-			return
-		}
-		sim.UploadUEProfile("free5gc", tokens[0])
-	}
-
-	if command == "get" {
-		sim.GetUEs()
-	}
-
-	if command == "exit" {
-		os.Exit(0)
-	}
-}
-
-func tokenize(cmd string) []string {
-	tokens := strings.Split(cmd, " ")
-	return tokens[1:]
+	return s
 }

@@ -62,76 +62,8 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 	}
 	var msg string
 	switch params[0] {
-	case "show":
-		if cnt == 1 {
-			msg = "show missing action[all/{id}]"
-		} else {
-			switch params[1] {
-			case "all":
-				msg = "[SHOW] " + ue.RegisterState + "\n"
-				for _, sess := range ue.PduSession {
-					sessInfo := sess.GetTunnelMsg()
-					if sessInfo == "" {
-						continue
-					}
-					msg = msg + "[SHOW] " + sessInfo
-				}
-			default:
-				id, err := strconv.Atoi(params[1])
-				if err != nil {
-					msg = "sess id is not digit"
-					break
-				}
-				sess := ue.PduSession[int64(id)]
-				if sess == nil {
-					msg = "sess " + params[1] + " has not established yet"
-					break
-				}
-				sessInfo := sess.GetTunnelMsg()
-				if sessInfo == "" {
-					msg = "sess " + params[1] + " is still establishing\n"
-					break
-				}
-				msg = "[SHOW] " + sessInfo
-			}
-		}
-	case "reg":
-		if ue.RegisterState == simulator_context.RegisterStateRegistered {
-			msg = "[REG] SUCCESS\n"
-			break
-		}
-		ran := self.RanPool[self.DefaultRanSctpUri]
-		if cnt > 1 {
-			// Use Specific RanSctpUri
-			ran = self.RanPool[params[1]]
-			if ran == nil {
-				msg = "ranIp " + params[1] + " does not exist"
-				break
-			}
-		}
-		if ue.RegisterState == simulator_context.RegisterStateDeregitered {
-			// Send Registration Request
-			ue.AttachRan(ran)
-			ue.RegisterState = simulator_context.RegisterStateRegistering
-			// simulator_ngap.SendInitailUeMessage_RegistraionRequest(ran, ue)
-		}
-		msg = ReadChannelMsg(ue, raddr)
-	case "dereg":
-		if ue.RegisterState == simulator_context.RegisterStateDeregitered {
-			msg = "[DEREG] SUCCESS\n"
-		} else {
-			// Send Deregistration Request
-			_, err := nas_packet.GetDeregistrationRequest(ue, 0) //normoal release
-			if err != nil {
-				logger.TcpServerLog.Error(err.Error())
-				msg = "[DEREG] FAIL\n"
-				break
-			}
-			// simulator_ngap.SendUplinkNasTransport(ue.Ran, ue, nasPdu)
-			msg = ReadChannelMsg(ue, raddr)
-		}
 	case "sess":
-		if ue.RegisterState != simulator_context.RegisterStateRegistered {
+		if ue.RmState != simulator_context.RegisterStateRegistered {
 			msg = "need to registrate first"
 			break
 		}
@@ -171,13 +103,13 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 				// Send Pdu Session Estblishment
 				gsmPdu, err := nas_packet.GetPduSessionEstablishmentRequest(pduSessionId, nasMessage.PDUSessionTypeIPv4)
 				if err != nil {
-					logger.TcpServerLog.Error(err.Error())
+					logger.ApiLog.Error(err.Error())
 					msg = fmt.Sprintf("[SESSION] ADD %d FAIL\n", pduSessionId)
 					break
 				}
 				_, err = nas_packet.GetUlNasTransport_PduSessionEstablishmentRequest(ue, pduSessionId, nasMessage.ULNASTransportRequestTypeInitialRequest, dnn, &snssai, gsmPdu)
 				if err != nil {
-					logger.TcpServerLog.Error(err.Error())
+					logger.ApiLog.Error(err.Error())
 					msg = fmt.Sprintf("[SESSION] ADD %d FAIL\n", pduSessionId)
 					break
 				}
@@ -201,7 +133,7 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 				pduSessionId := uint8(id)
 				_, err := nas_packet.GetUlNasTransport_PduSessionCommonData(ue, pduSessionId, nas_packet.PDUSesRelReq)
 				if err != nil {
-					logger.TcpServerLog.Error(err.Error())
+					logger.ApiLog.Error(err.Error())
 					msg = fmt.Sprintf("[SESSION] DEL %d FAIL\n", pduSessionId)
 					break
 				}
@@ -217,17 +149,17 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 }
 
 func ReadChannelMsg(ue *simulator_context.UeContext, raddr string) (msg string) {
-	mtx.Lock()
-	ue.TcpChannelMsg[raddr] = make(chan string)
-	mtx.Unlock()
-	select {
-	case msg = <-ue.TcpChannelMsg[raddr]:
-	case <-time.After(5 * time.Second):
-		msg = "[TIMEOUT]\n"
-	}
-	mtx.Lock()
-	delete(ue.TcpChannelMsg, raddr)
-	mtx.Unlock()
+	// mtx.Lock()
+	// ue.ApiNotifyChan[raddr] = make(chan string)
+	// mtx.Unlock()
+	// select {
+	// case msg = <-ue.ApiNotifyChan[raddr]:
+	// case <-time.After(5 * time.Second):
+	// 	msg = "[TIMEOUT]\n"
+	// }
+	// mtx.Lock()
+	// delete(ue.ApiNotifyChan, raddr)
+	// mtx.Unlock()
 	return
 }
 

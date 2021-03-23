@@ -13,6 +13,7 @@ require (
 	github.com/free5gc/openapi v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/sirupsen/logrus v1.7.0
+	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.3.0
 	go.mongodb.org/mongo-driver v1.4.4
@@ -24,4 +25,5 @@ require (
 replace (
 	git.cs.nctu.edu.tw/calee/sctp => /home/jay/thesis/sctp
 	github.com/free5gc/MongoDBLibrary => /home/jay/thesis/MongoDBLibrary
+	github.com/free5gc/nas v1.0.0 => /home/jay/thesis/nas
 )

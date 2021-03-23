@@ -22,10 +22,16 @@ const (
 	RanNgapIdUnspecified int64 = 0xffffffff
 	AmfNgapIdUnspecified int64 = 0xffffffffff
 )
+
 const (
 	RegisterStateRegistered  = "REGISTERED"
 	RegisterStateRegistering = "REGISTERING"
 	RegisterStateDeregitered = "DEREGISTERED"
+)
+
+const (
+	CmStateConnected = "CONNECTED"
+	CmStateIdle      = "IDLE"
 )
 
 const (
@@ -51,8 +57,8 @@ type UeContext struct {
 	RanUeNgapId   int64
 	AmfUeNgapId   int64
 	// security
-	ULCount         security.Count `bson:"uplinkCount,omitempty"`
-	DLCount         security.Count `bson:"downlinkCount,omitempty"`
+	ULCount         security.Count `bson:"nasUplinkCount"`
+	DLCount         security.Count `bson:"nasDownlinkCount"`
 	CipheringAlgStr string         `yaml:"cipherAlg" bson:"cipherAlgStr"`
 	IntegrityAlgStr string         `yaml:"integrityAlg" bson:"integrityAlgStr"`
 	CipheringAlg    uint8          `bson:"cipherAlg"`
@@ -66,9 +72,9 @@ type UeContext struct {
 	// related Context
 	Ran     *RanContext
 	RmState string `bson:"rmState"`
+	CmState string `bson:"cmState"`
 	// For API Usage
 	ApiNotifyChan chan ApiNotification `bson:"-"`
-	// TcpConn       map[string]net.Conn // supi -> UeTcpClient
 }
 
 type ApiNotification struct {
@@ -122,6 +128,7 @@ func NewUeContext() *UeContext {
 		AmfUeNgapId:   AmfNgapIdUnspecified,
 		RanUeNgapId:   RanNgapIdUnspecified,
 		RmState:       RegisterStateDeregitered,
+		CmState:       CmStateIdle,
 		ApiNotifyChan: make(chan ApiNotification, 100),
 	}
 }

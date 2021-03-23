@@ -16,11 +16,10 @@ type Config struct {
 	RanName         string          `yaml:"ranName"`
 	GnbId           GnbId           `yaml:"gnbId"`
 	SupportTAList   []SupportTAItem `yaml:"taiList"`
-	TcpUri          string          `yaml:"tcpUri"`
+	ApiServerAddr   string          `yaml:"apiServerAddr"`
 	UeInfoFile      []string        `yaml:"ueInfoFile"`
 	TunnelInfo      TunnelInfo      `yaml:"gtp5gTunnelInfo"`
-	// ListenIp   string       `yaml:"listenIp"`
-	Logger Logger `yaml:"logger"`
+	Logger          Logger          `yaml:"logger"`
 }
 
 type TunnelInfo struct {

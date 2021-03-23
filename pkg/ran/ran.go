@@ -1,6 +1,7 @@
 package ran
 
 import (
+	"context"
 	"errors"
 	"net"
 	"sync"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
+	"github.com/free5gc/MongoDBLibrary"
 	"github.com/free5gc/ngap"
 	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/factory"
@@ -17,6 +19,8 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
 )
 
@@ -63,7 +67,7 @@ func (r *RanApp) Initialize(c *cli.Context) error {
 
 	apiAddr := c.String("apiaddr")
 	if apiAddr != "" {
-		r.cfg.TcpUri = apiAddr
+		r.cfg.ApiServerAddr = apiAddr
 	}
 
 	r.ctx = simulator_context.NewRanContext()
@@ -106,7 +110,7 @@ func (r *RanApp) Run() {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		listener, err := net.Listen("tcp", r.cfg.TcpUri)
+		listener, err := net.Listen("tcp", r.cfg.ApiServerAddr)
 		if err != nil {
 			logger.InitLog.Fatalf("listen error: %v", err)
 		}
@@ -118,6 +122,17 @@ func (r *RanApp) Run() {
 		}
 	}(&wg)
 
+	// register self to mongodb
+	client, err := MongoDBLibrary.New(r.cfg.DBName, r.cfg.DBUrl)
+	if err != nil {
+		logger.AppLog.Fatalf("connect to DB error: %+v", err)
+	}
+	upsert := true
+	_, err = client.Database().Collection("ran").UpdateOne(context.TODO(), bson.M{"name": r.cfg.RanName},
+		bson.M{"$set": bson.M{"name": r.cfg.RanName, "url": r.cfg.ApiServerAddr}}, &options.UpdateOptions{Upsert: &upsert})
+	if err != nil {
+		logger.AppLog.Fatalf("register api service error: %+v", err)
+	}
 	wg.Wait()
 }
 
@@ -278,26 +293,26 @@ func (r *RanApp) StartSCTPAssociation() {
 }
 
 func (r *RanApp) Terminate() {
-	logger.SimulatorLog.Infof("Terminating RAN...")
+	logger.AppLog.Infof("Terminating RAN...")
 
 	// TODO: Send UE Deregistration to AMF
 	// logger.SimulatorLog.Infof("Clear UE DB...")
 
 	// simulator_util.ClearDB()
 
-	logger.SimulatorLog.Infof("Close SCTP Connection...")
+	logger.AppLog.Infof("Close SCTP Connection...")
 	if err := r.sctpConn.Close(); err != nil {
-		logger.SimulatorLog.Errorf("sctp close error: %+v", err)
+		logger.AppLog.Errorf("sctp close error: %+v", err)
 	}
 	// for _, ran := range r. {
 	// 	logger.SimulatorLog.Infof("Ran[%s] Connection Close", ran.RanSctpUri)
 	// 	ran.SctpConn.Close()
 	// }
 
-	logger.SimulatorLog.Infof("Close gRPC API Server")
+	logger.AppLog.Infof("Close gRPC API Server")
 	r.grpcServer.Stop()
 
-	logger.SimulatorLog.Infof("Clean Ue IP Addr in IP tables")
+	logger.AppLog.Infof("Clean Ue IP Addr in IP tables")
 
 	// for key, conn := range self.GtpConnPool {
 	// 	logger.InitLog.Infof("GTP[%s] Connection Close", key)
@@ -319,7 +334,7 @@ func (r *RanApp) Terminate() {
 	// 	self.ListenRawConn.Close()
 	// }
 
-	logger.SimulatorLog.Infof("RAN terminated")
+	logger.AppLog.Infof("RAN terminated")
 }
 
 func (r *RanApp) setLogLevel() {

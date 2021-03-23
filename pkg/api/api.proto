@@ -5,11 +5,13 @@ option go_package = "github.com/jay16213/radio_simulator/pkg/api";
 message UEContext {
     string supi = 1;
     string guti = 2;
-    string cm_state = 3;
-    string rm_state = 4;
-    uint32 nas_downlink_count = 5;
-    uint32 nas_uplink_count = 6;
-    string ue_security_capability = 7;
+    int64 ran_ue_ngap_id = 3;
+    int64 amf_ue_ngap_id = 4;
+    string cm_state = 5;
+    string rm_state = 6;
+    uint32 nas_downlink_count = 7;
+    uint32 nas_uplink_count = 8;
+    string ue_security_capability = 9;
 }
 
 message MMContext {
@@ -37,7 +39,9 @@ message GetUEsResponse {
     repeated UEContext ue_contexts = 1;
 }
 
-message DescribeUERequest {}
+message DescribeUERequest {
+    string supi = 1;
+}
 
 message DescribeUEResponse {
     UEContext ue_context = 1;
@@ -60,6 +64,7 @@ message RegisterRequest {
 message RegisterResponse {
     StatusCode status_code = 1;
     string body = 2;
+    UEContext ue_context = 3;
 }
 
 message DeregisterRequest {

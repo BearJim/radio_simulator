@@ -32,14 +32,14 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 		}
 
 		// TODO: Support for ue has nas connection in both accessType
-		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.Get(), security.Bearer3GPP,
+		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.ToUint32(), security.Bearer3GPP,
 			security.DirectionUplink, payload); err != nil {
 			return nil, err
 		}
 		// add sequece number
 		payload = append([]byte{sequenceNumber}, payload[:]...)
 
-		mac32, err := security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.ULCount.Get(), security.Bearer3GPP, security.DirectionUplink, payload)
+		mac32, err := security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.ULCount.ToUint32(), security.Bearer3GPP, security.DirectionUplink, payload)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		// remove header
 		payload = payload[3:]
 
-		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
+		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.DLCount.ToUint32(), security.Bearer3GPP,
 			security.DirectionDownlink, payload); err != nil {
 			return nil, err
 		}
@@ -113,7 +113,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		}
 		ue.DLCount.SetSQN(sequenceNumber)
 
-		mac32, err := security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.DLCount.Get(), security.Bearer3GPP,
+		mac32, err := security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.DLCount.ToUint32(), security.Bearer3GPP,
 			security.DirectionDownlink, payload)
 		if err != nil {
 			return nil, err
@@ -130,7 +130,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		// TODO: Support for ue has nas connection in both accessType
 		if securityHeaderType != nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext &&
 			securityHeaderType != nas.SecurityHeaderTypeIntegrityProtected {
-			if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.DLCount.Get(), security.Bearer3GPP,
+			if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.DLCount.ToUint32(), security.Bearer3GPP,
 				security.DirectionDownlink, payload); err != nil {
 				return nil, err
 			}

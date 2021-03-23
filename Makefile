@@ -1,12 +1,16 @@
 SIMULATOR = simulator
+SIMCTL = simctl
 
 .PHONY: $(SIMULATOR) clean
 
 .DEFAULT_GOAL: SIMULATOR
 
-all: $(SIMULATOR)
+all: $(SIMULATOR) $(SIMCTL)
 
 $(SIMULATOR): cmd/$(SIMULATOR)/main.go
+	go build -o bin/$@ $^
+
+$(SIMCTL): cmd/$(SIMCTL)/main.go
 	go build -o bin/$@ $^
 
 proto:
