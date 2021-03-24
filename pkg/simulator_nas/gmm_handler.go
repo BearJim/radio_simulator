@@ -11,7 +11,7 @@ import (
 	"github.com/free5gc/nas/nasMessage"
 )
 
-func (c *NASController) HandleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
+func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
 
 	nasLog.Infof("UE[%s] Handle Authentication Request", ue.Supi)
 
@@ -21,12 +21,11 @@ func (c *NASController) HandleAuthenticationRequest(ue *simulator_context.UeCont
 	ue.NgKsi = request.GetNasKeySetIdentifiler()
 	rand := request.GetRANDValue()
 	resStar := ue.DeriveRESstarAndSetKey(rand[:])
-	nasPdu := nas_packet.GetAuthenticationResponse(resStar, "")
-	c.ngMessager.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
+	c.SendAuthenticationResponse(ue, resStar)
 	return nil
 }
 
-func (c *NASController) HandleSecurityModeCommand(ue *simulator_context.UeContext, request *nasMessage.SecurityModeCommand) error {
+func (c *NASController) handleSecurityModeCommand(ue *simulator_context.UeContext, request *nasMessage.SecurityModeCommand) error {
 
 	nasLog.Infof("UE[%s] Handle Security Mode Command", ue.Supi)
 
@@ -34,15 +33,11 @@ func (c *NASController) HandleSecurityModeCommand(ue *simulator_context.UeContex
 	if err != nil {
 		return err
 	}
-	nasPdu, err := nas_packet.GetSecurityModeComplete(ue, nasContent)
-	if err != nil {
-		return err
-	}
-	c.ngMessager.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
+	c.SendSecurityModeCommand(ue, nasContent)
 	return nil
 }
 
-func (c *NASController) HandleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessage.RegistrationAccept) error {
+func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessage.RegistrationAccept) error {
 
 	nasLog.Infof("UE[%s] Handle Registration Accept", ue.Supi)
 
@@ -52,14 +47,15 @@ func (c *NASController) HandleRegistrationAccept(ue *simulator_context.UeContext
 	if err != nil {
 		return err
 	}
-	c.ngMessager.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
+	nasLog.Info("Send Registration Complete")
+	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
 	ue.RmState = simulator_context.RegisterStateRegistered
 	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
 	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
 	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgRegisterSuccess)
 	return nil
 }
-func (c *NASController) HandleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {
+func (c *NASController) handleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {
 
 	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
 
@@ -67,7 +63,7 @@ func (c *NASController) HandleDeregistrationAccept(ue *simulator_context.UeConte
 	return nil
 }
 
-func (c *NASController) HandleDLNASTransport(ue *simulator_context.UeContext, request *nasMessage.DLNASTransport) error {
+func (c *NASController) handleDLNASTransport(ue *simulator_context.UeContext, request *nasMessage.DLNASTransport) error {
 
 	nasLog.Infof("UE[%s] Handle DL NAS Transport", ue.Supi)
 

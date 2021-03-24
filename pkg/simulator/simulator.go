@@ -212,6 +212,7 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer cancel()
 
+	startTime := time.Now()
 	regResult, err := apiClient.Register(ctx, &api.RegisterRequest{
 		Supi:         ue.Supi,
 		ServingPlmn:  ue.ServingPlmnId,
@@ -229,6 +230,8 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 		return
 	}
 
+	finishTime := time.Since(startTime)
+
 	if regResult.GetStatusCode() == api.StatusCode_ERROR {
 		fmt.Printf("registration start failed: %s\n", regResult.GetBody())
 	} else {
@@ -240,6 +243,7 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 		ue.RanUeNgapId = resultUe.GetRanUeNgapId()
 		ue.DLCount = security.Count(resultUe.GetNasDownlinkCount())
 		ue.ULCount = security.Count(resultUe.GetNasUplinkCount())
+		fmt.Printf("expand %+v\n", finishTime)
 	}
 
 	// update SQN when trigger registration

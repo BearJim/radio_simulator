@@ -79,7 +79,7 @@ func (r *RanApp) Initialize(c *cli.Context) error {
 func (r *RanApp) Run() {
 	wg := sync.WaitGroup{}
 
-	logger.InitLog.Info("Start running RAN")
+	logger.AppLog.Info("Start running RAN")
 
 	// RAN connect to UPF
 	// for _, upf := range ran.UpfInfoList {
@@ -92,7 +92,7 @@ func (r *RanApp) Run() {
 	// RAN connect to AMF
 	conn, err := r.connectToAmf()
 	if err != nil {
-		logger.InitLog.Error(err.Error())
+		logger.AppLog.Error(err.Error())
 		return
 	}
 	r.sctpConn = conn
@@ -112,13 +112,13 @@ func (r *RanApp) Run() {
 		defer wg.Done()
 		listener, err := net.Listen("tcp", r.cfg.ApiServerAddr)
 		if err != nil {
-			logger.InitLog.Fatalf("listen error: %v", err)
+			logger.AppLog.Fatalf("listen error: %v", err)
 		}
 		logger.ApiLog.Infof("API server listening on %+v", listener.Addr())
 		r.grpcServer = grpc.NewServer()
 		api.RegisterAPIServiceServer(r.grpcServer, &apiService{ranApp: r})
 		if err := r.grpcServer.Serve(listener); err != nil {
-			logger.InitLog.Fatalf("api server error: %v", err)
+			logger.AppLog.Fatalf("api server error: %v", err)
 		}
 	}(&wg)
 
@@ -209,7 +209,7 @@ func (r *RanApp) SendToAMF(endpoint *sctp.SCTPAddr, pkt []byte) {
 		endpoint.ToSockaddr(0),
 	)
 	if err != nil {
-		logger.InitLog.Error(err)
+		logger.AppLog.Error(err)
 	}
 }
 
@@ -293,14 +293,14 @@ func (r *RanApp) StartSCTPAssociation() {
 }
 
 func (r *RanApp) Terminate() {
-	logger.AppLog.Infof("Terminating RAN...")
+	logger.AppLog.Info("Terminating RAN...")
 
 	// TODO: Send UE Deregistration to AMF
 	// logger.SimulatorLog.Infof("Clear UE DB...")
 
 	// simulator_util.ClearDB()
 
-	logger.AppLog.Infof("Close SCTP Connection...")
+	logger.AppLog.Info("Close SCTP Connection...")
 	if err := r.sctpConn.Close(); err != nil {
 		logger.AppLog.Errorf("sctp close error: %+v", err)
 	}
@@ -309,10 +309,10 @@ func (r *RanApp) Terminate() {
 	// 	ran.SctpConn.Close()
 	// }
 
-	logger.AppLog.Infof("Close gRPC API Server")
+	logger.AppLog.Info("Close gRPC API Server")
 	r.grpcServer.Stop()
 
-	logger.AppLog.Infof("Clean Ue IP Addr in IP tables")
+	logger.AppLog.Info("Clean Ue IP Addr in IP tables")
 
 	// for key, conn := range self.GtpConnPool {
 	// 	logger.InitLog.Infof("GTP[%s] Connection Close", key)
@@ -334,7 +334,7 @@ func (r *RanApp) Terminate() {
 	// 	self.ListenRawConn.Close()
 	// }
 
-	logger.AppLog.Infof("RAN terminated")
+	logger.AppLog.Info("RAN terminated")
 }
 
 func (r *RanApp) setLogLevel() {

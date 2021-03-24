@@ -34,7 +34,7 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func (c *NGController) SendUplinkNasTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
+func (c *NGController) SendUplinkNASTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
 
 	logger.NgapLog.Info("Send Uplink NAS Transport")
 

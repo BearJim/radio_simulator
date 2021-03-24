@@ -113,7 +113,7 @@ func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest)
 		logger.ApiLog.Error(err.Error())
 		return &api.DeregisterResponse{StatusCode: api.StatusCode_ERROR}, nil
 	}
-	a.ranApp.ngController.SendUplinkNasTransport(ue.AMFEndpoint, ue, nasPdu)
+	a.ranApp.ngController.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
 
 	// wait result
 	result := <-ue.ApiNotifyChan
