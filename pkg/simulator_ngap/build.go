@@ -20,7 +20,7 @@ func init() {
 	TestPlmn.Value = aper.OctetString("\x02\xf8\x39")
 }
 
-func BuildNGSetupRequest(ran *simulator_context.RanContext) ([]byte, error) {
+func (c *NGController) BuildNGSetupRequest() ([]byte, error) {
 	pdu := ngapType.NGAPPDU{}
 	pdu.Present = ngapType.NGAPPDUPresentInitiatingMessage
 	pdu.InitiatingMessage = new(ngapType.InitiatingMessage)
@@ -47,13 +47,13 @@ func BuildNGSetupRequest(ran *simulator_context.RanContext) ([]byte, error) {
 	globalRANNodeID.GlobalGNBID = new(ngapType.GlobalGNBID)
 
 	globalGNBID := globalRANNodeID.GlobalGNBID
-	globalGNBID.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	globalGNBID.PLMNIdentity = c.ran.Context().PlmnID
 	globalGNBID.GNBID.Present = ngapType.GNBIDPresentGNBID
 	globalGNBID.GNBID.GNBID = new(aper.BitString)
 
 	gNBID := globalGNBID.GNBID.GNBID
 
-	*gNBID = ran.GnbId
+	*gNBID = c.ran.Context().GnbId
 	nGSetupRequestIEs.List = append(nGSetupRequestIEs.List, ie)
 
 	// RANNodeName
@@ -64,7 +64,7 @@ func BuildNGSetupRequest(ran *simulator_context.RanContext) ([]byte, error) {
 	ie.Value.RANNodeName = new(ngapType.RANNodeName)
 
 	rANNodeName := ie.Value.RANNodeName
-	rANNodeName.Value = ran.Name
+	rANNodeName.Value = c.ran.Context().Name
 	nGSetupRequestIEs.List = append(nGSetupRequestIEs.List, ie)
 	// SupportedTAList
 	ie = ngapType.NGSetupRequestIEs{}
@@ -76,7 +76,7 @@ func BuildNGSetupRequest(ran *simulator_context.RanContext) ([]byte, error) {
 	supportedTAList := ie.Value.SupportedTAList
 
 	// SupportedTAItem in SupportedTAList
-	for tac, talist := range ran.SupportTAList {
+	for tac, talist := range c.ran.Context().SupportTAList {
 		supportedTAItem := ngapType.SupportedTAItem{}
 		supportedTAItem.TAC.Value, _ = hex.DecodeString(tac)
 		broadcastPLMNList := &supportedTAItem.BroadcastPLMNList
@@ -2144,8 +2144,8 @@ func BuildNasNonDeliveryIndication(amfUeNgapID, ranUeNgapID int64, naspdu aper.O
 	return
 }
 
-func BuildRanConfigurationUpdate() (pdu ngapType.NGAPPDU) {
-
+func (c *NGController) BuildRanConfigurationUpdate() ([]byte, error) {
+	pdu := ngapType.NGAPPDU{}
 	pdu.Present = ngapType.NGAPPDUPresentInitiatingMessage
 	pdu.InitiatingMessage = new(ngapType.InitiatingMessage)
 
@@ -2167,51 +2167,65 @@ func BuildRanConfigurationUpdate() (pdu ngapType.NGAPPDU) {
 	ie.Value.RANNodeName = new(ngapType.RANNodeName)
 
 	rANNodeName := ie.Value.RANNodeName
-	rANNodeName.Value = "Free5GC"
+	rANNodeName.Value = c.ran.Context().Name
 	rANConfigurationUpdateIEs.List = append(rANConfigurationUpdateIEs.List, ie)
 
-	// SupportTAList
 	ie = ngapType.RANConfigurationUpdateIEs{}
-	ie.Id.Value = ngapType.ProtocolIEIDSupportedTAList
-	ie.Criticality.Value = ngapType.CriticalityPresentReject
-	ie.Value.Present = ngapType.RANConfigurationUpdateIEsPresentSupportedTAList
-	ie.Value.SupportedTAList = new(ngapType.SupportedTAList)
-
-	supportedTAList := ie.Value.SupportedTAList
-	// SupportTAItem in SupportTAlist
-	supportedTAItem := ngapType.SupportedTAItem{}
-	supportedTAItem.TAC.Value = aper.OctetString("\x00\x00\x01")
-
-	broadcastPLMNList := &supportedTAItem.BroadcastPLMNList
-	// BroadcastPLMNItem in BroadcastPLMNList
-	broadcastPLMNLItem := ngapType.BroadcastPLMNItem{}
-	broadcastPLMNLItem.PLMNIdentity.Value = aper.OctetString("\x00\x1D\x5C")
-
-	sliceSupportList := &broadcastPLMNLItem.TAISliceSupportList
-	// SlicesupportItem in SliceSupportList
-	sliceSupportItem := ngapType.SliceSupportItem{}
-	sliceSupportItem.SNSSAI.SST.Value = aper.OctetString("\x57")
-	// Optional
-	sliceSupportItem.SNSSAI.SD = new(ngapType.SD)
-	sliceSupportItem.SNSSAI.SD.Value = aper.OctetString("\x00\x01\x02")
-
-	sliceSupportList.List = append(sliceSupportList.List, sliceSupportItem)
-	broadcastPLMNList.List = append(broadcastPLMNList.List, broadcastPLMNLItem)
-	supportedTAList.List = append(supportedTAList.List, supportedTAItem)
-	rANConfigurationUpdateIEs.List = append(rANConfigurationUpdateIEs.List, ie)
-
-	// DefaultPagingDRX
-	ie = ngapType.RANConfigurationUpdateIEs{}
-	ie.Id.Value = ngapType.ProtocolIEIDDefaultPagingDRX
+	ie.Id.Value = ngapType.ProtocolIEIDGlobalRANNodeID
 	ie.Criticality.Value = ngapType.CriticalityPresentIgnore
-	ie.Value.Present = ngapType.RANConfigurationUpdateIEsPresentDefaultPagingDRX
-	ie.Value.DefaultPagingDRX = new(ngapType.PagingDRX)
+	ie.Value.Present = ngapType.RANConfigurationUpdateIEsPresentGlobalRANNodeID
+	ie.Value.GlobalRANNodeID = new(ngapType.GlobalRANNodeID)
 
-	pagingDRX := ie.Value.DefaultPagingDRX
-	pagingDRX.Value = ngapType.PagingDRXPresentV128
+	globalranNodeID := ie.Value.GlobalRANNodeID
+	globalranNodeID.Present = ngapType.GlobalRANNodeIDPresentGlobalGNBID
+	globalranNodeID.GlobalGNBID = new(ngapType.GlobalGNBID)
+	globalranNodeID.GlobalGNBID.PLMNIdentity = c.ran.Context().PlmnID
+	globalranNodeID.GlobalGNBID.GNBID.Present = ngapType.GNBIDPresentGNBID
+	globalranNodeID.GlobalGNBID.GNBID.GNBID = &c.ran.Context().GnbId
+
 	rANConfigurationUpdateIEs.List = append(rANConfigurationUpdateIEs.List, ie)
+	// // SupportTAList
+	// ie = ngapType.RANConfigurationUpdateIEs{}
+	// ie.Id.Value = ngapType.ProtocolIEIDSupportedTAList
+	// ie.Criticality.Value = ngapType.CriticalityPresentReject
+	// ie.Value.Present = ngapType.RANConfigurationUpdateIEsPresentSupportedTAList
+	// ie.Value.SupportedTAList = new(ngapType.SupportedTAList)
 
-	return
+	// supportedTAList := ie.Value.SupportedTAList
+	// // SupportTAItem in SupportTAlist
+	// supportedTAItem := ngapType.SupportedTAItem{}
+	// supportedTAItem.TAC.Value = aper.OctetString("\x00\x00\x01")
+
+	// broadcastPLMNList := &supportedTAItem.BroadcastPLMNList
+	// // BroadcastPLMNItem in BroadcastPLMNList
+	// broadcastPLMNLItem := ngapType.BroadcastPLMNItem{}
+	// broadcastPLMNLItem.PLMNIdentity.Value = aper.OctetString("\x00\x1D\x5C")
+
+	// sliceSupportList := &broadcastPLMNLItem.TAISliceSupportList
+	// // SlicesupportItem in SliceSupportList
+	// sliceSupportItem := ngapType.SliceSupportItem{}
+	// sliceSupportItem.SNSSAI.SST.Value = aper.OctetString("\x57")
+	// // Optional
+	// sliceSupportItem.SNSSAI.SD = new(ngapType.SD)
+	// sliceSupportItem.SNSSAI.SD.Value = aper.OctetString("\x00\x01\x02")
+
+	// sliceSupportList.List = append(sliceSupportList.List, sliceSupportItem)
+	// broadcastPLMNList.List = append(broadcastPLMNList.List, broadcastPLMNLItem)
+	// supportedTAList.List = append(supportedTAList.List, supportedTAItem)
+	// rANConfigurationUpdateIEs.List = append(rANConfigurationUpdateIEs.List, ie)
+
+	// // DefaultPagingDRX
+	// ie = ngapType.RANConfigurationUpdateIEs{}
+	// ie.Id.Value = ngapType.ProtocolIEIDDefaultPagingDRX
+	// ie.Criticality.Value = ngapType.CriticalityPresentIgnore
+	// ie.Value.Present = ngapType.RANConfigurationUpdateIEsPresentDefaultPagingDRX
+	// ie.Value.DefaultPagingDRX = new(ngapType.PagingDRX)
+
+	// pagingDRX := ie.Value.DefaultPagingDRX
+	// pagingDRX.Value = ngapType.PagingDRXPresentV128
+	// rANConfigurationUpdateIEs.List = append(rANConfigurationUpdateIEs.List, ie)
+
+	return ngap.Encoder(pdu)
 }
 
 func BuildRanConfigurationUpdateAck(diagnostics *ngapType.CriticalityDiagnostics) (pdu ngapType.NGAPPDU) {

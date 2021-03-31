@@ -16,7 +16,7 @@ import (
 func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 	logger.NgapLog.Info("Send NG Setup Request")
 	// send NGSetupRequest Msg
-	pkt, err := BuildNGSetupRequest(c.ran.Context())
+	pkt, err := c.BuildNGSetupRequest()
 	if err != nil {
 		logger.NgapLog.Errorf("Build NGSetUp failed : %s", err.Error())
 		return
@@ -164,6 +164,17 @@ func (c *NGController) SendAMFConfigurationUpdateAcknowledge(endpoint *sctp.SCTP
 	pkt, err := BuildAMFConfigurationUpdateAcknowledge(setupList)
 	if err != nil {
 		logger.NgapLog.Errorf("Build AMFConfigurationUpdateAcknowledge failed: %+v", err)
+		return
+	}
+	c.ran.SendToAMF(endpoint, pkt)
+}
+
+func (c *NGController) SendRanConfigurationUpdate(endpoint *sctp.SCTPAddr) {
+	logger.NgapLog.Info("Send RAN Configuration Update")
+
+	pkt, err := c.BuildRanConfigurationUpdate()
+	if err != nil {
+		logger.NgapLog.Errorf("Build RanConfigurationUpdate failed : %s", err.Error())
 		return
 	}
 	c.ran.SendToAMF(endpoint, pkt)

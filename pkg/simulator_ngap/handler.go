@@ -2,6 +2,7 @@ package simulator_ngap
 
 import (
 	"net"
+	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/logger"
@@ -610,7 +611,7 @@ func (c *NGController) HandlePduSessionResourceReleaseCommand(endpoint *sctp.SCT
 	}
 }
 
-func (c *NGController) HandleAMFConfigurationUpdate(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
+func (c *NGController) handleAMFConfigurationUpdate(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
 	var (
 		amfTNLAssociationToAddList *ngapType.AMFTNLAssociationToAddList
 	)
@@ -655,7 +656,7 @@ func (c *NGController) HandleAMFConfigurationUpdate(endpoint *sctp.SCTPAddr, mes
 		if err := c.ran.Connect(sctpAddr); err != nil {
 			logger.NgapLog.Error(err)
 		} else {
-			logger.NgapLog.Infof("establish additional TNL association with AMF success (addr: %s)", ipv4Addr)
+			logger.NgapLog.Infof("establish additional TNL association with AMF success (addr: %s)", sctpAddr)
 			setupItem := ngapType.AMFTNLAssociationSetupItem{
 				AMFTNLAssociationAddress: ngapType.CPTransportLayerInformation{
 					Present:           ngapType.CPTransportLayerInformationPresentEndpointIPAddress,
@@ -663,9 +664,44 @@ func (c *NGController) HandleAMFConfigurationUpdate(endpoint *sctp.SCTPAddr, mes
 				},
 			}
 			amfTNLAssociationSetupList.List = append(amfTNLAssociationSetupList.List, setupItem)
+			c.SendRanConfigurationUpdate(sctpAddr)
 		}
 	}
 	c.SendAMFConfigurationUpdateAcknowledge(endpoint, &amfTNLAssociationSetupList)
+	time.Sleep(200 * time.Millisecond)
+}
+
+func (c *NGController) handleRanConfigurationUpdateAcknowledge(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
+}
+
+func (c *NGController) handleRanConfigurationUpdateFailure(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
+	var (
+		cause *ngapType.Cause
+	)
+
+	logger.NgapLog.Info("Handle RAN Configuration Update Failure")
+
+	if message == nil {
+		logger.NgapLog.Error("NGAP Message is nil")
+		return
+	}
+
+	ranConfigurationUpdateFailure := message.UnsuccessfulOutcome.Value.RANConfigurationUpdateFailure
+	if ranConfigurationUpdateFailure == nil {
+		logger.NgapLog.Error("ranConfigurationUpdateFailure is nil")
+		return
+	}
+
+	for _, ie := range ranConfigurationUpdateFailure.ProtocolIEs.List {
+		switch ie.Id.Value {
+		case ngapType.ProtocolIEIDCause:
+			cause = ie.Value.Cause
+		}
+	}
+
+	if cause != nil {
+		printAndGetCause(cause)
+	}
 }
 
 func buildCriticalityDiagnostics(

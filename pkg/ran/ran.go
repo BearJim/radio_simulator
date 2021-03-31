@@ -233,7 +233,7 @@ func (r *RanApp) StartSCTPAssociation() {
 				event := noti.(*sctp.SCTPAssocChangeEvent)
 				switch event.State() {
 				case sctp.SCTP_COMM_UP:
-					// logger.NgapLog.Infof("SCTP state is SCTP_COMM_UP: %d", event.AssocID())
+					logger.NgapLog.Infof("SCTP state is SCTP_COMM_UP: %d", event.AssocID())
 					// c, err := r.sctpConn.PeelOff(int(event.AssocID()))
 					// if err != nil {
 					// 	logger.NgapLog.Errorf("PeelOff: %+v", err)
