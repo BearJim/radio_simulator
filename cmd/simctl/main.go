@@ -6,11 +6,17 @@ import (
 	"os"
 
 	"github.com/jay16213/radio_simulator/pkg/simulator"
+	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/mohae/deepcopy"
 	"github.com/spf13/cobra"
 )
 
 // flags
-var simulatorDBUrl string
+var (
+	simulatorDBUrl string
+	numOfUEs       int32
+	allUEs         bool
+)
 
 var rootCmd = &cobra.Command{
 	Use:     "simctl",
@@ -115,12 +121,17 @@ func registerCommand() *cobra.Command {
 		Use:     "reg <SUPI> <RanName>",
 		Short:   "trigger initial registration procedure for UE with SUPI via RanName",
 		Example: "reg imsi-2089300000003 ran1",
-		Args:    cobra.ExactArgs(2),
+		Args:    cobra.RangeArgs(1, 2),
 		Run: func(cmd *cobra.Command, args []string) {
 			s := initSimulator(simulatorDBUrl)
-			s.UeRegister(args[0], args[1])
+			if allUEs {
+				s.AllUeRegister(args[0])
+			} else {
+				s.UeRegister(args[0], args[1])
+			}
 		},
 	}
+	cmd.PersistentFlags().BoolVarP(&allUEs, "all", "a", false, "register all UEs via RanName")
 	return cmd
 }
 
@@ -147,9 +158,19 @@ func loadCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			s := initSimulator(simulatorDBUrl)
 			ueContexts := s.ParseUEData(args[0])
+			if cmd.HasPersistentFlags() {
+				defaultUE := ueContexts[0]
+
+				for i := 2; i <= int(numOfUEs); i++ {
+					ue := deepcopy.Copy(defaultUE).(*simulator_context.UeContext)
+					ue.Supi = fmt.Sprintf("imsi-20893%08d", i)
+					ueContexts = append(ueContexts, ue)
+				}
+			}
 			s.InsertUEContextToDB(ueContexts)
 		},
 	}
+	cmd.PersistentFlags().Int32VarP(&numOfUEs, "generate", "g", 10, "automatically generate UE profile for input quantity")
 	return cmd
 }
 

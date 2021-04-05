@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"sync"
 	"syscall"
 	"text/tabwriter"
 	"time"
@@ -194,6 +195,43 @@ func (s *Simulator) DescribeUE(supi string) {
 	fmt.Printf("CmState: %s\n", ue.CmState)
 }
 
+func (s *Simulator) AllUeRegister(ranName string) {
+	apiClient, err := s.connectToRan(ranName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// find all UE and register
+	cur, err := s.dbClient.Database().Collection("ue").Find(context.TODO(), bson.D{})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			fmt.Println("No UE found in DB")
+		} else {
+			fmt.Printf("Find UE error: %+v\n", err)
+		}
+		return
+	}
+
+	wg := sync.WaitGroup{}
+	defer cur.Close(context.TODO())
+	for cur.Next(context.TODO()) {
+		ue := new(simulator_context.UeContext)
+		err := cur.Decode(ue)
+		if err != nil {
+			fmt.Printf("decode ue error: %+v\n", err)
+			continue
+		}
+		ue.ServingRan = ranName
+		wg.Add(1)
+		go func(wg *sync.WaitGroup) {
+			s.ueRegister(ue, apiClient)
+			wg.Done()
+		}(&wg)
+	}
+	wg.Wait()
+}
+
 func (s *Simulator) UeRegister(supi string, ranName string) {
 	ue, err := s.findUE(supi)
 	if err != nil {
@@ -208,7 +246,10 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 	}
 
 	ue.ServingRan = ranName
+	s.ueRegister(ue, apiClient)
+}
 
+func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer cancel()
 
@@ -235,7 +276,7 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 	if regResult.GetStatusCode() == api.StatusCode_ERROR {
 		fmt.Printf("registration start failed: %s\n", regResult.GetBody())
 	} else {
-		fmt.Printf("registration success\n")
+		fmt.Printf("registration success (expand %+v)\n", finishTime)
 		resultUe := regResult.GetUeContext()
 		ue.RmState = resultUe.GetRmState()
 		ue.CmState = resultUe.GetCmState()
@@ -243,7 +284,6 @@ func (s *Simulator) UeRegister(supi string, ranName string) {
 		ue.RanUeNgapId = resultUe.GetRanUeNgapId()
 		ue.DLCount = security.Count(resultUe.GetNasDownlinkCount())
 		ue.ULCount = security.Count(resultUe.GetNasUplinkCount())
-		fmt.Printf("expand %+v\n", finishTime)
 	}
 
 	// update SQN when trigger registration
