@@ -33,6 +33,7 @@ type RanApp struct {
 	// ran context
 	primaryAMFEndpoint *sctp.SCTPAddr
 	ngController       *simulator_ngap.NGController
+	nasController      *simulator_nas.NASController
 	ctx                *simulator_context.RanContext
 	sctpConn           *sctp.SCTPConn
 
@@ -96,14 +97,22 @@ func (r *RanApp) Run() {
 		return
 	}
 	r.sctpConn = conn
-	nasController := simulator_nas.NewController()
-	r.ngController = simulator_ngap.NewController(r, nasController)
-	nasController.SetNGMessager(r.ngController)
+	r.nasController = simulator_nas.New()
+	r.ngController = simulator_ngap.New(r, r.nasController)
+	r.nasController.SetNGMessager(r.ngController)
 
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
 		r.StartSCTPAssociation()
+	}(&wg)
+
+	// run NAS
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		if err := r.nasController.Run(); err != nil {
+			logger.AppLog.Fatalln(err)
+		}
 	}(&wg)
 
 	// init API service
@@ -308,6 +317,9 @@ func (r *RanApp) Terminate() {
 	// 	logger.SimulatorLog.Infof("Ran[%s] Connection Close", ran.RanSctpUri)
 	// 	ran.SctpConn.Close()
 	// }
+
+	logger.AppLog.Info("Close NAS")
+	r.nasController.Stop()
 
 	logger.AppLog.Info("Close gRPC API Server")
 	r.grpcServer.Stop()

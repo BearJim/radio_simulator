@@ -69,7 +69,7 @@ func (c *NASController) handleDLNASTransport(ue *simulator_context.UeContext, re
 
 	switch request.GetPayloadContainerType() {
 	case nasMessage.PayloadContainerTypeN1SMInfo:
-		c.HandleNAS(ue, request.GetPayloadContainerContents())
+		c.handleGsmMessage(ue, request.GetPayloadContainerContents())
 	case nasMessage.PayloadContainerTypeSMS:
 		return fmt.Errorf("PayloadContainerTypeSMS has not been implemented yet in DL NAS TRANSPORT")
 	case nasMessage.PayloadContainerTypeLPP:

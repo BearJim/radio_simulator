@@ -21,7 +21,7 @@ type NGController struct {
 	nasController NASController
 }
 
-func NewController(ranApp RanApp, nasController NASController) *NGController {
+func New(ranApp RanApp, nasController NASController) *NGController {
 	return &NGController{
 		ran:           ranApp,
 		nasController: nasController,
