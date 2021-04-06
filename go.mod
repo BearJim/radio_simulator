@@ -24,7 +24,7 @@ require (
 )
 
 replace (
-	git.cs.nctu.edu.tw/calee/sctp => /home/jay/thesis/sctp
-	github.com/free5gc/MongoDBLibrary => /home/jay/thesis/MongoDBLibrary
+	git.cs.nctu.edu.tw/calee/sctp => github.com/jay16213/sctp v1.1.0
+	github.com/free5gc/MongoDBLibrary => github.com/jay16213/MongoDBLibrary v1.1.0
 	github.com/free5gc/nas v1.0.0 => github.com/jay16213/nas v1.0.1
 )
