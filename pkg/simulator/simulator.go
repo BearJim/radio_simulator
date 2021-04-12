@@ -274,9 +274,9 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	finishTime := time.Since(startTime)
 
 	if regResult.GetStatusCode() == api.StatusCode_ERROR {
-		fmt.Printf("registration start failed: %s\n", regResult.GetBody())
+		fmt.Printf("registration start failed: %s (supi: %s)\n", regResult.GetBody(), ue.Supi)
 	} else {
-		fmt.Printf("registration success (expand %+v)\n", finishTime)
+		fmt.Printf("registration success (supi: %s, expand %+v)\n", ue.Supi, finishTime)
 		resultUe := regResult.GetUeContext()
 		ue.RmState = resultUe.GetRmState()
 		ue.CmState = resultUe.GetCmState()
@@ -286,7 +286,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 		ue.ULCount = security.Count(resultUe.GetNasUplinkCount())
 	}
 
-	// update SQN when trigger registration
+	// update SQN when triggering registration
 	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
 	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
 	s.updateUE(ue)
@@ -455,8 +455,6 @@ func (s *Simulator) updateUE(ue *simulator_context.UeContext) {
 		bson.M{"$set": ue}, &options.UpdateOptions{Upsert: &upsert})
 	if err != nil {
 		fmt.Printf("update UE error: %+v\n", err)
-	} else {
-		fmt.Printf("UE profile updated (supi: %s)\n", ue.Supi)
 	}
 }
 
