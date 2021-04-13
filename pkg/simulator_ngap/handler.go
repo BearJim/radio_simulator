@@ -2,6 +2,7 @@ package simulator_ngap
 
 import (
 	"net"
+	"reflect"
 	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
@@ -59,7 +60,7 @@ func (c *NGController) HandleNGSetupResponse(endpoint *sctp.SCTPAddr, message *n
 	// }
 }
 
-func (c *NGController) HandleDownlinkNASTransport(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
+func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
 	var aMFUENGAPID *ngapType.AMFUENGAPID
 	var rANUENGAPID *ngapType.RANUENGAPID
 	// var oldAMF *ngapType.AMFName
@@ -72,18 +73,7 @@ func (c *NGController) HandleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 
 	var iesCriticalityDiagnostics ngapType.CriticalityDiagnosticsIEList
 
-	if message == nil {
-		logger.NgapLog.Error("NGAP Message is nil")
-		return
-	}
-
-	initiatingMessage := message.InitiatingMessage
-	if initiatingMessage == nil {
-		logger.NgapLog.Error("InitiatingMessage is nil")
-		return
-	}
-
-	downlinkNASTransport := initiatingMessage.Value.DownlinkNASTransport
+	downlinkNASTransport := message.InitiatingMessage.Value.DownlinkNASTransport
 	if downlinkNASTransport == nil {
 		logger.NgapLog.Error("downlinkNASTransport is nil")
 		return
@@ -149,7 +139,7 @@ func (c *NGController) HandleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 	if rANUENGAPID != nil {
 		ue = c.ran.Context().FindUeByRanUeNgapID(rANUENGAPID.Value)
 		if ue == nil {
-			logger.NgapLog.Warnf("No UE Context[RanUeNgapID:%d]\n", rANUENGAPID.Value)
+			logger.NgapLog.Warnf("No UE Context[RanUeNgapID:%d]", rANUENGAPID.Value)
 			return
 		}
 	}
@@ -158,7 +148,7 @@ func (c *NGController) HandleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 		if ue.AmfUeNgapId == simulator_context.AmfNgapIdUnspecified {
 			logger.NgapLog.Tracef("Create new logical UE-associated NG-connection")
 			ue.AmfUeNgapId = aMFUENGAPID.Value
-			// n3iwfUe.SCTPAddr = amf.SCTPAddr
+			ue.AMFEndpoint = endpoint
 		} else {
 			if ue.AmfUeNgapId != aMFUENGAPID.Value {
 				logger.NgapLog.Warn("AMFUENGAPID unmatched")
@@ -167,12 +157,17 @@ func (c *NGController) HandleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 		}
 	}
 
+	if !reflect.DeepEqual(ue.AMFEndpoint, endpoint) {
+		logger.NgapLog.Warnf("UE AMF endpoint change from %s to %s", ue.AMFEndpoint.String(), endpoint.String())
+		ue.AMFEndpoint = endpoint
+	}
+
 	if nASPDU != nil {
 		c.nasController.HandleNAS(ue, nASPDU.Value)
 	}
 }
 
-func (c *NGController) HandleInitialContextSetupRequest(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
+func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
 	var aMFUENGAPID *ngapType.AMFUENGAPID
 	var rANUENGAPID *ngapType.RANUENGAPID
 	// var oldAMF *ngapType.AMFName

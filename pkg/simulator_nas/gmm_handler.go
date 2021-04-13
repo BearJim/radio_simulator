@@ -18,7 +18,6 @@ var once sync.Once
 var firstTime bool = true
 
 func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
-
 	if ue.Supi == "imsi-2089300000001" {
 		logger.ApiLog.Infof("Try to trigger AMF fail")
 		once.Do(func() {

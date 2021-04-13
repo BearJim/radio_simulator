@@ -19,13 +19,17 @@ func init() {
 type NGController struct {
 	ran           RanApp
 	nasController NASController
+
+	// handlers map[int64]func(*sctp.SCTPAddr, *ngapType.NGAPPDU)
 }
 
 func New(ranApp RanApp, nasController NASController) *NGController {
-	return &NGController{
+	c := &NGController{
 		ran:           ranApp,
 		nasController: nasController,
 	}
+	// c.registerHandlers()
+	return c
 }
 
 type RanApp interface {
@@ -38,12 +42,31 @@ type NASController interface {
 	HandleNAS(*simulator_context.UeContext, []byte)
 }
 
+// func (c *NGController) registerHandlers() {
+// 	c.handlers = make(map[int64]func(*sctp.SCTPAddr, *ngapType.NGAPPDU))
+
+// 	// InitiatingMessage
+// 	c.handlers[ngapType.ProcedureCodeAMFConfigurationUpdate] = c.handleAMFConfigurationUpdate
+// 	c.handlers[ngapType.ProcedureCodeDownlinkNASTransport] = c.handleDownlinkNASTransport
+// 	c.handlers[ngapType.ProcedureCodeInitialContextSetup] = c.handleInitialContextSetupRequest
+// 	c.handlers[ngapType.ProcedureCodeUEContextRelease] = c.HandleUeContextReleaseCommand
+// 	c.handlers[ngapType.ProcedureCodePDUSessionResourceSetup] = c.HandlePduSessionResourceSetupRequest
+// 	c.handlers[ngapType.ProcedureCodePDUSessionResourceRelease] = c.HandlePduSessionResourceReleaseCommand
+
+// 	// SuccessfulOutcome
+// 	c.handlers[ngapType.ProcedureCodeNGSetup] = c.HandleNGSetupResponse
+// 	c.handlers[ngapType.ProcedureCodeRANConfigurationUpdate] = c.handleRanConfigurationUpdateAcknowledge
+// }
+
 func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
 	pdu, err := ngap.Decoder(msg)
 	if err != nil {
 		ngapLog.Errorf("NGAP decode error: %s", err)
 		return
 	}
+
+	logger.NgapLog.Infof("read from %s", endpoint.String())
+
 	switch pdu.Present {
 	case ngapType.NGAPPDUPresentInitiatingMessage:
 		initiatingMessage := pdu.InitiatingMessage
@@ -56,10 +79,10 @@ func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
 			c.handleAMFConfigurationUpdate(endpoint, pdu)
 		case ngapType.ProcedureCodeDownlinkNASTransport:
 			ngapLog.Infof("Handle Downlink NAS Transport")
-			c.HandleDownlinkNASTransport(endpoint, pdu)
+			c.handleDownlinkNASTransport(endpoint, pdu)
 		case ngapType.ProcedureCodeInitialContextSetup:
 			ngapLog.Infof("Handle Initial Context Setup Request")
-			c.HandleInitialContextSetupRequest(endpoint, pdu)
+			c.handleInitialContextSetupRequest(endpoint, pdu)
 		case ngapType.ProcedureCodeUEContextRelease:
 			ngapLog.Infof("Handle Ue Context Release Command")
 			c.HandleUeContextReleaseCommand(endpoint, pdu)
