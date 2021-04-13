@@ -3,6 +3,7 @@ package simulator_context
 import (
 	"encoding/hex"
 	"net"
+	"sync"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/free5gc/aper"
@@ -26,6 +27,7 @@ type RanContext struct {
 	PlmnID           ngapType.PLMNIdentity
 	Name             string
 	GnbId            aper.BitString
+	mu               sync.RWMutex
 	UePool           map[int64]*UeContext // ranUeNgapId
 	SessPool         map[uint32]*SessionContext
 	DefaultTAC       string
@@ -121,7 +123,9 @@ func NewRanContext() *RanContext {
 func (ran *RanContext) NewUE(supi string) *UeContext {
 	ue := NewUeContext()
 	ue.Ran = ran
+	ran.mu.Lock()
 	ran.UePool[ran.RanUeIDGenerator] = ue
+	ran.mu.Unlock()
 	ue.RanUeNgapId = ran.RanUeIDGenerator
 	ran.RanUeIDGenerator++
 	ue.CmState = CmStateConnected
