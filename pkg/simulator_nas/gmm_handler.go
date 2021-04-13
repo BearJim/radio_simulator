@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/jay16213/radio_simulator/pkg/api"
+	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 
@@ -19,8 +20,13 @@ var firstTime bool = true
 func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
 
 	if ue.Supi == "imsi-2089300000001" {
+		logger.ApiLog.Infof("Try to trigger AMF fail")
 		once.Do(func() {
-			http.Get("http://10.10.0.18:31118/fail")
+			logger.ApiLog.Infof("Once.Do trigger AMF fail")
+			_, err := http.Get("http://10.10.0.18:31118/fail")
+			if err != nil {
+				logger.ApiLog.Errorf("trigger amf failing failed: %+v", err)
+			}
 			firstTime = false
 		})
 	}
