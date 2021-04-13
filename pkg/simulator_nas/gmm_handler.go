@@ -2,7 +2,9 @@ package simulator_nas
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
@@ -11,7 +13,21 @@ import (
 	"github.com/free5gc/nas/nasMessage"
 )
 
+var once sync.Once
+var firstTime bool = true
+
 func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
+
+	if ue.Supi == "imsi-2089300000001" {
+		once.Do(func() {
+			http.Get("http://10.10.0.18:31118/fail")
+			firstTime = false
+		})
+	}
+
+	if firstTime {
+		return nil
+	}
 
 	nasLog.Infof("UE[%s] Handle Authentication Request", ue.Supi)
 
