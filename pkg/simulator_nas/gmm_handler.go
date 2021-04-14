@@ -2,6 +2,7 @@ package simulator_nas
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -23,7 +24,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 		once.Do(func() {
 			logger.ApiLog.Infof("Once.Do trigger AMF fail")
 			_, err := http.Get("http://10.10.0.18:31118/fail")
-			if err != nil {
+			if err != nil && err != io.EOF {
 				logger.ApiLog.Errorf("trigger amf failing failed: %+v", err)
 			}
 			firstTime = false
@@ -31,6 +32,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 	}
 
 	if firstTime {
+		logger.ApiLog.Debugln("trigger fail first time")
 		return nil
 	}
 

@@ -290,7 +290,7 @@ func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 	Kausf := UeauCommon.GetKDFValue(key, FC, P0, UeauCommon.KDFLen(P0), P1, UeauCommon.KDFLen(P1))
 	P0 = []byte(snName)
 	Kseaf := UeauCommon.GetKDFValue(Kausf, UeauCommon.FC_FOR_KSEAF_DERIVATION, P0, UeauCommon.KDFLen(P0))
-
+	logger.ContextLog.Debugf("Kseaf: %+v", Kseaf)
 	supiRegexp, _ := regexp.Compile("(?:imsi|supi)-([0-9]{5,15})")
 	groups := supiRegexp.FindStringSubmatch(ue.Supi)
 	if groups == nil {
@@ -302,6 +302,7 @@ func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 	L1 := UeauCommon.KDFLen(P1)
 
 	ue.Kamf = UeauCommon.GetKDFValue(Kseaf, UeauCommon.FC_FOR_KAMF_DERIVATION, P0, L0, P1, L1)
+	logger.ContextLog.Debugf("Kamf: %+v", Kamf)
 }
 
 // Algorithm key Derivation function defined in TS 33.501 Annex A.9
