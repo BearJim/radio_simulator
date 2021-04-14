@@ -14,11 +14,13 @@ import (
 	"github.com/free5gc/ngap/ngapType"
 )
 
-func (c *NGController) HandleNGSetupResponse(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
+func (c *NGController) handleNGSetupResponse(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
 	var (
 	// amfName         *ngapType.AMFName
 	// servedGuamiList *ngapType.ServedGUAMIList
 	)
+
+	logger.NgapLog.Info("Handle NG Setup Response")
 
 	ngSetupResponse := message.SuccessfulOutcome.Value.NGSetupResponse
 	if ngSetupResponse == nil {
@@ -667,6 +669,7 @@ func (c *NGController) handleAMFConfigurationUpdate(endpoint *sctp.SCTPAddr, mes
 }
 
 func (c *NGController) handleRanConfigurationUpdateAcknowledge(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
+	logger.NgapLog.Info("Handle RAN Configuration Update Acknowledge")
 }
 
 func (c *NGController) handleRanConfigurationUpdateFailure(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {

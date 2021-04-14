@@ -35,7 +35,6 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 }
 
 func (c *NGController) SendUplinkNASTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
-
 	logger.NgapLog.Info("Send Uplink NAS Transport")
 
 	pkt, err := BuildUplinkNasTransport(ue, nasPdu)
