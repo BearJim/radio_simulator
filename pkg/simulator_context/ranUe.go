@@ -302,7 +302,7 @@ func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 	L1 := UeauCommon.KDFLen(P1)
 
 	ue.Kamf = UeauCommon.GetKDFValue(Kseaf, UeauCommon.FC_FOR_KAMF_DERIVATION, P0, L0, P1, L1)
-	logger.ContextLog.Debugf("Kamf: %+v", Kamf)
+	logger.ContextLog.Debugf("Kamf: %+v", ue.Kamf)
 }
 
 // Algorithm key Derivation function defined in TS 33.501 Annex A.9
