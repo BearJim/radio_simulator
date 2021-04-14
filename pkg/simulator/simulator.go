@@ -267,7 +267,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 		Sqn:          ue.AuthData.SQN,
 	})
 	if err != nil {
-		fmt.Printf("register error: %+v\n", err)
+		fmt.Printf("registration failed: %+v (supi: %s)\n", err, ue.Supi)
 		return
 	}
 

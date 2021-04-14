@@ -1,9 +1,9 @@
 package simulator_context
 
 import (
-	"encoding/hex"
 	"fmt"
 	"regexp"
+	"strconv"
 	"sync"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
@@ -11,7 +11,6 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/logger"
 
 	"github.com/free5gc/UeauCommon"
-	"github.com/free5gc/milenage"
 	"github.com/free5gc/nas/nasType"
 	"github.com/free5gc/nas/security"
 	"github.com/free5gc/ngap/ngapType"
@@ -133,6 +132,11 @@ func NewUeContext() *UeContext {
 	}
 }
 
+func (ue *UeContext) AuthDataSQNAddOne() {
+	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
+	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
+}
+
 func (ue *UeContext) AddPduSession(pduSessionId uint8, dnn string, snssai models.Snssai) *SessionContext {
 	sess := &SessionContext{
 		PduSessionId:      int64(pduSessionId),
@@ -239,70 +243,49 @@ func (ue *UeContext) GetServingNetworkName() string {
 	return fmt.Sprintf("5G:mnc%s.mcc%s.3gppnetwork.org", mnc, mcc)
 }
 
-func (ue *UeContext) DeriveRESstarAndSetKey(RAND []byte) []byte {
-	authData := ue.AuthData
-	snName := ue.GetServingNetworkName()
-	SQN, _ := hex.DecodeString(authData.SQN)
-
-	AMF, _ := hex.DecodeString(authData.AMF)
-
-	// Run milenage
-	MAC_A, MAC_S := make([]byte, 8), make([]byte, 8)
-	CK, IK := make([]byte, 16), make([]byte, 16)
-	RES := make([]byte, 8)
-	AK, AKstar := make([]byte, 6), make([]byte, 6)
-	OPC, _ := hex.DecodeString(authData.Opc)
-	K, _ := hex.DecodeString(authData.K)
-	// Generate MAC_A, MAC_S
-	if err := milenage.F1(OPC, K, RAND, SQN, AMF, MAC_A, MAC_S); err != nil {
-		logger.ContextLog.Errorln(err)
-		return nil
-	}
-
-	// Generate RES, CK, IK, AK, AKstar
-	if err := milenage.F2345(OPC, K, RAND, RES, CK, IK, AK, AKstar); err != nil {
-		logger.ContextLog.Errorln(err)
-		return nil
-	}
-
-	// derive RES*
-	key := append(CK, IK...)
+// TS 33.501 Annex A.4
+func (ue *UeContext) DeriveRESstar(ck []byte, ik []byte, servingNetworkName string, rand []byte, res []byte) []byte {
+	inputKey := append(ck, ik...)
 	FC := UeauCommon.FC_FOR_RES_STAR_XRES_STAR_DERIVATION
-	P0 := []byte(snName)
-	P1 := RAND
-	P2 := RES
-
-	ue.DerivateKamf(key, snName, SQN, AK)
-	kdfVal_for_resStar := UeauCommon.GetKDFValue(key, FC, P0, UeauCommon.KDFLen(P0), P1, UeauCommon.KDFLen(P1), P2, UeauCommon.KDFLen(P2))
+	P0 := []byte(servingNetworkName)
+	L0 := UeauCommon.KDFLen(P0)
+	P1 := rand
+	L1 := UeauCommon.KDFLen(P1)
+	P2 := res
+	L2 := UeauCommon.KDFLen(P2)
+	kdfVal_for_resStar := UeauCommon.GetKDFValue(inputKey, FC, P0, L0, P1, L1, P2, L2)
 	return kdfVal_for_resStar[len(kdfVal_for_resStar)/2:]
-
 }
 
-func (ue *UeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
+// TS 33.501 Annex A.2
+func DerivateKausf(ck []byte, ik []byte, servingNetworkName string, sqnXorAK []byte) []byte {
+	inputKey := append(ck, ik...)
+	P0 := []byte(servingNetworkName)
+	L0 := UeauCommon.KDFLen(P0)
+	P1 := sqnXorAK
+	L1 := UeauCommon.KDFLen(P1)
+	return UeauCommon.GetKDFValue(inputKey, UeauCommon.FC_FOR_KAUSF_DERIVATION, P0, L0, P1, L1)
+}
 
-	FC := UeauCommon.FC_FOR_KAUSF_DERIVATION
-	P0 := []byte(snName)
-	SQNxorAK := make([]byte, 6)
-	for i := 0; i < len(SQN); i++ {
-		SQNxorAK[i] = SQN[i] ^ AK[i]
-	}
-	P1 := SQNxorAK
-	Kausf := UeauCommon.GetKDFValue(key, FC, P0, UeauCommon.KDFLen(P0), P1, UeauCommon.KDFLen(P1))
-	P0 = []byte(snName)
-	Kseaf := UeauCommon.GetKDFValue(Kausf, UeauCommon.FC_FOR_KSEAF_DERIVATION, P0, UeauCommon.KDFLen(P0))
-	logger.ContextLog.Debugf("Kseaf: %+v", Kseaf)
+func DerivateKseaf(kausf []byte, servingNetworkName string) []byte {
+	P0 := []byte(servingNetworkName)
+	L0 := UeauCommon.KDFLen(P0)
+	return UeauCommon.GetKDFValue(kausf, UeauCommon.FC_FOR_KSEAF_DERIVATION, P0, L0)
+}
+
+func (ue *UeContext) DerivateKamf(kseaf []byte, abba []byte) {
 	supiRegexp, _ := regexp.Compile("(?:imsi|supi)-([0-9]{5,15})")
 	groups := supiRegexp.FindStringSubmatch(ue.Supi)
 	if groups == nil {
 		return
 	}
-	P0 = []byte(groups[1])
+	P0 := []byte(groups[1])
 	L0 := UeauCommon.KDFLen(P0)
-	P1 = []byte{0x00, 0x00}
+	P1 := abba
 	L1 := UeauCommon.KDFLen(P1)
 
-	ue.Kamf = UeauCommon.GetKDFValue(Kseaf, UeauCommon.FC_FOR_KAMF_DERIVATION, P0, L0, P1, L1)
-	logger.ContextLog.Debugf("Kamf: %+v", ue.Kamf)
+	ue.Kamf = UeauCommon.GetKDFValue(kseaf, UeauCommon.FC_FOR_KAMF_DERIVATION, P0, L0, P1, L1)
+	logger.ContextLog.Debugf("Kamf: 0x%0x", ue.Kamf)
 }
 
 // Algorithm key Derivation function defined in TS 33.501 Annex A.9

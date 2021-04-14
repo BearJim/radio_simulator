@@ -1,40 +1,35 @@
 package simulator_nas
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"sync"
 
 	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 
+	"github.com/free5gc/milenage"
 	"github.com/free5gc/nas/nasMessage"
 )
 
-var once sync.Once
 var firstTime bool = true
 
 func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
-	if ue.Supi == "imsi-2089300000001" {
+	// ------------ THESIS FAIL TRIGGER ------------
+	if firstTime && ue.Supi == "imsi-2089300000001" {
 		logger.ApiLog.Infof("Try to trigger AMF fail")
-		once.Do(func() {
-			logger.ApiLog.Infof("Once.Do trigger AMF fail")
-			_, err := http.Get("http://10.10.0.18:31118/fail")
-			if err != nil && err != io.EOF {
-				logger.ApiLog.Errorf("trigger amf failing failed: %+v", err)
-			}
-			firstTime = false
-		})
-	}
-
-	if firstTime {
-		logger.ApiLog.Debugln("trigger fail first time")
+		_, err := http.Get("http://10.10.0.18:31118/fail")
+		if err != nil && err != io.EOF {
+			logger.ApiLog.Errorf("trigger amf failing failed: %+v", err)
+		}
+		firstTime = false
 		return nil
 	}
+	// ------------ THESIS FAIL TRIGGER ------------
 
 	nasLog.Infof("UE[%s] Handle Authentication Request", ue.Supi)
 
@@ -42,9 +37,85 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 		return fmt.Errorf("AuthenticationRequest body is nil")
 	}
 	ue.NgKsi = request.GetNasKeySetIdentifiler()
-	rand := request.GetRANDValue()
-	resStar := ue.DeriveRESstarAndSetKey(rand[:])
+
+	// Get RAND & AUTN from Authentication request
+	RAND := request.GetRANDValue()
+	AUTN := request.GetAUTN()
+	SQNxorAK := AUTN[0:6]
+	AMF := AUTN[6:8]
+	MAC := AUTN[8:]
+
+	authData := ue.AuthData
+	servingNetworkName := ue.GetServingNetworkName()
+	SQNms, _ := hex.DecodeString(authData.SQN)
+
+	// Run milenage
+	XMAC, MAC_S := make([]byte, 8), make([]byte, 8)
+	CK, IK := make([]byte, 16), make([]byte, 16)
+	RES := make([]byte, 8)
+	SQN := make([]byte, 6)
+	AK, AKstar := make([]byte, 6), make([]byte, 6)
+	OPC, _ := hex.DecodeString(authData.Opc)
+	K, _ := hex.DecodeString(authData.K)
+
+	// Generate RES, CK, IK, AK
+	if err := milenage.F2345(OPC, K, RAND[:], RES, CK, IK, AK, nil); err != nil {
+		logger.NASLog.Errorln(err)
+		return nil
+	}
+
+	// Derive SQN
+	for i := 0; i < 6; i++ {
+		SQN[i] = SQNxorAK[i] ^ AK[i]
+	}
+
+	// Generate XMAC
+	if err := milenage.F1(OPC, K, RAND[:], SQN, AMF, XMAC, nil); err != nil {
+		logger.NASLog.Errorln(err)
+		return nil
+	}
+
+	// Verify MAC == XMAC
+	if !bytes.Equal(MAC, XMAC) {
+		logger.NASLog.Errorf("Authentication Failed: MAC (0x%0x) != XMAC (0x%0x)", MAC, XMAC)
+		c.SendAuthenticationFailure(ue, nasMessage.Cause5GMMMACFailure, nil)
+		return nil
+	}
+
+	// Verify that SQN is in the current range TS 33.102
+	// sqn is out of sync -> synchronisation failure -> trigger resync procedure
+	if !bytes.Equal(SQN, SQNms) {
+		logger.NASLog.Errorf("Authentication Synchronisation Failure: SQN (0x%0x) != SQNms (0x%0x)", SQN, SQNms)
+		SQNmsXorAK := make([]byte, 6)
+
+		// TS 33.102 6.3.3: The AMF used to calculate MAC S assumes a dummy value of all zeros so that it does not
+		// need to be transmitted in the clear in the re-synch message.
+		if err := milenage.F1(OPC, K, RAND[:], SQNms, []byte{0x00, 0x00}, nil, MAC_S); err != nil {
+			logger.NASLog.Error(err)
+			return nil
+		}
+		if err := milenage.F2345(OPC, K, RAND[:], nil, nil, nil, nil, AKstar); err != nil {
+			logger.NASLog.Error(err)
+			return nil
+		}
+		for i := 0; i < 6; i++ {
+			SQNmsXorAK[i] = SQNms[i] ^ AKstar[i]
+		}
+		AUTS := append(SQNmsXorAK, MAC_S...)
+		c.SendAuthenticationFailure(ue, nasMessage.Cause5GMMSynchFailure, AUTS)
+		return nil
+	}
+
+	// derive RES* and send response
+	resStar := ue.DeriveRESstar(CK, IK, servingNetworkName, RAND[:], RES)
 	c.SendAuthenticationResponse(ue, resStar)
+
+	// generate keys
+	kausf := simulator_context.DerivateKausf(CK, IK, servingNetworkName, SQNxorAK)
+	logger.NASLog.Tracef("Kausf: 0x%0x", kausf)
+	kseaf := simulator_context.DerivateKseaf(kausf, servingNetworkName)
+	logger.NASLog.Tracef("Kseaf: 0x%0x", kseaf)
+	ue.DerivateKamf(kseaf, []byte{0x00, 0x00})
 	return nil
 }
 
@@ -73,8 +144,7 @@ func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext
 	nasLog.Info("Send Registration Complete")
 	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
 	ue.RmState = simulator_context.RegisterStateRegistered
-	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
-	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
+	ue.AuthDataSQNAddOne()
 	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgRegisterSuccess)
 	return nil
 }

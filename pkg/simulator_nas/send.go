@@ -12,6 +12,12 @@ func (c *NASController) SendAuthenticationResponse(ue *simulator_context.UeConte
 	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
 }
 
+func (c *NASController) SendAuthenticationFailure(ue *simulator_context.UeContext, cause uint8, authFailParams []byte) {
+	logger.NASLog.Info("Send Authentication Failure")
+	nasPdu := nas_packet.GetAuthenticationFailure(cause, authFailParams)
+	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
+}
+
 func (c *NASController) SendSecurityModeCommand(ue *simulator_context.UeContext, nasMsg []byte) {
 	logger.NASLog.Info("Send Security Mode Complete")
 	nasPdu, err := nas_packet.GetSecurityModeComplete(ue, nasMsg)
