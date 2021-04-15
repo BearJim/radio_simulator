@@ -299,7 +299,7 @@ func (s *Simulator) ueDeregister(ue *simulator_context.UeContext, apiClient api.
 	startTime := time.Now()
 	result, err := apiClient.Deregister(ctx, &api.DeregisterRequest{Supi: ue.Supi})
 	if err != nil {
-		fmt.Printf("deregister error: %+v\n", err)
+		fmt.Printf("Deregistration failed: %+v (supi: %s)\n", err, ue.Supi)
 		return
 	}
 	finishTime := time.Since(startTime)
