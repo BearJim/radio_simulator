@@ -69,9 +69,9 @@ type UeContext struct {
 	// PduSession
 	PduSession map[int64]*SessionContext
 	// related Context
-	Ran     *RanContext
-	RmState string `bson:"rmState"`
-	CmState string `bson:"cmState"`
+	Ran     *RanContext `bson:"-"`
+	RmState string      `bson:"rmState"`
+	CmState string      `bson:"cmState"`
 	// For API Usage
 	ApiNotifyChan chan ApiNotification `bson:"-"`
 }

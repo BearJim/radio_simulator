@@ -32,6 +32,7 @@ func init() {
 	rootCmd.AddCommand(describeCommand())
 	rootCmd.AddCommand(registerCommand())
 	rootCmd.AddCommand(deregisterCommand())
+	rootCmd.AddCommand(deregisterAllCommand())
 }
 
 func main() {
@@ -127,7 +128,7 @@ func registerCommand() *cobra.Command {
 			if allUEs {
 				s.AllUeRegister(args[0])
 			} else {
-				s.UeRegister(args[0], args[1])
+				s.SingleUeRegister(args[0], args[1])
 			}
 		},
 	}
@@ -139,11 +140,25 @@ func deregisterCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "dereg <SUPI>",
 		Short:   "trigger deregistration procedure for UE with SUPI",
-		Example: "reg imsi-2089300000003",
+		Example: "dereg imsi-2089300000003",
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			s := initSimulator(simulatorDBUrl)
-			s.UeDeregister(args[0])
+			s.SingleUeDeregister(args[0])
+		},
+	}
+	return cmd
+}
+
+func deregisterAllCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "deregall <RanName>",
+		Short:   "trigger deregistration procedure for all UEs in RanName",
+		Example: "deregall ran1",
+		Args:    cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.AllUeDeregister(args[0])
 		},
 	}
 	return cmd

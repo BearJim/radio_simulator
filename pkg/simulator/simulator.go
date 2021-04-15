@@ -232,7 +232,7 @@ func (s *Simulator) AllUeRegister(ranName string) {
 	wg.Wait()
 }
 
-func (s *Simulator) UeRegister(supi string, ranName string) {
+func (s *Simulator) SingleUeRegister(supi string, ranName string) {
 	ue, err := s.findUE(supi)
 	if err != nil {
 		fmt.Println(err)
@@ -267,16 +267,16 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 		Sqn:          ue.AuthData.SQN,
 	})
 	if err != nil {
-		fmt.Printf("registration failed: %+v (supi: %s)\n", err, ue.Supi)
+		fmt.Printf("Registration failed: %+v (supi: %s)\n", err, ue.Supi)
 		return
 	}
 
 	finishTime := time.Since(startTime)
 
 	if regResult.GetStatusCode() == api.StatusCode_ERROR {
-		fmt.Printf("registration start failed: %s (supi: %s)\n", regResult.GetBody(), ue.Supi)
+		fmt.Printf("Registration failed: %s (supi: %s)\n", regResult.GetBody(), ue.Supi)
 	} else {
-		fmt.Printf("registration success (supi: %s, expand %+v)\n", ue.Supi, finishTime)
+		fmt.Printf("Registration success (supi: %s, expand %+v)\n", ue.Supi, finishTime)
 		resultUe := regResult.GetUeContext()
 		ue.RmState = resultUe.GetRmState()
 		ue.CmState = resultUe.GetCmState()
@@ -292,7 +292,66 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	s.updateUE(ue)
 }
 
-func (s *Simulator) UeDeregister(supi string) {
+func (s *Simulator) ueDeregister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+	defer cancel()
+
+	startTime := time.Now()
+	result, err := apiClient.Deregister(ctx, &api.DeregisterRequest{Supi: ue.Supi})
+	if err != nil {
+		fmt.Printf("deregister error: %+v\n", err)
+		return
+	}
+	finishTime := time.Since(startTime)
+
+	if result.GetStatusCode() == api.StatusCode_ERROR {
+		fmt.Printf("Deregistration failed: %s (supi: %s)\n", result.GetBody(), ue.Supi)
+	} else {
+		fmt.Printf("Deregistration success (supi: %s, expand %+v)\n", ue.Supi, finishTime)
+		ue.CmState = simulator_context.CmStateIdle
+		ue.RmState = simulator_context.RegisterStateDeregitered
+		s.updateUE(ue)
+	}
+}
+
+func (s *Simulator) AllUeDeregister(ranName string) {
+	apiClient, err := s.connectToRan(ranName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// find all UE and deregister
+	cur, err := s.dbClient.Database().Collection("ue").Find(context.TODO(), bson.M{"servingRan": ranName})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			fmt.Println("No UE found in DB")
+		} else {
+			fmt.Printf("Find UE error: %+v\n", err)
+		}
+		return
+	}
+
+	wg := sync.WaitGroup{}
+	defer cur.Close(context.TODO())
+	for cur.Next(context.TODO()) {
+		ue := new(simulator_context.UeContext)
+		err := cur.Decode(ue)
+		if err != nil {
+			fmt.Printf("decode ue error: %+v\n", err)
+			continue
+		}
+
+		wg.Add(1)
+		go func(wg *sync.WaitGroup) {
+			s.ueDeregister(ue, apiClient)
+			wg.Done()
+		}(&wg)
+	}
+	wg.Wait()
+}
+
+func (s *Simulator) SingleUeDeregister(supi string) {
 	ue, err := s.findUE(supi)
 	if err != nil {
 		fmt.Println(err)
@@ -305,19 +364,7 @@ func (s *Simulator) UeDeregister(supi string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
-	defer cancel()
-
-	result, err := apiClient.Deregister(ctx, &api.DeregisterRequest{Supi: ue.Supi})
-	if err != nil {
-		fmt.Printf("deregister error: %+v\n", err)
-		return
-	}
-	if result.GetStatusCode() == api.StatusCode_ERROR {
-		fmt.Printf("Deregistration start failed: %s\n", result.GetBody())
-	} else {
-		fmt.Println("Deregistration success")
-	}
+	s.ueDeregister(ue, apiClient)
 }
 
 func (s *Simulator) SubscribeUELog(client api.APIServiceClient, ue *simulator_context.UeContext, closeMsg []string) {
