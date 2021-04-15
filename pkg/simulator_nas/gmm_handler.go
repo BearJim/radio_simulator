@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
@@ -17,10 +18,11 @@ import (
 )
 
 var firstTime bool = true
+var triggerFail string = os.Getenv("THESIS_ENABLE_FAIL")
 
 func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
 	// ------------ THESIS FAIL TRIGGER ------------
-	if firstTime && ue.Supi == "imsi-2089300000001" {
+	if triggerFail == "enable" && firstTime && ue.Supi == "imsi-2089300000001" {
 		logger.ApiLog.Infof("Try to trigger AMF fail")
 		_, err := http.Get("http://10.10.0.18:31118/fail")
 		if err != nil && err != io.EOF {
