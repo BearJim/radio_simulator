@@ -463,7 +463,6 @@ func BuildUEContextReleaseRequest(amfUeNgapID, ranUeNgapID int64, pduSessionIDLi
 }
 
 func BuildUEContextReleaseComplete(ue *simulator_context.UeContext) ([]byte, error) {
-
 	pdu := ngapType.NGAPPDU{}
 	pdu.Present = ngapType.NGAPPDUPresentSuccessfulOutcome
 	pdu.SuccessfulOutcome = new(ngapType.SuccessfulOutcome)
@@ -503,15 +502,15 @@ func BuildUEContextReleaseComplete(ue *simulator_context.UeContext) ([]byte, err
 	uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
 
 	// User Location Information (optional)
-	ie = ngapType.UEContextReleaseCompleteIEs{}
-	ie.Id.Value = ngapType.ProtocolIEIDUserLocationInformation
-	ie.Criticality.Value = ngapType.CriticalityPresentIgnore
-	ie.Value.Present = ngapType.UEContextReleaseCompleteIEsPresentUserLocationInformation
-	ie.Value.UserLocationInformation = new(ngapType.UserLocationInformation)
+	// ie = ngapType.UEContextReleaseCompleteIEs{}
+	// ie.Id.Value = ngapType.ProtocolIEIDUserLocationInformation
+	// ie.Criticality.Value = ngapType.CriticalityPresentIgnore
+	// ie.Value.Present = ngapType.UEContextReleaseCompleteIEsPresentUserLocationInformation
+	// ie.Value.UserLocationInformation = new(ngapType.UserLocationInformation)
 
-	*ie.Value.UserLocationInformation = ue.Ran.GetUserLocation()
+	// *ie.Value.UserLocationInformation = ue.Ran.GetUserLocation()
 
-	uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
+	// uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
 	// Information on Recommended Cells and RAN Nodes for Paging (optional)
 
 	if ue.RmState != simulator_context.RegisterStateDeregitered {
