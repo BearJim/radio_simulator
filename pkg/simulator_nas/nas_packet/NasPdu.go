@@ -564,7 +564,7 @@ func GetServiceRequest(serviceType uint8) (nasPdu []byte) {
 	return
 }
 
-func GetAuthenticationResponse(authenticationResponseParam []uint8, eapMsg string) (nasPdu []byte) {
+func BuildAuthenticationResponse(authenticationResponseParam []uint8, eapMsg string) (nasPdu []byte) {
 
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
@@ -599,7 +599,7 @@ func GetAuthenticationResponse(authenticationResponseParam []uint8, eapMsg strin
 	return
 }
 
-func GetAuthenticationFailure(cause5GMM uint8, authenticationFailureParam []uint8) (nasPdu []byte) {
+func BuildAuthenticationFailure(cause5GMM uint8, authenticationFailureParam []uint8) (nasPdu []byte) {
 
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
@@ -729,7 +729,7 @@ func GetDeregistrationRequest(ue *simulator_context.UeContext, switchOff uint8) 
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeDeregistrationRequestUEOriginatingDeregistration)
 
-	if ue.RmState == simulator_context.RegisterStateRegistered {
+	if ue.RmState == simulator_context.RmStateRegistered {
 		m.SecurityHeader = nas.SecurityHeader{
 			ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
 			SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,

@@ -23,9 +23,9 @@ const (
 )
 
 const (
-	RegisterStateRegistered  = "REGISTERED"
-	RegisterStateRegistering = "REGISTERING"
-	RegisterStateDeregitered = "DEREGISTERED"
+	RmStateRegistered  = "REGISTERED"
+	RmStateRegistering = "REGISTERING"
+	RmStateDeregitered = "DEREGISTERED"
 )
 
 const (
@@ -126,7 +126,7 @@ func NewUeContext() *UeContext {
 		PduSession:    make(map[int64]*SessionContext),
 		AmfUeNgapId:   AmfNgapIdUnspecified,
 		RanUeNgapId:   RanNgapIdUnspecified,
-		RmState:       RegisterStateDeregitered,
+		RmState:       RmStateDeregitered,
 		CmState:       CmStateIdle,
 		ApiNotifyChan: make(chan ApiNotification, 100),
 	}

@@ -145,7 +145,7 @@ func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext
 	}
 	nasLog.Info("Send Registration Complete")
 	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
-	ue.RmState = simulator_context.RegisterStateRegistered
+	ue.RmState = simulator_context.RmStateRegistered
 	ue.AuthDataSQNAddOne()
 	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgRegisterSuccess)
 	return nil
@@ -154,7 +154,7 @@ func (c *NASController) handleDeregistrationAccept(ue *simulator_context.UeConte
 
 	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
 
-	ue.RmState = simulator_context.RegisterStateDeregitered
+	ue.RmState = simulator_context.RmStateDeregitered
 	return nil
 }
 

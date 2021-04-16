@@ -63,7 +63,7 @@ func parseCmd(ue *simulator_context.UeContext, raddr string, cmd string) string 
 	var msg string
 	switch params[0] {
 	case "sess":
-		if ue.RmState != simulator_context.RegisterStateRegistered {
+		if ue.RmState != simulator_context.RmStateRegistered {
 			msg = "need to registrate first"
 			break
 		}

@@ -309,7 +309,7 @@ func (s *Simulator) ueDeregister(ue *simulator_context.UeContext, apiClient api.
 	} else {
 		fmt.Printf("Deregistration success (supi: %s, expand %+v)\n", ue.Supi, finishTime)
 		ue.CmState = simulator_context.CmStateIdle
-		ue.RmState = simulator_context.RegisterStateDeregitered
+		ue.RmState = simulator_context.RmStateDeregitered
 		s.updateUE(ue)
 	}
 }

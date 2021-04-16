@@ -8,13 +8,13 @@ import (
 
 func (c *NASController) SendAuthenticationResponse(ue *simulator_context.UeContext, resStar []byte) {
 	logger.NASLog.Info("Send Authentication Response")
-	nasPdu := nas_packet.GetAuthenticationResponse(resStar, "")
+	nasPdu := nas_packet.BuildAuthenticationResponse(resStar, "")
 	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
 }
 
 func (c *NASController) SendAuthenticationFailure(ue *simulator_context.UeContext, cause uint8, authFailParams []byte) {
 	logger.NASLog.Info("Send Authentication Failure")
-	nasPdu := nas_packet.GetAuthenticationFailure(cause, authFailParams)
+	nasPdu := nas_packet.BuildAuthenticationFailure(cause, authFailParams)
 	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
 }
 
