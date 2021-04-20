@@ -24,7 +24,7 @@ func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 }
 
 func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
-	logger.NgapLog.Info("Send Initail Ue Message (Initail Registration Request)")
+	logger.NgapLog.Info("Send Initail UE Message (Initail Registration Request)", "supi", ue.Supi)
 	pkt, err := BuildInitialUEMessage(ue, nasMessage.RegistrationType5GSInitialRegistration, "")
 	if err != nil {
 		logger.NgapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
@@ -34,7 +34,7 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 }
 
 func (c *NGController) SendUplinkNASTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
-	logger.NgapLog.Infow("Send Uplink NAS Transport", "amf_ue_ngap_id", ue.AmfUeNgapId)
+	logger.NgapLog.Infow("Send Uplink NAS Transport", "supi", ue.Supi)
 
 	pkt, err := BuildUplinkNasTransport(ue, nasPdu)
 	if err != nil {

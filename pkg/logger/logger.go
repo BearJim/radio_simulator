@@ -33,6 +33,10 @@ func init() {
 			panic(err)
 		}
 	}
+	if _, err := os.Stat("./log/ran.log"); err == nil {
+		os.Remove("./log/ran.log")
+	}
+
 	zapCfg.OutputPaths = append(zapCfg.OutputPaths, "./log/ran.log")
 	log, err := zapCfg.Build()
 	if err != nil {
