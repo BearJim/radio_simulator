@@ -121,6 +121,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 }
 
 func (c *NASController) handleAuthenticationReject(ue *simulator_context.UeContext, message *nasMessage.AuthenticationReject) error {
+	logger.NASLog.Errorw("Receive Authentication Reject", "supi", ue.Supi)
 	return nil
 }
 
