@@ -150,6 +150,7 @@ func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext
 	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgRegisterSuccess)
 	return nil
 }
+
 func (c *NASController) handleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {
 
 	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
