@@ -33,7 +33,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 	}
 	// ------------ THESIS FAIL TRIGGER ------------
 
-	nasLog.Infof("UE[%s] Handle Authentication Request", ue.Supi)
+	nasLog.Infow("Handle Authentication Request", "supi", ue.Supi)
 
 	if request == nil {
 		return fmt.Errorf("AuthenticationRequest body is nil")
@@ -118,6 +118,10 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 	kseaf := simulator_context.DerivateKseaf(kausf, servingNetworkName)
 	logger.NASLog.Debugf("Kseaf: 0x%0x", kseaf)
 	ue.DerivateKamf(kseaf, []byte{0x00, 0x00})
+	return nil
+}
+
+func (c *NASController) handleAuthenticationReject(ue *simulator_context.UeContext, message *nasMessage.AuthenticationReject) error {
 	return nil
 }
 

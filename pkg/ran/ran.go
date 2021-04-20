@@ -276,10 +276,8 @@ func (r *RanApp) StartSCTPAssociation() {
 							break
 						}
 					}
-					// ran.Remove()
 				case sctp.SCTP_SHUTDOWN_COMP:
-					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP, close the connection")
-					// ran.Remove()
+					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP")
 				case sctp.SCTP_CANT_STR_ASSOC:
 					logger.NgapLog.Infof("SCTP state is SCTP_CANT_STR_ASSOC")
 				default:
