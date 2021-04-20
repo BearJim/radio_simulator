@@ -231,6 +231,8 @@ func (ue *UeContext) AttachRan(ran *RanContext) {
 
 func (ue *UeContext) DetachRan(ran *RanContext) {
 	ue.Ran = nil
+	ran.uePoolMu.Lock()
+	defer ran.uePoolMu.Unlock()
 	delete(ran.UePool, ue.RanUeNgapId)
 }
 

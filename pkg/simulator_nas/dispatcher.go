@@ -7,13 +7,13 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_security"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/free5gc/nas"
 	"github.com/free5gc/nas/nasMessage"
 )
 
-var nasLog *logrus.Entry
+var nasLog *zap.SugaredLogger
 
 func init() {
 	nasLog = logger.NASLog

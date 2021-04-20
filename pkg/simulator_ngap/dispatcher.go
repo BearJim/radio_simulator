@@ -64,7 +64,7 @@ func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
 	case ngapType.NGAPPDUPresentInitiatingMessage:
 		initiatingMessage := pdu.InitiatingMessage
 		if initiatingMessage == nil {
-			logger.NgapLog.Errorln("Initiating Message is nil")
+			logger.NgapLog.Error("Initiating Message is nil")
 			return
 		}
 		switch initiatingMessage.ProcedureCode.Value {
@@ -91,7 +91,7 @@ func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
 	case ngapType.NGAPPDUPresentSuccessfulOutcome:
 		successfulOutcome := pdu.SuccessfulOutcome
 		if successfulOutcome == nil {
-			logger.NgapLog.Errorln("successful Outcome is nil")
+			logger.NgapLog.Error("successful Outcome is nil")
 			return
 		}
 		switch successfulOutcome.ProcedureCode.Value {
@@ -105,7 +105,7 @@ func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
 	case ngapType.NGAPPDUPresentUnsuccessfulOutcome:
 		unsuccessfulOutcome := pdu.UnsuccessfulOutcome
 		if unsuccessfulOutcome == nil {
-			logger.NgapLog.Errorln("unsuccessful Outcome is nil")
+			logger.NgapLog.Error("unsuccessful Outcome is nil")
 			return
 		}
 		switch unsuccessfulOutcome.ProcedureCode.Value {

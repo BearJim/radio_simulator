@@ -35,9 +35,9 @@ func (c *NGController) handleNGSetupResponse(endpoint *sctp.SCTPAddr, message *n
 		case ngapType.ProtocolIEIDServedGUAMIList:
 			// servedGuamiList = ie.Value.ServedGUAMIList
 		case ngapType.ProtocolIEIDRelativeAMFCapacity:
-			logger.NgapLog.Tracef("Decode IE RelativeAMFCapacity")
+			logger.NgapLog.Debug("Decode IE RelativeAMFCapacity")
 		case ngapType.ProtocolIEIDPLMNSupportList:
-			logger.NgapLog.Tracef("Decode IE PLMNSupportList")
+			logger.NgapLog.Debug("Decode IE PLMNSupportList")
 		}
 	}
 
@@ -84,7 +84,7 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 	for _, ie := range downlinkNASTransport.ProtocolIEs.List {
 		switch ie.Id.Value {
 		case ngapType.ProtocolIEIDAMFUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE AMFUENGAPID")
+			logger.NgapLog.Debug("Decode IE AMFUENGAPID")
 			aMFUENGAPID = ie.Value.AMFUENGAPID
 			if aMFUENGAPID == nil {
 				logger.NgapLog.Error("AMFUENGAPID is nil")
@@ -92,7 +92,7 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDRANUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RANUENGAPID")
+			logger.NgapLog.Debug("Decode IE RANUENGAPID")
 			rANUENGAPID = ie.Value.RANUENGAPID
 			if rANUENGAPID == nil {
 				logger.NgapLog.Error("RANUENGAPID is nil")
@@ -100,13 +100,13 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDOldAMF:
-			logger.NgapLog.Traceln("[NGAP] Decode IE OldAMF")
+			logger.NgapLog.Debug("Decode IE OldAMF")
 			// oldAMF = ie.Value.OldAMF
 		case ngapType.ProtocolIEIDRANPagingPriority:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RANPagingPriority")
+			logger.NgapLog.Debug("Decode IE RANPagingPriority")
 			// rANPagingPriority = ie.Value.RANPagingPriority
 		case ngapType.ProtocolIEIDNASPDU:
-			logger.NgapLog.Traceln("[NGAP] Decode IE NASPDU")
+			logger.NgapLog.Debug("Decode IE NASPDU")
 			nASPDU = ie.Value.NASPDU
 			if nASPDU == nil {
 				logger.NgapLog.Error("NASPDU is nil")
@@ -114,16 +114,16 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDMobilityRestrictionList:
-			logger.NgapLog.Traceln("[NGAP] Decode IE MobilityRestrictionList")
+			logger.NgapLog.Debug("Decode IE MobilityRestrictionList")
 			// mobilityRestrictionList = ie.Value.MobilityRestrictionList
 		case ngapType.ProtocolIEIDIndexToRFSP:
-			logger.NgapLog.Traceln("[NGAP] Decode IE IndexToRFSP")
+			logger.NgapLog.Debug("Decode IE IndexToRFSP")
 			// indexToRFSP = ie.Value.IndexToRFSP
 		case ngapType.ProtocolIEIDUEAggregateMaximumBitRate:
-			logger.NgapLog.Traceln("[NGAP] Decode IE UEAggregateMaximumBitRate")
+			logger.NgapLog.Debug("Decode IE UEAggregateMaximumBitRate")
 			// uEAggregateMaximumBitRate = ie.Value.UEAggregateMaximumBitRate
 		case ngapType.ProtocolIEIDAllowedNSSAI:
-			logger.NgapLog.Traceln("[NGAP] Decode IE AllowedNSSAI")
+			logger.NgapLog.Debug("Decode IE AllowedNSSAI")
 			// allowedNSSAI = ie.Value.AllowedNSSAI
 		}
 	}
@@ -148,7 +148,7 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 
 	if aMFUENGAPID != nil {
 		if ue.AmfUeNgapId == simulator_context.AmfNgapIdUnspecified {
-			logger.NgapLog.Tracef("Create new logical UE-associated NG-connection")
+			logger.NgapLog.Debug("Create new logical UE-associated NG-connection")
 			ue.AmfUeNgapId = aMFUENGAPID.Value
 			ue.AMFEndpoint = endpoint
 		} else {
@@ -212,7 +212,7 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 	for _, ie := range initialContextSetupRequest.ProtocolIEs.List {
 		switch ie.Id.Value {
 		case ngapType.ProtocolIEIDAMFUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE AMFUENGAPID")
+			logger.NgapLog.Debug("Decode IE AMFUENGAPID")
 			aMFUENGAPID = ie.Value.AMFUENGAPID
 			if aMFUENGAPID == nil {
 				logger.NgapLog.Error("AMFUENGAPID is nil")
@@ -220,7 +220,7 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDRANUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RANUENGAPID")
+			logger.NgapLog.Debug("Decode IE RANUENGAPID")
 			rANUENGAPID = ie.Value.RANUENGAPID
 			if rANUENGAPID == nil {
 				logger.NgapLog.Error("RANUENGAPID is nil")
@@ -228,10 +228,10 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDOldAMF:
-			logger.NgapLog.Traceln("[NGAP] Decode IE OldAMF")
+			logger.NgapLog.Debug("Decode IE OldAMF")
 			// oldAMF = ie.Value.OldAMF
 		case ngapType.ProtocolIEIDUEAggregateMaximumBitRate:
-			logger.NgapLog.Traceln("[NGAP] Decode IE UEAggregateMaximumBitRate")
+			logger.NgapLog.Debug("Decode IE UEAggregateMaximumBitRate")
 			uEAggregateMaximumBitRate = ie.Value.UEAggregateMaximumBitRate
 			if uEAggregateMaximumBitRate == nil {
 				logger.NgapLog.Error("UEAggregateMaximumBitRate is nil")
@@ -239,10 +239,10 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDCoreNetworkAssistanceInformation:
-			logger.NgapLog.Traceln("[NGAP] Decode IE CoreNetworkAssistanceInformation")
+			logger.NgapLog.Debug("Decode IE CoreNetworkAssistanceInformation")
 			// coreNetworkAssistanceInformation = ie.Value.CoreNetworkAssistanceInformation
 		case ngapType.ProtocolIEIDGUAMI:
-			logger.NgapLog.Traceln("[NGAP] Decode IE GUAMI")
+			logger.NgapLog.Debug("Decode IE GUAMI")
 			gUAMI = ie.Value.GUAMI
 			if gUAMI == nil {
 				logger.NgapLog.Error("GUAMI is nil")
@@ -250,10 +250,10 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDPDUSessionResourceSetupListCxtReq:
-			logger.NgapLog.Traceln("[NGAP] Decode IE PDUSessionResourceSetupListCxtReq")
+			logger.NgapLog.Debug("Decode IE PDUSessionResourceSetupListCxtReq")
 			// pDUSessionResourceSetupListCxtReq = ie.Value.PDUSessionResourceSetupListCxtReq
 		case ngapType.ProtocolIEIDAllowedNSSAI:
-			logger.NgapLog.Traceln("[NGAP] Decode IE AllowedNSSAI")
+			logger.NgapLog.Debug("Decode IE AllowedNSSAI")
 			allowedNSSAI = ie.Value.AllowedNSSAI
 			if allowedNSSAI == nil {
 				logger.NgapLog.Error("AllowedNSSAI is nil")
@@ -261,7 +261,7 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDUESecurityCapabilities:
-			logger.NgapLog.Traceln("[NGAP] Decode IE UESecurityCapabilities")
+			logger.NgapLog.Debug("Decode IE UESecurityCapabilities")
 			uESecurityCapabilities = ie.Value.UESecurityCapabilities
 			if uESecurityCapabilities == nil {
 				logger.NgapLog.Error("UESecurityCapabilities is nil")
@@ -269,7 +269,7 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDSecurityKey:
-			logger.NgapLog.Traceln("[NGAP] Decode IE SecurityKey")
+			logger.NgapLog.Debug("Decode IE SecurityKey")
 			securityKey = ie.Value.SecurityKey
 			if securityKey == nil {
 				logger.NgapLog.Error("SecurityKey is nil")
@@ -277,31 +277,31 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDTraceActivation:
-			logger.NgapLog.Traceln("[NGAP] Decode IE TraceActivation")
+			logger.NgapLog.Debug("Decode IE TraceActivation")
 			// traceActivation = ie.Value.TraceActivation
 		case ngapType.ProtocolIEIDMobilityRestrictionList:
-			logger.NgapLog.Traceln("[NGAP] Decode IE MobilityRestrictionList")
+			logger.NgapLog.Debug("Decode IE MobilityRestrictionList")
 			// mobilityRestrictionList = ie.Value.MobilityRestrictionList
 		case ngapType.ProtocolIEIDUERadioCapability:
-			logger.NgapLog.Traceln("[NGAP] Decode IE UERadioCapability")
+			logger.NgapLog.Debug("Decode IE UERadioCapability")
 			// uERadioCapability = ie.Value.UERadioCapability
 		case ngapType.ProtocolIEIDIndexToRFSP:
-			logger.NgapLog.Traceln("[NGAP] Decode IE IndexToRFSP")
+			logger.NgapLog.Debug("Decode IE IndexToRFSP")
 			// indexToRFSP = ie.Value.IndexToRFSP
 		case ngapType.ProtocolIEIDMaskedIMEISV:
-			logger.NgapLog.Traceln("[NGAP] Decode IE MaskedIMEISV")
+			logger.NgapLog.Debug("Decode IE MaskedIMEISV")
 			// maskedIMEISV = ie.Value.MaskedIMEISV
 		case ngapType.ProtocolIEIDNASPDU:
-			logger.NgapLog.Traceln("[NGAP] Decode IE NASPDU")
+			logger.NgapLog.Debug("Decode IE NASPDU")
 			nASPDU = ie.Value.NASPDU
 		case ngapType.ProtocolIEIDEmergencyFallbackIndicator:
-			logger.NgapLog.Traceln("[NGAP] Decode IE EmergencyFallbackIndicator")
+			logger.NgapLog.Debug("Decode IE EmergencyFallbackIndicator")
 			// emergencyFallbackIndicator = ie.Value.EmergencyFallbackIndicator
 		case ngapType.ProtocolIEIDRRCInactiveTransitionReportRequest:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RRCInactiveTransitionReportRequest")
+			logger.NgapLog.Debug("Decode IE RRCInactiveTransitionReportRequest")
 			// rRCInactiveTransitionReportRequest = ie.Value.RRCInactiveTransitionReportRequest
 		case ngapType.ProtocolIEIDUERadioCapabilityForPaging:
-			logger.NgapLog.Traceln("[NGAP] Decode IE UERadioCapabilityForPaging")
+			logger.NgapLog.Debug("Decode IE UERadioCapabilityForPaging")
 			// uERadioCapabilityForPaging = ie.Value.UERadioCapabilityForPaging
 		}
 	}
@@ -356,7 +356,7 @@ func (c *NGController) HandleUeContextReleaseCommand(endpoint *sctp.SCTPAddr, me
 	for _, ie := range uEContextReleaseCommand.ProtocolIEs.List {
 		switch ie.Id.Value {
 		case ngapType.ProtocolIEIDUENGAPIDs:
-			logger.NgapLog.Traceln("[NGAP] Decode IE UENGAPIDs")
+			logger.NgapLog.Debug("Decode IE UENGAPIDs")
 			uENGAPIDs = ie.Value.UENGAPIDs
 			if uENGAPIDs == nil {
 				logger.NgapLog.Error("UENGAPIDs is nil")
@@ -364,7 +364,7 @@ func (c *NGController) HandleUeContextReleaseCommand(endpoint *sctp.SCTPAddr, me
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDCause:
-			logger.NgapLog.Traceln("[NGAP] Decode IE Cause")
+			logger.NgapLog.Debug("Decode IE Cause")
 			cause = ie.Value.Cause
 		}
 	}
@@ -384,14 +384,14 @@ func (c *NGController) HandleUeContextReleaseCommand(endpoint *sctp.SCTPAddr, me
 	case ngapType.UENGAPIDsPresentAMFUENGAPID:
 		ue = c.ran.Context().FindUeByAmfUeNgapID(uENGAPIDs.AMFUENGAPID.Value)
 		if ue == nil {
-			logger.NgapLog.Warnf("No UE Context[AmfUeNgapID:%d]\n", uENGAPIDs.AMFUENGAPID.Value)
+			logger.NgapLog.Warnf("No UE Context[AmfUeNgapID:%d]", uENGAPIDs.AMFUENGAPID.Value)
 			return
 		}
 	case ngapType.UENGAPIDsPresentUENGAPIDPair:
 		pair := uENGAPIDs.UENGAPIDPair
 		ue = c.ran.Context().FindUeByRanUeNgapID(pair.RANUENGAPID.Value)
 		if ue == nil {
-			logger.NgapLog.Warnf("No UE Context[RanUeNgapID:%d]\n", pair.RANUENGAPID.Value)
+			logger.NgapLog.Warnf("No UE Context[RanUeNgapID:%d]", pair.RANUENGAPID.Value)
 			return
 		}
 	}
@@ -429,7 +429,7 @@ func (c *NGController) HandlePduSessionResourceSetupRequest(endpoint *sctp.SCTPA
 	for _, ie := range pDUSessionResourceSetupRequest.ProtocolIEs.List {
 		switch ie.Id.Value {
 		case ngapType.ProtocolIEIDAMFUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE AMFUENGAPID")
+			logger.NgapLog.Debug("Decode IE AMFUENGAPID")
 			aMFUENGAPID = ie.Value.AMFUENGAPID
 			if aMFUENGAPID == nil {
 				logger.NgapLog.Error("AMFUENGAPID is nil")
@@ -437,7 +437,7 @@ func (c *NGController) HandlePduSessionResourceSetupRequest(endpoint *sctp.SCTPA
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDRANUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RANUENGAPID")
+			logger.NgapLog.Debug("Decode IE RANUENGAPID")
 			rANUENGAPID = ie.Value.RANUENGAPID
 			if rANUENGAPID == nil {
 				logger.NgapLog.Error("RANUENGAPID is nil")
@@ -445,13 +445,13 @@ func (c *NGController) HandlePduSessionResourceSetupRequest(endpoint *sctp.SCTPA
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDRANPagingPriority:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RANPagingPriority")
+			logger.NgapLog.Debug("Decode IE RANPagingPriority")
 			// rANPagingPriority = ie.Value.RANPagingPriority
 		case ngapType.ProtocolIEIDNASPDU:
-			logger.NgapLog.Traceln("[NGAP] Decode IE NASPDU")
+			logger.NgapLog.Debug("Decode IE NASPDU")
 			nASPDU = ie.Value.NASPDU
 		case ngapType.ProtocolIEIDPDUSessionResourceSetupListSUReq:
-			logger.NgapLog.Traceln("[NGAP] Decode IE PDUSessionResourceSetupListSUReq")
+			logger.NgapLog.Debug("Decode IE PDUSessionResourceSetupListSUReq")
 			pDUSessionResourceSetupListSUReq = ie.Value.PDUSessionResourceSetupListSUReq
 			if pDUSessionResourceSetupListSUReq == nil {
 				logger.NgapLog.Error("PDUSessionResourceSetupListSUReq is nil")
@@ -538,7 +538,7 @@ func (c *NGController) HandlePduSessionResourceReleaseCommand(endpoint *sctp.SCT
 	for _, ie := range pDUSessionResourceReleaseCommand.ProtocolIEs.List {
 		switch ie.Id.Value {
 		case ngapType.ProtocolIEIDAMFUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE AMFUENGAPID")
+			logger.NgapLog.Debug("Decode IE AMFUENGAPID")
 			aMFUENGAPID = ie.Value.AMFUENGAPID
 			if aMFUENGAPID == nil {
 				logger.NgapLog.Error("AMFUENGAPID is nil")
@@ -546,7 +546,7 @@ func (c *NGController) HandlePduSessionResourceReleaseCommand(endpoint *sctp.SCT
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDRANUENGAPID:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RANUENGAPID")
+			logger.NgapLog.Debug("Decode IE RANUENGAPID")
 			rANUENGAPID = ie.Value.RANUENGAPID
 			if rANUENGAPID == nil {
 				logger.NgapLog.Error("RANUENGAPID is nil")
@@ -554,13 +554,13 @@ func (c *NGController) HandlePduSessionResourceReleaseCommand(endpoint *sctp.SCT
 				iesCriticalityDiagnostics.List = append(iesCriticalityDiagnostics.List, item)
 			}
 		case ngapType.ProtocolIEIDRANPagingPriority:
-			logger.NgapLog.Traceln("[NGAP] Decode IE RANPagingPriority")
+			logger.NgapLog.Debug("Decode IE RANPagingPriority")
 			// rANPagingPriority = ie.Value.RANPagingPriority
 		case ngapType.ProtocolIEIDNASPDU:
-			logger.NgapLog.Traceln("[NGAP] Decode IE NASPDU")
+			logger.NgapLog.Debug("Decode IE NASPDU")
 			nASPDU = ie.Value.NASPDU
 		case ngapType.ProtocolIEIDPDUSessionResourceToReleaseListRelCmd:
-			logger.NgapLog.Traceln("[NGAP] Decode IE PDUSessionResourceToReleaseListRelCmd")
+			logger.NgapLog.Debug("Decode IE PDUSessionResourceToReleaseListRelCmd")
 			pDUSessionResourceToReleaseListRelCmd = ie.Value.PDUSessionResourceToReleaseListRelCmd
 			if pDUSessionResourceToReleaseListRelCmd == nil {
 				logger.NgapLog.Error("PDUSessionResourceToReleaseListRelCmd is nil")

@@ -111,7 +111,7 @@ func (r *RanApp) Run() {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		if err := r.nasController.Run(); err != nil {
-			logger.AppLog.Fatalln(err)
+			logger.AppLog.Fatal(err)
 		}
 	}(&wg)
 

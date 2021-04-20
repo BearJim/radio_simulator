@@ -62,7 +62,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 
 	// Generate RES, CK, IK, AK
 	if err := milenage.F2345(OPC, K, RAND[:], RES, CK, IK, AK, nil); err != nil {
-		logger.NASLog.Errorln(err)
+		logger.NASLog.Error(err)
 		return nil
 	}
 
@@ -73,7 +73,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 
 	// Generate XMAC
 	if err := milenage.F1(OPC, K, RAND[:], SQN, AMF, XMAC, nil); err != nil {
-		logger.NASLog.Errorln(err)
+		logger.NASLog.Error(err)
 		return nil
 	}
 
@@ -114,9 +114,9 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 
 	// generate keys
 	kausf := simulator_context.DerivateKausf(CK, IK, servingNetworkName, SQNxorAK)
-	logger.NASLog.Tracef("Kausf: 0x%0x", kausf)
+	logger.NASLog.Debugf("Kausf: 0x%0x", kausf)
 	kseaf := simulator_context.DerivateKseaf(kausf, servingNetworkName)
-	logger.NASLog.Tracef("Kseaf: 0x%0x", kseaf)
+	logger.NASLog.Debugf("Kseaf: 0x%0x", kseaf)
 	ue.DerivateKamf(kseaf, []byte{0x00, 0x00})
 	return nil
 }
@@ -156,6 +156,7 @@ func (c *NASController) handleDeregistrationAccept(ue *simulator_context.UeConte
 	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
 
 	ue.RmState = simulator_context.RmStateDeregitered
+	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgDeregisterSuccess)
 	return nil
 }
 

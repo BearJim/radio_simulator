@@ -5,7 +5,6 @@ import (
 	"os/exec"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
-	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 
@@ -35,7 +34,7 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 }
 
 func (c *NGController) SendUplinkNASTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
-	logger.NgapLog.Info("Send Uplink NAS Transport")
+	logger.NgapLog.Infow("Send Uplink NAS Transport", "amf_ue_ngap_id", ue.AmfUeNgapId)
 
 	pkt, err := BuildUplinkNasTransport(ue, nasPdu)
 	if err != nil {
@@ -74,18 +73,14 @@ func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue 
 		if sess.UeIp != "" {
 			_, err := exec.Command("ip", "addr", "del", sess.UeIp, "dev", "lo").Output()
 			if err != nil {
-				logger.NgapLog.Errorln(err)
+				logger.NgapLog.Error(err)
 				return
 			}
 		}
 	}
 
 	c.ran.SendToAMF(endpoint, pkt)
-	if ue.RmState == simulator_context.RmStateDeregitered {
-		// Complete Deregistration
-		ue.CmState = simulator_context.CmStateIdle
-		ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgDeregisterSuccess)
-	}
+	ue.CmState = simulator_context.CmStateIdle
 }
 
 func (c *NGController) SendPDUSessionResourceSetupResponse(
@@ -94,7 +89,7 @@ func (c *NGController) SendPDUSessionResourceSetupResponse(
 	responseList *ngapType.PDUSessionResourceSetupListSURes,
 	failedListSURes *ngapType.PDUSessionResourceFailedToSetupListSURes) {
 
-	logger.NgapLog.Infoln("Send PDU Session Resource Setup Response")
+	logger.NgapLog.Info("Send PDU Session Resource Setup Response")
 
 	pkt, err := BuildPDUSessionResourceSetupResponse(ue, responseList, failedListSURes)
 	if err != nil {
@@ -129,10 +124,10 @@ func (c *NGController) SendPDUSessionResourceReleaseResponse(
 	relList ngapType.PDUSessionResourceReleasedListRelRes,
 	diagnostics *ngapType.CriticalityDiagnostics) {
 
-	logger.NgapLog.Infoln("Send PDU Session Resource Release Response")
+	logger.NgapLog.Info("Send PDU Session Resource Release Response")
 
 	if len(relList.List) < 1 {
-		logger.NgapLog.Errorln("PDUSessionResourceReleasedListRelRes is nil. This message shall contain at least one Item")
+		logger.NgapLog.Error("PDUSessionResourceReleasedListRelRes is nil. This message shall contain at least one Item")
 		return
 	}
 

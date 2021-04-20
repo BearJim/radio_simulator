@@ -27,19 +27,22 @@ type RanContext struct {
 	PlmnID           ngapType.PLMNIdentity
 	Name             string
 	GnbId            aper.BitString
-	mu               sync.RWMutex
-	UePool           map[int64]*UeContext // ranUeNgapId
-	SessPool         map[uint32]*SessionContext
-	DefaultTAC       string
-	SupportTAList    map[string][]PlmnSupportItem // TAC(hex string) -> PlmnSupportItem
-	AmfPool          map[*sctp.SCTPAddr]*AMFContext
-	SctpConn         *sctp.SCTPConn
+	/**/
+	uePoolMu sync.RWMutex
+	UePool   map[int64]*UeContext // ranUeNgapId
+	/**/
+	SessPool      map[uint32]*SessionContext
+	DefaultTAC    string
+	SupportTAList map[string][]PlmnSupportItem // TAC(hex string) -> PlmnSupportItem
+	AmfPool       map[*sctp.SCTPAddr]*AMFContext
+	SctpConn      *sctp.SCTPConn
 }
 
 type UpfInfo struct {
 	Addr    net.UDPAddr
 	GtpConn *net.UDPConn
 }
+
 type PlmnSupportItem struct {
 	PlmnId     ngapType.PLMNIdentity
 	SNssaiList []ngapType.SNSSAI
@@ -74,7 +77,14 @@ func (ran *RanContext) TEIDAlloc() uint32 {
 	return ran.TEIDGenerator
 }
 
+// FIXME: complete this function at deregistration procedure
+func (ran *RanContext) DeleteUE() {
+
+}
+
 func (ran *RanContext) FindUeByRanUeNgapID(ranUeNgapID int64) *UeContext {
+	ran.uePoolMu.RLock()
+	defer ran.uePoolMu.RUnlock()
 	if ue, ok := ran.UePool[ranUeNgapID]; ok {
 		return ue
 	} else {
@@ -83,6 +93,8 @@ func (ran *RanContext) FindUeByRanUeNgapID(ranUeNgapID int64) *UeContext {
 }
 
 func (ran *RanContext) FindUeByAmfUeNgapID(amfUeNgapID int64) *UeContext {
+	ran.uePoolMu.RLock()
+	defer ran.uePoolMu.RUnlock()
 	for _, ranUe := range ran.UePool {
 		if ranUe.AmfUeNgapId == amfUeNgapID {
 			return ranUe
@@ -123,9 +135,9 @@ func NewRanContext() *RanContext {
 func (ran *RanContext) NewUE(supi string) *UeContext {
 	ue := NewUeContext()
 	ue.Ran = ran
-	ran.mu.Lock()
+	ran.uePoolMu.Lock()
 	ran.UePool[ran.RanUeIDGenerator] = ue
-	ran.mu.Unlock()
+	ran.uePoolMu.Unlock()
 	ue.RanUeNgapId = ran.RanUeIDGenerator
 	ran.RanUeIDGenerator++
 	ue.CmState = CmStateConnected
@@ -133,6 +145,8 @@ func (ran *RanContext) NewUE(supi string) *UeContext {
 }
 
 func (ran *RanContext) FindUEBySupi(supi string) *UeContext {
+	ran.uePoolMu.RLock()
+	defer ran.uePoolMu.RUnlock()
 	for _, ue := range ran.UePool {
 		if ue.Supi == supi {
 			return ue
