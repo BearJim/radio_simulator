@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"os"
 	"sync"
 	"syscall"
 	"time"
@@ -267,14 +268,19 @@ func (r *RanApp) StartSCTPAssociation() {
 					logger.NgapLog.Infof("SCTP state is SCTP_RESTART")
 				case sctp.SCTP_COMM_LOST:
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_LOST, %+v", endpoint)
-					for {
-						addr := sctp.SockaddrToSCTPAddr(endpoint)
-						if err := r.Connect(addr); err != nil {
-							logger.NgapLog.Warnf("try to  reconnect to %s...", addr)
-							time.Sleep(3 * time.Second)
-						} else {
-							break
-						}
+					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
+					if reconnect == "enable" {
+						go func() {
+							for {
+								addr := sctp.SockaddrToSCTPAddr(endpoint)
+								if err := r.Connect(addr); err != nil {
+									logger.NgapLog.Warnf("try to reconnect to %s...", addr)
+									time.Sleep(3 * time.Second)
+								} else {
+									break
+								}
+							}
+						}()
 					}
 				case sctp.SCTP_SHUTDOWN_COMP:
 					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP")

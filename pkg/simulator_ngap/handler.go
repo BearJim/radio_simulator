@@ -81,6 +81,7 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 		return
 	}
 
+	logger.NgapLog.Infow("Handle Downlink NAS Transport", "amf", endpoint.String())
 	for _, ie := range downlinkNASTransport.ProtocolIEs.List {
 		switch ie.Id.Value {
 		case ngapType.ProtocolIEIDAMFUENGAPID:
@@ -160,11 +161,13 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 	}
 
 	if !reflect.DeepEqual(ue.AMFEndpoint, endpoint) {
-		logger.NgapLog.Warnf("UE AMF endpoint change from %s to %s", ue.AMFEndpoint.String(), endpoint.String())
+		logger.NgapLog.Warnw("AMF endpoint change", "supi", ue.Supi, "old", ue.AMFEndpoint.String(),
+			"new", endpoint.String())
 		ue.AMFEndpoint = endpoint
 	}
 
 	if nASPDU != nil {
+		logger.NASLog.Infow("Forward Downlink NAS Transport", "amf", endpoint.String(), "supi", ue.Supi)
 		c.nasController.HandleNAS(ue, nASPDU.Value)
 	}
 }

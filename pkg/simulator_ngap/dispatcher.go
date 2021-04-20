@@ -71,7 +71,6 @@ func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
 		case ngapType.ProcedureCodeAMFConfigurationUpdate:
 			c.handleAMFConfigurationUpdate(endpoint, pdu)
 		case ngapType.ProcedureCodeDownlinkNASTransport:
-			logger.NgapLog.Infof("Handle Downlink NAS Transport")
 			c.handleDownlinkNASTransport(endpoint, pdu)
 		case ngapType.ProcedureCodeInitialContextSetup:
 			logger.NgapLog.Infof("Handle Initial Context Setup Request")
