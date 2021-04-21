@@ -23,10 +23,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 	// ------------ THESIS FAIL TRIGGER ------------
 	if triggerFail == "enable" && firstTime && ue.Supi == "imsi-2089300000001" {
 		logger.ApiLog.Infof("Try to trigger AMF fail")
-		_, err := http.Get("http://10.10.0.18:31118/fail")
-		if err != nil && err.Error() != "EOF" {
-			logger.ApiLog.Errorf("trigger amf failing failed: %+v", err)
-		}
+		http.Get("http://10.10.0.18:31118/fail")
 		firstTime = false
 		return nil
 	}
