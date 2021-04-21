@@ -2,3 +2,4 @@ bin/*
 test.go
 log/*
 vendor
+*.log

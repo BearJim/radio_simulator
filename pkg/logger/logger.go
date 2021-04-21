@@ -29,19 +29,13 @@ func init() {
 		pae.AppendString(t.Format(time.RFC3339))
 	}
 
-	if _, err := os.Stat("./log/ran.log"); err == nil {
-		if err = os.Remove("./log/ran.log"); err != nil {
+	if _, err := os.Stat("./ran.log"); err == nil {
+		if err = os.Remove("./ran.log"); err != nil {
 			panic(err)
 		}
 	}
 
-	if _, err := os.Stat("./log"); os.IsNotExist(err) {
-		if err = os.Mkdir("./log", 0775); err != nil {
-			panic(err)
-		}
-	}
-
-	zapCfg.OutputPaths = append(zapCfg.OutputPaths, "./log/ran.log")
+	zapCfg.OutputPaths = append(zapCfg.OutputPaths, "./ran.log")
 	log, err := zapCfg.Build()
 	if err != nil {
 		panic(err)
