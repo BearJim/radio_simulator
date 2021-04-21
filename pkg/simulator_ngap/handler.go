@@ -161,8 +161,8 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 	}
 
 	if !reflect.DeepEqual(ue.AMFEndpoint, endpoint) {
-		logger.NgapLog.Warnw("AMF endpoint change", "supi", ue.Supi, "old", ue.AMFEndpoint.String(),
-			"new", endpoint.String())
+		logger.NgapLog.Warnw("AMF endpoint change", "supi", ue.Supi, "id", ue.AmfUeNgapId,
+			"old", ue.AMFEndpoint.String(), "new", endpoint.String())
 		ue.AMFEndpoint = endpoint
 	}
 

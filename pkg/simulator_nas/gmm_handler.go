@@ -29,7 +29,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 	}
 	// ------------ THESIS FAIL TRIGGER ------------
 
-	nasLog.Infow("Handle Authentication Request", "supi", ue.Supi)
+	nasLog.Infow("Handle Authentication Request", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 
 	if request == nil {
 		return fmt.Errorf("AuthenticationRequest body is nil")
@@ -118,7 +118,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 }
 
 func (c *NASController) handleAuthenticationReject(ue *simulator_context.UeContext, message *nasMessage.AuthenticationReject) error {
-	logger.NASLog.Errorw("Receive Authentication Reject", "supi", ue.Supi)
+	logger.NASLog.Errorw("Receive Authentication Reject", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 	return nil
 }
 

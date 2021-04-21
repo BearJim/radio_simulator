@@ -24,7 +24,7 @@ func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 }
 
 func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
-	logger.NgapLog.Info("Send Initail UE Message (Initail Registration Request)", "supi", ue.Supi)
+	logger.NgapLog.Info("Send Initail UE Message (Initail Registration Request)", "rid", ue.RanUeNgapId)
 	pkt, err := BuildInitialUEMessage(ue, nasMessage.RegistrationType5GSInitialRegistration, "")
 	if err != nil {
 		logger.NgapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
@@ -34,7 +34,7 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 }
 
 func (c *NGController) SendUplinkNASTransport(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
-	logger.NgapLog.Infow("Send Uplink NAS Transport", "supi", ue.Supi)
+	logger.NgapLog.Infow("Send Uplink NAS Transport", "supi", ue.Supi, "id", ue.AmfUeNgapId, "amf", endpoint.String())
 
 	pkt, err := BuildUplinkNasTransport(ue, nasPdu)
 	if err != nil {
@@ -45,8 +45,7 @@ func (c *NGController) SendUplinkNASTransport(endpoint *sctp.SCTPAddr, ue *simul
 }
 
 func (c *NGController) SendIntialContextSetupResponse(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, pduSessionIds []string) {
-
-	logger.NgapLog.Info("[RAN] Send Intial Context Setup Response")
+	logger.NgapLog.Info("Send Intial Context Setup Response")
 
 	pkt, err := BuildInitialContextSetupResponse(ue, pduSessionIds, nil)
 	if err != nil {
@@ -57,7 +56,6 @@ func (c *NGController) SendIntialContextSetupResponse(endpoint *sctp.SCTPAddr, u
 }
 
 func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
-
 	logger.NgapLog.Info("Send Ue Context Release Complete")
 
 	pkt, err := BuildUEContextReleaseComplete(ue)
