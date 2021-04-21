@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -29,13 +28,8 @@ func init() {
 		pae.AppendString(t.Format(time.RFC3339))
 	}
 
-	if _, err := os.Stat("./ran.log"); err == nil {
-		if err = os.Remove("./ran.log"); err != nil {
-			panic(err)
-		}
-	}
-
 	zapCfg.OutputPaths = append(zapCfg.OutputPaths, "./ran.log")
+	zapCfg.ErrorOutputPaths = append(zapCfg.ErrorOutputPaths, "./ran.log")
 	log, err := zapCfg.Build()
 	if err != nil {
 		panic(err)
