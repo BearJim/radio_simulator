@@ -250,7 +250,7 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string) {
 }
 
 func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
-	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	startTime := time.Now()

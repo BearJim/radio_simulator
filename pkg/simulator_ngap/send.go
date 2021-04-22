@@ -24,7 +24,7 @@ func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 }
 
 func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
-	logger.NgapLog.Info("Send Initail UE Message (Initail Registration Request)", "rid", ue.RanUeNgapId)
+	logger.NgapLog.Infow("Send Initail UE Message (Initail Registration Request)", "rid", ue.RanUeNgapId)
 	pkt, err := BuildInitialUEMessage(ue, nasMessage.RegistrationType5GSInitialRegistration, "")
 	if err != nil {
 		logger.NgapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())

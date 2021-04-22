@@ -149,9 +149,10 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 
 	if aMFUENGAPID != nil {
 		if ue.AmfUeNgapId == simulator_context.AmfNgapIdUnspecified {
-			logger.NgapLog.Debug("Create new logical UE-associated NG-connection")
 			ue.AmfUeNgapId = aMFUENGAPID.Value
 			ue.AMFEndpoint = endpoint
+			logger.NgapLog.Infow("Create new logical UE-associated NG-connection",
+				"supi", ue.Supi, "id", ue.AmfUeNgapId, "amf", ue.AMFEndpoint.String())
 		} else {
 			if ue.AmfUeNgapId != aMFUENGAPID.Value {
 				logger.NgapLog.Warn("AMFUENGAPID unmatched")
