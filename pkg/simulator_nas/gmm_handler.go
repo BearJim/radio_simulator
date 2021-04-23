@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"net/http"
-	"os"
 
 	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
@@ -16,24 +14,9 @@ import (
 	"github.com/free5gc/nas/nasMessage"
 )
 
-var firstTime bool = true
-var triggerFail string = os.Getenv("THESIS_ENABLE_FAIL")
-
 func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeContext, request *nasMessage.AuthenticationRequest) error {
-	// ------------ THESIS FAIL TRIGGER ------------
-	if triggerFail == "enable" && firstTime && ue.Supi == "imsi-2089300000001" {
-		logger.ApiLog.Infof("Try to trigger AMF fail")
-		http.Get("http://10.10.0.18:31118/fail")
-		firstTime = false
-		return nil
-	}
-	// ------------ THESIS FAIL TRIGGER ------------
-
 	nasLog.Infow("Handle Authentication Request", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 
-	if request == nil {
-		return fmt.Errorf("AuthenticationRequest body is nil")
-	}
 	ue.NgKsi = request.GetNasKeySetIdentifiler()
 
 	// Get RAND & AUTN from Authentication request

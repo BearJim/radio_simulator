@@ -16,6 +16,7 @@ var (
 	simulatorDBUrl string
 	numOfUEs       int32
 	allUEs         bool
+	triggerFail    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -126,13 +127,14 @@ func registerCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			s := initSimulator(simulatorDBUrl)
 			if allUEs {
-				s.AllUeRegister(args[0])
+				s.AllUeRegister(args[0], triggerFail)
 			} else {
-				s.SingleUeRegister(args[0], args[1])
+				s.SingleUeRegister(args[0], args[1], triggerFail)
 			}
 		},
 	}
 	cmd.PersistentFlags().BoolVarP(&allUEs, "all", "a", false, "register all UEs via RanName")
+	cmd.PersistentFlags().BoolVarP(&triggerFail, "fail", "f", false, "trigger AMF fail")
 	return cmd
 }
 

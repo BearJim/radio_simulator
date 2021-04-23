@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -18,6 +19,7 @@ import (
 	"github.com/free5gc/nas/security"
 	"github.com/free5gc/openapi/models"
 	"github.com/jay16213/radio_simulator/pkg/api"
+	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/ue_factory"
 	"go.mongodb.org/mongo-driver/bson"
@@ -195,7 +197,7 @@ func (s *Simulator) DescribeUE(supi string) {
 	fmt.Printf("CmState: %s\n", ue.CmState)
 }
 
-func (s *Simulator) AllUeRegister(ranName string) {
+func (s *Simulator) AllUeRegister(ranName string, triggerFail bool) {
 	apiClient, err := s.connectToRan(ranName)
 	if err != nil {
 		fmt.Println(err)
@@ -229,10 +231,17 @@ func (s *Simulator) AllUeRegister(ranName string) {
 			wg.Done()
 		}(&wg)
 	}
+	if triggerFail {
+		logger.ApiLog.Infof("Try to trigger AMF fail")
+		_, err := http.Get("http://10.10.0.18:31118/fail")
+		if err != nil {
+			fmt.Printf("http get: %+v", err)
+		}
+	}
 	wg.Wait()
 }
 
-func (s *Simulator) SingleUeRegister(supi string, ranName string) {
+func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFail bool) {
 	ue, err := s.findUE(supi)
 	if err != nil {
 		fmt.Println(err)
@@ -246,7 +255,23 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string) {
 	}
 
 	ue.ServingRan = ranName
-	s.ueRegister(ue, apiClient)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		s.ueRegister(ue, apiClient)
+		wg.Done()
+	}(&wg)
+
+	// trigger fail
+	time.Sleep(50 * time.Millisecond)
+	if triggerFail {
+		logger.ApiLog.Infof("Try to trigger AMF fail")
+		_, err := http.Get("http://10.10.0.18:31118/fail")
+		if err != nil {
+			fmt.Printf("http get: %+v", err)
+		}
+	}
+	wg.Wait()
 }
 
 func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
