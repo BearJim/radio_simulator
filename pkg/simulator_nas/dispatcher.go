@@ -48,6 +48,7 @@ func (c *NASController) SetNGMessager(messager NGMessager) {
 
 type NGMessager interface {
 	SendUplinkNASTransport(*sctp.SCTPAddr, *simulator_context.UeContext, []byte)
+	SendInitailUeMessage_RegistraionRequest(*sctp.SCTPAddr, *simulator_context.UeContext)
 }
 
 func (c *NASController) Run() error {
@@ -101,6 +102,8 @@ func (c *NASController) handleGmmMessage(ue *simulator_context.UeContext, nasPdu
 		checkMsgError(c.handleAuthenticationRequest(ue, msg.GmmMessage.AuthenticationRequest), "AuthenticationRequest")
 	case nas.MsgTypeAuthenticationReject:
 		checkMsgError(c.handleAuthenticationReject(ue, msg.GmmMessage.AuthenticationReject), "AuthenticationReject")
+	case nas.MsgTypeRegistrationReject:
+
 	case nas.MsgTypeSecurityModeCommand:
 		checkMsgError(c.handleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
 	case nas.MsgTypeRegistrationAccept:
