@@ -268,7 +268,7 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFail bo
 		logger.ApiLog.Infof("Try to trigger AMF fail")
 		_, err := http.Get("http://10.10.0.18:31118/fail")
 		if err != nil {
-			fmt.Printf("http get: %+v", err)
+			fmt.Printf("http get: %+v\n", err)
 		}
 	}
 	wg.Wait()
