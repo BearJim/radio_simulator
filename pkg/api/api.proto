@@ -65,6 +65,8 @@ message RegisterResponse {
     StatusCode status_code = 1;
     string body = 2;
     UEContext ue_context = 3;
+    int32 restart_count = 4;
+    int64 restart_timestamp = 5;
 }
 
 message DeregisterRequest {

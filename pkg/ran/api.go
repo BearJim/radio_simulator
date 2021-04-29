@@ -91,15 +91,21 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 
 	// wait result
 	result := <-ue.ApiNotifyChan
-	return &api.RegisterResponse{StatusCode: result.Status, Body: result.Message, UeContext: &api.UEContext{
-		Supi:             ue.Supi,
-		RmState:          ue.RmState,
-		CmState:          ue.CmState,
-		NasUplinkCount:   ue.ULCount.ToUint32(),
-		NasDownlinkCount: ue.DLCount.ToUint32(),
-		AmfUeNgapId:      ue.AmfUeNgapId,
-		RanUeNgapId:      ue.RanUeNgapId,
-	}}, nil
+	return &api.RegisterResponse{
+		StatusCode: result.Status,
+		Body:       result.Message,
+		UeContext: &api.UEContext{
+			Supi:             ue.Supi,
+			RmState:          ue.RmState,
+			CmState:          ue.CmState,
+			NasUplinkCount:   ue.ULCount.ToUint32(),
+			NasDownlinkCount: ue.DLCount.ToUint32(),
+			AmfUeNgapId:      ue.AmfUeNgapId,
+			RanUeNgapId:      ue.RanUeNgapId,
+		},
+		RestartCount:     int32(result.RestartCount),
+		RestartTimestamp: result.RestartTimeStamp.UnixNano(),
+	}, nil
 }
 
 func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest) (*api.DeregisterResponse, error) {
