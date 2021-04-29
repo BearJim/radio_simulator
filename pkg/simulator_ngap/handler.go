@@ -63,15 +63,17 @@ func (c *NGController) handleNGSetupResponse(endpoint *sctp.SCTPAddr, message *n
 }
 
 func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
-	var aMFUENGAPID *ngapType.AMFUENGAPID
-	var rANUENGAPID *ngapType.RANUENGAPID
-	// var oldAMF *ngapType.AMFName
-	// var rANPagingPriority *ngapType.RANPagingPriority
-	var nASPDU *ngapType.NASPDU
-	// var mobilityRestrictionList *ngapType.MobilityRestrictionList
-	// var indexToRFSP *ngapType.IndexToRFSP
-	// var uEAggregateMaximumBitRate *ngapType.UEAggregateMaximumBitRate
-	// var allowedNSSAI *ngapType.AllowedNSSAI
+	var (
+		aMFUENGAPID *ngapType.AMFUENGAPID
+		rANUENGAPID *ngapType.RANUENGAPID
+		nASPDU      *ngapType.NASPDU
+		// oldAMF      *ngapType.AMFName
+		// rANPagingPriority         *ngapType.RANPagingPriority
+		// mobilityRestrictionList   *ngapType.MobilityRestrictionList
+		// indexToRFSP               *ngapType.IndexToRFSP
+		// uEAggregateMaximumBitRate *ngapType.UEAggregateMaximumBitRate
+		// allowedNSSAI              *ngapType.AllowedNSSAI
+	)
 
 	var iesCriticalityDiagnostics ngapType.CriticalityDiagnosticsIEList
 
@@ -154,10 +156,11 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 			logger.NgapLog.Infow("Create new logical UE-associated NG-connection",
 				"supi", ue.Supi, "id", ue.AmfUeNgapId, "amf", ue.AMFEndpoint.String())
 		} else {
-			if ue.AmfUeNgapId != aMFUENGAPID.Value {
-				logger.NgapLog.Warn("AMFUENGAPID unmatched")
-				return
-			}
+			oldID := ue.AmfUeNgapId
+			ue.AmfUeNgapId = aMFUENGAPID.Value
+			ue.AMFEndpoint = endpoint
+			logger.NgapLog.Infow("AMF UE NGAP ID has changed",
+				"supi", ue.Supi, "newid", ue.AmfUeNgapId, "oldid", oldID, "amf", ue.AMFEndpoint.String())
 		}
 	}
 
