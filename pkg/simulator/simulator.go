@@ -296,7 +296,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	}
 
 	now := time.Now()
-	finishTime := time.Since(startTime)
+	finishTime := now.Sub(startTime)
 
 	if regResult.GetStatusCode() == api.StatusCode_ERROR {
 		fmt.Printf("Registration failed: %s (supi: %s)\n", regResult.GetBody(), ue.Supi)
@@ -306,7 +306,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 			restartFinishTime := now.Sub(restartTime)
 			fmt.Printf("Registration success (supi: %s, total: %+v, restart: %+v)\n", ue.Supi, finishTime, restartFinishTime)
 		} else {
-			fmt.Printf("Registration success (supi: %s, expand %+v)\n", ue.Supi, finishTime)
+			fmt.Printf("Registration success (supi: %s, total: %+v)\n", ue.Supi, finishTime)
 		}
 		resultUe := regResult.GetUeContext()
 		ue.RmState = resultUe.GetRmState()
