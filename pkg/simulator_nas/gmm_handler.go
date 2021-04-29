@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
@@ -97,6 +98,7 @@ func (c *NASController) handleAuthenticationRequest(ue *simulator_context.UeCont
 	kseaf := simulator_context.DerivateKseaf(kausf, servingNetworkName)
 	logger.NASLog.Debugf("Kseaf: 0x%0x", kseaf)
 	ue.DerivateKamf(kseaf, []byte{0x00, 0x00})
+	ue.AuthDataSQNAddOne()
 	return nil
 }
 
@@ -109,6 +111,8 @@ func (c *NASController) handleRegistrationReject(ue *simulator_context.UeContext
 	logger.NASLog.Warnw("Handle Registration Reject", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 	if message.Cause5GMM.GetCauseValue() == nasMessage.Cause5GMMCongestion {
 		logger.NASLog.Warnw("Restart Initial Registration", "supi", ue.Supi, "id", ue.AmfUeNgapId)
+		ue.RestartCount++
+		ue.RestartTimeStamp = time.Now()
 		c.ngMessager.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 	}
 	return nil
@@ -139,8 +143,8 @@ func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext
 	nasLog.Info("Send Registration Complete")
 	c.ngMessager.SendUplinkNASTransport(ue.AMFEndpoint, ue, nasPdu)
 	ue.RmState = simulator_context.RmStateRegistered
-	ue.AuthDataSQNAddOne()
 	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgRegisterSuccess)
+	ue.RestartCount = 0
 	return nil
 }
 

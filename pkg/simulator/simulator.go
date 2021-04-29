@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"sync"
 	"syscall"
 	"text/tabwriter"
@@ -264,7 +263,7 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFail bo
 
 	// trigger fail
 	if triggerFail {
-		time.Sleep(50 * time.Millisecond)
+		// time.Sleep(100 * time.Millisecond)
 		logger.ApiLog.Infof("Try to trigger AMF fail")
 		_, err := http.Get("http://10.10.0.18:31118/fail")
 		if err != nil {
@@ -312,8 +311,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	}
 
 	// update SQN when triggering registration
-	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
-	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
+	ue.AuthDataSQNAddOne()
 	s.updateUE(ue)
 }
 

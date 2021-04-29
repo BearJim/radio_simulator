@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"sync"
+	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/api"
@@ -73,12 +74,16 @@ type UeContext struct {
 	RmState string      `bson:"rmState"`
 	CmState string      `bson:"cmState"`
 	// For API Usage
-	ApiNotifyChan chan ApiNotification `bson:"-"`
+	RestartCount     int
+	RestartTimeStamp time.Time
+	ApiNotifyChan    chan ApiNotification `bson:"-"`
 }
 
 type ApiNotification struct {
-	Status  api.StatusCode
-	Message string
+	Status           api.StatusCode
+	Message          string
+	RestartCount     int
+	RestartTimeStamp time.Time
 }
 
 type UeAmbr struct {
@@ -92,7 +97,7 @@ type AuthData struct {
 	Opc        string `yaml:"Opc,omitempty" bson:"Opc"`
 	Op         string `yaml:"Op,omitempty" bson:"Op"`
 	AMF        string `yaml:"AMF" bson:"AMF"`
-	SQN        string `yaml:"SQN" bson:"SQN"`
+	SQN        string `yaml:"SQN" bson:"SQN"` // 48-bit integer in hex format
 }
 
 type SessionContext struct {
@@ -133,7 +138,7 @@ func NewUeContext() *UeContext {
 }
 
 func (ue *UeContext) AuthDataSQNAddOne() {
-	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 64)
+	num, _ := strconv.ParseInt(ue.AuthData.SQN, 16, 48)
 	ue.AuthData.SQN = fmt.Sprintf("%x", num+1)
 }
 
@@ -219,7 +224,12 @@ func (s *SessionContext) GetTunnelMsg() string {
 }
 
 func (ue *UeContext) SendAPINotification(status api.StatusCode, msg string) {
-	ue.ApiNotifyChan <- ApiNotification{Status: status, Message: msg}
+	ue.ApiNotifyChan <- ApiNotification{
+		Status:           status,
+		Message:          msg,
+		RestartCount:     ue.RestartCount,
+		RestartTimeStamp: ue.RestartTimeStamp,
+	}
 }
 
 func (ue *UeContext) AttachRan(ran *RanContext) {
