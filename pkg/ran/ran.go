@@ -81,8 +81,6 @@ func (r *RanApp) Initialize(c *cli.Context) error {
 func (r *RanApp) Run() {
 	wg := sync.WaitGroup{}
 
-	logger.AppLog.Info("Start running RAN")
-
 	// RAN connect to UPF
 	// for _, upf := range ran.UpfInfoList {
 	// upf.GtpConn, err = connectToUpf(ran.RanGtpUri.IP, upf.Addr.IP, ran.RanGtpUri.Port, upf.Addr.Port)

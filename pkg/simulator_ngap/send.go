@@ -63,9 +63,10 @@ func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue 
 		logger.NgapLog.Errorf("Build Ue Context Release Complete failed : %s", err.Error())
 		return
 	}
+	c.ran.SendToAMF(endpoint, pkt)
 
 	// Reset Ue Context
-	ue.AmfUeNgapId = simulator_context.AmfNgapIdUnspecified
+	c.CloseNASConnection(ue.RanUeNgapId)
 	for _, sess := range ue.PduSession {
 		sess.Remove()
 		if sess.UeIp != "" {
@@ -76,9 +77,6 @@ func (c *NGController) SendUeContextReleaseComplete(endpoint *sctp.SCTPAddr, ue 
 			}
 		}
 	}
-
-	c.ran.SendToAMF(endpoint, pkt)
-	ue.CmState = simulator_context.CmStateIdle
 }
 
 func (c *NGController) SendPDUSessionResourceSetupResponse(

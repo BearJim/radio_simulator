@@ -172,7 +172,7 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 
 	if nASPDU != nil {
 		logger.NASLog.Infow("Forward Downlink NAS Transport", "amf", endpoint.String(), "supi", ue.Supi)
-		c.nasController.HandleNAS(ue, nASPDU.Value)
+		c.SendNAS(ue.RanUeNgapId, nASPDU.Value)
 	}
 }
 
@@ -332,9 +332,8 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 	c.SendIntialContextSetupResponse(endpoint, ue, nil)
 
 	if nASPDU != nil {
-		c.nasController.HandleNAS(ue, nASPDU.Value)
+		c.SendNAS(ue.RanUeNgapId, nASPDU.Value)
 	}
-
 }
 
 func (c *NGController) HandleUeContextReleaseCommand(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
@@ -495,7 +494,7 @@ func (c *NGController) HandlePduSessionResourceSetupRequest(endpoint *sctp.SCTPA
 		}
 		if pduSession.PDUSessionNASPDU != nil {
 			// Handle Nas Msg
-			c.nasController.HandleNAS(ue, pduSession.PDUSessionNASPDU.Value)
+			c.SendNAS(ue.RanUeNgapId, nASPDU.Value)
 		}
 		sess.Mtx.Lock()
 		c.ran.Context().AttachSession(sess)
@@ -512,7 +511,7 @@ func (c *NGController) HandlePduSessionResourceSetupRequest(endpoint *sctp.SCTPA
 	}
 	c.SendPDUSessionResourceSetupResponse(endpoint, ue, responseList, failedListSURes)
 	if nASPDU != nil {
-		c.nasController.HandleNAS(ue, nASPDU.Value)
+		c.SendNAS(ue.RanUeNgapId, nASPDU.Value)
 	}
 }
 
@@ -611,7 +610,7 @@ func (c *NGController) HandlePduSessionResourceReleaseCommand(endpoint *sctp.SCT
 	c.SendPDUSessionResourceReleaseResponse(endpoint, ue, responseList, nil)
 
 	if nASPDU != nil {
-		c.nasController.HandleNAS(ue, nASPDU.Value)
+		c.SendNAS(ue.RanUeNgapId, nASPDU.Value)
 	}
 }
 

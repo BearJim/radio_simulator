@@ -87,6 +87,7 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	}
 	// amf selection
 	ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
+	a.ranApp.ngController.NewNASConnection(ue)
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 
 	// wait result

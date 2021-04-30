@@ -11,6 +11,7 @@ require (
 	github.com/free5gc/nas v1.0.0
 	github.com/free5gc/ngap v1.0.1
 	github.com/free5gc/openapi v1.0.0
+	github.com/free5gc/version v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/sirupsen/logrus v1.7.0

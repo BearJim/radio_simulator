@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/free5gc/nas"
-	"github.com/free5gc/nas/nasMessage"
 )
 
 var nasLog *zap.SugaredLogger
@@ -25,20 +24,19 @@ func checkMsgError(err error, msg string) {
 	}
 }
 
-type NASController struct {
-	ngMessager    NGMessager
-	n1MessageChan chan n1Message
-	cancelCtx     context.CancelFunc
+type Routine interface {
+	Run(context.Context)
 }
 
-type n1Message struct {
-	ue     *simulator_context.UeContext
-	nasPdu []byte
+type NASController struct {
+	n1ConnectionsQueue chan Routine
+	ngMessager         NGMessager
+	cancelCtx          context.CancelFunc
 }
 
 func New() *NASController {
 	return &NASController{
-		n1MessageChan: make(chan n1Message, 1024),
+		n1ConnectionsQueue: make(chan Routine, 512),
 	}
 }
 
@@ -52,18 +50,23 @@ type NGMessager interface {
 }
 
 func (c *NASController) Run() error {
+	return c.dispatch()
+}
+
+func (c *NASController) dispatch() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	c.cancelCtx = cancel
-
 	for {
-		select {
-		case <-ctx.Done():
-			logger.NASLog.Info("Close NAS Controller")
-			return nil
-		case n1Msg := <-c.n1MessageChan:
-			c.handleGmmMessage(n1Msg.ue, n1Msg.nasPdu)
-		}
+		n1Connection := <-c.n1ConnectionsQueue // take a n1 connection
+		go func(ctx context.Context) {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			n1Connection.Run(ctx)
+		}(ctx)
 	}
 }
 
@@ -71,22 +74,15 @@ func (c *NASController) Stop() {
 	c.cancelCtx()
 }
 
-func (c *NASController) HandleNAS(ue *simulator_context.UeContext, nasPdu []byte) {
-	if ue == nil {
-		nasLog.Error("Ue is nil")
-		return
+func (c *NASController) NewNASConnection(ue *simulator_context.UeContext) chan []byte {
+	nasCh := make(chan []byte, 16)
+	c.n1ConnectionsQueue <- &NASRoutine{
+		rid:           int(ue.RanUeNgapId),
+		ue:            ue,
+		NASController: c,
+		nasPduCh:      nasCh,
 	}
-
-	if nasPdu == nil {
-		nasLog.Error("nasPdu is nil")
-		return
-	}
-
-	if nas.GetEPD(nasPdu) == nasMessage.Epd5GSSessionManagementMessage {
-		logger.NASLog.Errorf("GSM message should inside GMM message")
-		return
-	}
-	c.n1MessageChan <- n1Message{ue: ue, nasPdu: nasPdu}
+	return nasCh
 }
 
 func (c *NASController) handleGmmMessage(ue *simulator_context.UeContext, nasPdu []byte) {

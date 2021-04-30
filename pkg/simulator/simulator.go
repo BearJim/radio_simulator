@@ -214,7 +214,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFail bool) {
 		return
 	}
 
-	wg := sync.WaitGroup{}
+	var ues []*simulator_context.UeContext
 	defer cur.Close(context.TODO())
 	for cur.Next(context.TODO()) {
 		ue := new(simulator_context.UeContext)
@@ -224,18 +224,21 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFail bool) {
 			continue
 		}
 		ue.ServingRan = ranName
+		ues = append(ues, ue)
+	}
+
+	// set fail triggering
+	if triggerFail {
+		triggerAmfFail()
+	}
+
+	wg := sync.WaitGroup{}
+	for i := range ues {
 		wg.Add(1)
-		go func(wg *sync.WaitGroup) {
+		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
 			s.ueRegister(ue, apiClient)
 			wg.Done()
-		}(&wg)
-	}
-	if triggerFail {
-		logger.ApiLog.Infof("Try to trigger AMF fail")
-		_, err := http.Get("http://10.10.0.18:31118/fail")
-		if err != nil {
-			fmt.Printf("http get: %+v\n", err)
-		}
+		}(ues[i], &wg)
 	}
 	wg.Wait()
 }
@@ -263,14 +266,17 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFail bo
 
 	// trigger fail
 	if triggerFail {
-		// time.Sleep(100 * time.Millisecond)
-		logger.ApiLog.Infof("Try to trigger AMF fail")
-		_, err := http.Get("http://10.10.0.18:31118/fail")
-		if err != nil {
-			fmt.Printf("http get: %+v\n", err)
-		}
+		triggerAmfFail()
 	}
 	wg.Wait()
+}
+
+func triggerAmfFail() {
+	logger.ApiLog.Infof("trigger AMF fail")
+	_, err := http.Get("http://10.10.0.18:31118/fail")
+	if err != nil {
+		logger.ApiLog.Errorf("http get: %+v", err)
+	}
 }
 
 func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
