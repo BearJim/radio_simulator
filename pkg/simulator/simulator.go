@@ -310,9 +310,10 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 		if regResult.RestartCount != 0 {
 			restartTime := time.Unix(0, regResult.RestartTimestamp)
 			restartFinishTime := now.Sub(restartTime)
-			fmt.Printf("Registration success (supi: %s, total: %+v, restart: %+v)\n", ue.Supi, finishTime, restartFinishTime)
+			fmt.Printf("supi: %s, total: %+v, restart: %d ms\n", ue.Supi, finishTime,
+				restartFinishTime.Milliseconds())
 		} else {
-			fmt.Printf("Registration success (supi: %s, total: %+v)\n", ue.Supi, finishTime)
+			fmt.Printf("supi: %s, total: %d ms\n", ue.Supi, finishTime.Milliseconds())
 		}
 		resultUe := regResult.GetUeContext()
 		ue.RmState = resultUe.GetRmState()
