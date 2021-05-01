@@ -196,7 +196,7 @@ func (s *Simulator) DescribeUE(supi string) {
 	fmt.Printf("CmState: %s\n", ue.CmState)
 }
 
-func (s *Simulator) AllUeRegister(ranName string, triggerFail bool) {
+func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int) {
 	apiClient, err := s.connectToRan(ranName)
 	if err != nil {
 		fmt.Println(err)
@@ -228,8 +228,8 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFail bool) {
 	}
 
 	// set fail triggering
-	if triggerFail {
-		triggerAmfFail()
+	if triggerFailCount != 0 {
+		triggerAmfFail(triggerFailCount)
 	}
 
 	wg := sync.WaitGroup{}
@@ -243,7 +243,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFail bool) {
 	wg.Wait()
 }
 
-func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFail bool) {
+func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCount int) {
 	ue, err := s.findUE(supi)
 	if err != nil {
 		fmt.Println(err)
@@ -265,15 +265,15 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFail bo
 	}(&wg)
 
 	// trigger fail
-	if triggerFail {
-		triggerAmfFail()
+	if triggerFailCount != 0 {
+		triggerAmfFail(triggerFailCount)
 	}
 	wg.Wait()
 }
 
-func triggerAmfFail() {
+func triggerAmfFail(count int) {
 	logger.ApiLog.Infof("trigger AMF fail")
-	_, err := http.Get("http://10.10.0.18:31118/fail")
+	_, err := http.Get(fmt.Sprintf("http://10.10.0.18:31118/fail?count=%d", count))
 	if err != nil {
 		logger.ApiLog.Errorf("http get: %+v", err)
 	}
