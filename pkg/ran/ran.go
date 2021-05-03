@@ -273,10 +273,17 @@ func (r *RanApp) StartSCTPAssociation() {
 								addr := sctp.SockaddrToSCTPAddr(endpoint)
 								if err := r.Connect(addr); err != nil {
 									logger.NgapLog.Warnf("try to reconnect to %s...", addr)
-									time.Sleep(3 * time.Second)
+									time.Sleep(1 * time.Second)
 								} else {
 									break
 								}
+							}
+
+							// WORKAROUND: always restart registration procedure
+							for _, ue := range r.ctx.UePool {
+								ue.RestartCount++
+								ue.RestartTimeStamp = time.Now()
+								r.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 							}
 						}()
 					}
