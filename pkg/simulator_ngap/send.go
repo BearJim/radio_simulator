@@ -7,6 +7,7 @@ import (
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 
 	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/ngap/ngapType"
@@ -25,7 +26,24 @@ func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 
 func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
 	logger.NgapLog.Infow("Send Initail UE Message (Initail Registration Request)", "rid", ue.RanUeNgapId)
-	pkt, err := BuildInitialUEMessage(ue, nasMessage.RegistrationType5GSInitialRegistration, "")
+
+	nasPdu, err := nas_packet.GetRegistrationRequestWith5GMM(ue, nasMessage.RegistrationType5GSInitialRegistration, nil, nil)
+	if err != nil {
+		logger.NgapLog.Errorf("Build RegistrationRequest failed: %s", err.Error())
+		return
+	}
+
+	pkt, err := BuildInitialUEMessage(ue, "", nasPdu)
+	if err != nil {
+		logger.NgapLog.Errorf("Build InitialUEMessage failed: %s", err.Error())
+		return
+	}
+	c.ran.SendToAMF(endpoint, pkt)
+}
+
+func (c *NGController) SendInitailUeMessage(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
+	logger.NgapLog.Infow("Send Initail UE Message", "rid", ue.RanUeNgapId)
+	pkt, err := BuildInitialUEMessage(ue, "", nasPdu)
 	if err != nil {
 		logger.NgapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
 		return
@@ -45,7 +63,7 @@ func (c *NGController) SendUplinkNASTransport(endpoint *sctp.SCTPAddr, ue *simul
 }
 
 func (c *NGController) SendIntialContextSetupResponse(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, pduSessionIds []string) {
-	logger.NgapLog.Info("Send Intial Context Setup Response")
+	logger.NgapLog.Infow("Send Intial Context Setup Response", "id", ue.AmfUeNgapId, "rid", ue.RanUeNgapId)
 
 	pkt, err := BuildInitialContextSetupResponse(ue, pduSessionIds, nil)
 	if err != nil {

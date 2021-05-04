@@ -102,6 +102,10 @@ func (c *NASController) handleGmmMessage(ue *simulator_context.UeContext, nasPdu
 		checkMsgError(c.handleRegistrationReject(ue, msg.GmmMessage.RegistrationReject), "RegistrationReject")
 	case nas.MsgTypeSecurityModeCommand:
 		checkMsgError(c.handleSecurityModeCommand(ue, msg.GmmMessage.SecurityModeCommand), "SecurityModeCommand")
+	case nas.MsgTypeServiceAccept:
+		checkMsgError(c.handleServiceAccept(ue, msg.GmmMessage.ServiceAccept), "ServiceAccept")
+	case nas.MsgTypeServiceReject:
+		checkMsgError(c.handleServiceReject(ue, msg.GmmMessage.ServiceReject), "ServiceReject")
 	case nas.MsgTypeRegistrationAccept:
 		checkMsgError(c.handleRegistrationAccept(ue, msg.GmmMessage.RegistrationAccept), "RegistrationAccept")
 	case nas.MsgTypeDeregistrationAcceptUEOriginatingDeregistration:

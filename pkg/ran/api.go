@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/nas/security"
 	"github.com/jay16213/radio_simulator/pkg/api"
 	"github.com/jay16213/radio_simulator/pkg/logger"
@@ -87,6 +88,7 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	}
 	// amf selection
 	ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
+	ue.FollowOnRequest = req.FollowOnRequest
 	a.ranApp.ngController.NewNASConnection(ue)
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 
@@ -125,6 +127,36 @@ func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest)
 	// wait result
 	result := <-ue.ApiNotifyChan
 	return &api.DeregisterResponse{StatusCode: result.Status, Body: result.Message}, nil
+}
+
+func (a *apiService) ServiceRequestProc(ctx context.Context, req *api.ServiceRequest) (*api.ServiceRequestResult, error) {
+	ue := a.ranApp.ctx.FindUEBySupi(req.GetSupi())
+	if ue == nil {
+		return nil, fmt.Errorf("UE not found (supi: %s)", req.GetSupi())
+	}
+
+	serviceType := uint8(0)
+	switch req.ServiceType {
+	case api.ServiceType_Signalling:
+		serviceType = nasMessage.ServiceTypeSignalling
+	case api.ServiceType_Data:
+		serviceType = nasMessage.ServiceTypeData
+	default:
+		serviceType = nasMessage.ServiceTypeSignalling
+	}
+
+	logger.ApiLog.Infow("Service Request Procedure", "supi", ue.Supi, "id", ue.AmfUeNgapId, "rid", ue.RanUeNgapId)
+	a.ranApp.ngController.NewNASConnection(ue)
+	nasPdu, err := nas_packet.GetServiceRequest(ue, serviceType)
+	if err != nil {
+		logger.ApiLog.Error(err.Error())
+		return nil, fmt.Errorf("build error: %+v", err)
+	}
+	a.ranApp.ngController.SendInitailUeMessage(ue.AMFEndpoint, ue, nasPdu)
+
+	// wait result
+	result := <-ue.ApiNotifyChan
+	return &api.ServiceRequestResult{StatusCode: result.Status, Body: result.Message}, nil
 }
 
 func (a *apiService) SubscribeLog(req *api.LogStreamingRequest, stream api.APIService_SubscribeLogServer) error {

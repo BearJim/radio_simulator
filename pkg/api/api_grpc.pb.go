@@ -22,6 +22,7 @@ type APIServiceClient interface {
 	GetUEs(ctx context.Context, in *GetUEsRequest, opts ...grpc.CallOption) (*GetUEsResponse, error)
 	DescribeUE(ctx context.Context, in *DescribeUERequest, opts ...grpc.CallOption) (*DescribeUEResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	ServiceRequestProc(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*ServiceRequestResult, error)
 	Deregister(ctx context.Context, in *DeregisterRequest, opts ...grpc.CallOption) (*DeregisterResponse, error)
 	SubscribeLog(ctx context.Context, in *LogStreamingRequest, opts ...grpc.CallOption) (APIService_SubscribeLogClient, error)
 }
@@ -64,6 +65,15 @@ func (c *aPIServiceClient) DescribeUE(ctx context.Context, in *DescribeUERequest
 func (c *aPIServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	out := new(RegisterResponse)
 	err := c.cc.Invoke(ctx, "/APIService/Register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aPIServiceClient) ServiceRequestProc(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*ServiceRequestResult, error) {
+	out := new(ServiceRequestResult)
+	err := c.cc.Invoke(ctx, "/APIService/ServiceRequestProc", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +129,7 @@ type APIServiceServer interface {
 	GetUEs(context.Context, *GetUEsRequest) (*GetUEsResponse, error)
 	DescribeUE(context.Context, *DescribeUERequest) (*DescribeUEResponse, error)
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	ServiceRequestProc(context.Context, *ServiceRequest) (*ServiceRequestResult, error)
 	Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error)
 	SubscribeLog(*LogStreamingRequest, APIService_SubscribeLogServer) error
 	mustEmbedUnimplementedAPIServiceServer()
@@ -139,6 +150,9 @@ func (UnimplementedAPIServiceServer) DescribeUE(context.Context, *DescribeUERequ
 }
 func (UnimplementedAPIServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedAPIServiceServer) ServiceRequestProc(context.Context, *ServiceRequest) (*ServiceRequestResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ServiceRequestProc not implemented")
 }
 func (UnimplementedAPIServiceServer) Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Deregister not implemented")
@@ -231,6 +245,24 @@ func _APIService_Register_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _APIService_ServiceRequestProc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServiceServer).ServiceRequestProc(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/APIService/ServiceRequestProc",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServiceServer).ServiceRequestProc(ctx, req.(*ServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _APIService_Deregister_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeregisterRequest)
 	if err := dec(in); err != nil {
@@ -292,6 +324,10 @@ var APIService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _APIService_Register_Handler,
+		},
+		{
+			MethodName: "ServiceRequestProc",
+			Handler:    _APIService_ServiceRequestProc_Handler,
 		},
 		{
 			MethodName: "Deregister",

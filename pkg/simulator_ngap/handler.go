@@ -177,25 +177,27 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 }
 
 func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr, message *ngapType.NGAPPDU) {
-	var aMFUENGAPID *ngapType.AMFUENGAPID
-	var rANUENGAPID *ngapType.RANUENGAPID
-	// var oldAMF *ngapType.AMFName
-	var uEAggregateMaximumBitRate *ngapType.UEAggregateMaximumBitRate
-	// var coreNetworkAssistanceInformation *ngapType.CoreNetworkAssistanceInformation
-	var gUAMI *ngapType.GUAMI
-	// var pDUSessionResourceSetupListCxtReq *ngapType.PDUSessionResourceSetupListCxtReq
-	var allowedNSSAI *ngapType.AllowedNSSAI
-	var uESecurityCapabilities *ngapType.UESecurityCapabilities
-	var securityKey *ngapType.SecurityKey
-	// var traceActivation *ngapType.TraceActivation
-	// var mobilityRestrictionList *ngapType.MobilityRestrictionList
-	// var uERadioCapability *ngapType.UERadioCapability
-	// var indexToRFSP *ngapType.IndexToRFSP
-	// var maskedIMEISV *ngapType.MaskedIMEISV
-	var nASPDU *ngapType.NASPDU
-	// var emergencyFallbackIndicator *ngapType.EmergencyFallbackIndicator
-	// var rRCInactiveTransitionReportRequest *ngapType.RRCInactiveTransitionReportRequest
-	// var uERadioCapabilityForPaging *ngapType.UERadioCapabilityForPaging
+	var (
+		aMFUENGAPID               *ngapType.AMFUENGAPID
+		rANUENGAPID               *ngapType.RANUENGAPID
+		uEAggregateMaximumBitRate *ngapType.UEAggregateMaximumBitRate
+		gUAMI                     *ngapType.GUAMI
+		allowedNSSAI              *ngapType.AllowedNSSAI
+		uESecurityCapabilities    *ngapType.UESecurityCapabilities
+		securityKey               *ngapType.SecurityKey
+		nASPDU                    *ngapType.NASPDU
+		// oldAMF                             *ngapType.AMFName
+		// coreNetworkAssistanceInformation   *ngapType.CoreNetworkAssistanceInformation
+		// pDUSessionResourceSetupListCxtReq  *ngapType.PDUSessionResourceSetupListCxtReq
+		// traceActivation                    *ngapType.TraceActivation
+		// mobilityRestrictionList            *ngapType.MobilityRestrictionList
+		// uERadioCapability                  *ngapType.UERadioCapability
+		// indexToRFSP                        *ngapType.IndexToRFSP
+		// maskedIMEISV                       *ngapType.MaskedIMEISV
+		// emergencyFallbackIndicator         *ngapType.EmergencyFallbackIndicator
+		// rRCInactiveTransitionReportRequest *ngapType.RRCInactiveTransitionReportRequest
+		// uERadioCapabilityForPaging         *ngapType.UERadioCapabilityForPaging
+	)
 
 	var iesCriticalityDiagnostics ngapType.CriticalityDiagnosticsIEList
 
@@ -328,7 +330,20 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 		return
 	}
 
-	// TODO: Service Request Case
+	if aMFUENGAPID != nil {
+		if ue.AmfUeNgapId == simulator_context.AmfNgapIdUnspecified {
+			ue.AmfUeNgapId = aMFUENGAPID.Value
+			ue.AMFEndpoint = endpoint
+			logger.NgapLog.Infow("Create new logical UE-associated NG-connection",
+				"supi", ue.Supi, "id", ue.AmfUeNgapId, "amf", ue.AMFEndpoint.String())
+		} else {
+			oldID := ue.AmfUeNgapId
+			ue.AmfUeNgapId = aMFUENGAPID.Value
+			ue.AMFEndpoint = endpoint
+			logger.NgapLog.Infow("AMF UE NGAP ID has changed",
+				"supi", ue.Supi, "newid", ue.AmfUeNgapId, "oldid", oldID, "amf", ue.AMFEndpoint.String())
+		}
+	}
 	c.SendIntialContextSetupResponse(endpoint, ue, nil)
 
 	if nASPDU != nil {

@@ -196,7 +196,7 @@ func (s *Simulator) DescribeUE(supi string) {
 	fmt.Printf("CmState: %s\n", ue.CmState)
 }
 
-func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int) {
+func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOnRequest bool) {
 	apiClient, err := s.connectToRan(ranName)
 	if err != nil {
 		fmt.Println(err)
@@ -224,6 +224,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int) {
 			continue
 		}
 		ue.ServingRan = ranName
+		ue.FollowOnRequest = followOnRequest
 		ues = append(ues, ue)
 	}
 
@@ -243,7 +244,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int) {
 	wg.Wait()
 }
 
-func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCount int) {
+func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCount int, followOnRequest bool) {
 	ue, err := s.findUE(supi)
 	if err != nil {
 		fmt.Println(err)
@@ -257,6 +258,7 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCou
 	}
 
 	ue.ServingRan = ranName
+	ue.FollowOnRequest = followOnRequest
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
@@ -269,6 +271,57 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCou
 		triggerAmfFail(triggerFailCount)
 	}
 	wg.Wait()
+}
+
+func (s *Simulator) SingleUeServiceRequest(supi string, triggerFailCount int) {
+	ue, err := s.findUE(supi)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	apiClient, err := s.connectToRan(ue.ServingRan)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// trigger fail
+	if triggerFailCount != 0 {
+		triggerAmfFail(triggerFailCount)
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		s.ueServiceRequest(ue, apiClient)
+		wg.Done()
+	}(&wg)
+	wg.Wait()
+}
+
+func (s *Simulator) ueServiceRequest(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+	defer cancel()
+
+	startTime := time.Now()
+	result, err := apiClient.ServiceRequestProc(ctx, &api.ServiceRequest{
+		Supi:        ue.Supi,
+		ServiceType: api.ServiceType_Signalling,
+	})
+	if err != nil {
+		fmt.Printf("ServiceRequest failed: %+v (supi: %s)\n", err, ue.Supi)
+		return
+	}
+	finishTime := time.Since(startTime)
+
+	if result.StatusCode == api.StatusCode_ERROR {
+		fmt.Printf("service failed %s, (supi: %s)\n", result.GetBody(), ue.Supi)
+	} else {
+		fmt.Printf("%s, %+v\n", ue.Supi, finishTime)
+		ue.CmState = simulator_context.CmStateConnected
+	}
+	s.updateUE(ue)
 }
 
 func triggerAmfFail(count int) {
@@ -285,16 +338,17 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 
 	startTime := time.Now()
 	regResult, err := apiClient.Register(ctx, &api.RegisterRequest{
-		Supi:         ue.Supi,
-		ServingPlmn:  ue.ServingPlmnId,
-		CipheringAlg: ue.CipheringAlgStr,
-		IntegrityAlg: ue.IntegrityAlgStr,
-		AuthMethod:   ue.AuthData.AuthMethod,
-		K:            ue.AuthData.K,
-		Opc:          ue.AuthData.Opc,
-		Op:           ue.AuthData.Op,
-		Amf:          ue.AuthData.AMF,
-		Sqn:          ue.AuthData.SQN,
+		Supi:            ue.Supi,
+		FollowOnRequest: ue.FollowOnRequest,
+		ServingPlmn:     ue.ServingPlmnId,
+		CipheringAlg:    ue.CipheringAlgStr,
+		IntegrityAlg:    ue.IntegrityAlgStr,
+		AuthMethod:      ue.AuthData.AuthMethod,
+		K:               ue.AuthData.K,
+		Opc:             ue.AuthData.Opc,
+		Op:              ue.AuthData.Op,
+		Amf:             ue.AuthData.AMF,
+		Sqn:             ue.AuthData.SQN,
 	})
 	if err != nil {
 		fmt.Printf("Registration failed: %+v (supi: %s)\n", err, ue.Supi)

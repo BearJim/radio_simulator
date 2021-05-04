@@ -65,7 +65,8 @@ func GetRegistrationRequest(registrationType uint8, mobileIdentity nasType.Mobil
 	return
 }
 
-func GetRegistrationRequestWith5GMM(ue *simulator_context.UeContext, registrationType uint8, requestedNSSAI *nasType.RequestedNSSAI, uplinkDataStatus *nasType.UplinkDataStatus) ([]byte, error) {
+func GetRegistrationRequestWith5GMM(ue *simulator_context.UeContext, registrationType uint8,
+	requestedNSSAI *nasType.RequestedNSSAI, uplinkDataStatus *nasType.UplinkDataStatus) ([]byte, error) {
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeRegistrationRequest)
@@ -93,7 +94,11 @@ func GetRegistrationRequestWith5GMM(ue *simulator_context.UeContext, registratio
 	registrationRequest.RequestedNSSAI = requestedNSSAI
 	registrationRequest.UplinkDataStatus = uplinkDataStatus
 
-	registrationRequest.SetFOR(1)
+	if ue.FollowOnRequest {
+		registrationRequest.SetFOR(1)
+	} else {
+		registrationRequest.SetFOR(0)
+	}
 
 	m.GmmMessage.RegistrationRequest = registrationRequest
 
@@ -522,22 +527,27 @@ func GetConfigurationUpdateComplete() (nasPdu []byte) {
 	return
 }
 
-func GetServiceRequest(serviceType uint8) (nasPdu []byte) {
-
+func GetServiceRequest(ue *simulator_context.UeContext, serviceType uint8) ([]byte, error) {
 	m := nas.NewMessage()
 	m.GmmMessage = nas.NewGmmMessage()
 	m.GmmHeader.SetMessageType(nas.MsgTypeServiceRequest)
+
+	m.SecurityHeader = nas.SecurityHeader{
+		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
+		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+	}
 
 	serviceRequest := nasMessage.NewServiceRequest(0)
 	serviceRequest.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSMobilityManagementMessage)
 	serviceRequest.SetSecurityHeaderType(nas.SecurityHeaderTypePlainNas)
 	serviceRequest.SetMessageType(nas.MsgTypeServiceRequest)
 	serviceRequest.SetServiceTypeValue(serviceType)
-	serviceRequest.SetNasKeySetIdentifiler(0x01)
-	serviceRequest.SetAMFSetID(uint16(0xFE) << 2)
-	serviceRequest.SetAMFPointer(0)
-	serviceRequest.SetTMSI5G([4]uint8{0, 0, 0, 1})
+	serviceRequest.SetNasKeySetIdentifiler(ue.NgKsi)
+	serviceRequest.SetAMFSetID(ue.Guti.GetAMFSetID())
+	serviceRequest.SetAMFPointer(ue.Guti.GetAMFPointer())
+	serviceRequest.SetTMSI5G(ue.Guti.GetTMSI5G())
 	serviceRequest.TMSI5GS.SetLen(7)
+
 	switch serviceType {
 	case nasMessage.ServiceTypeMobileTerminatedServices:
 		serviceRequest.AllowedPDUSessionStatus = new(nasType.AllowedPDUSessionStatus)
@@ -553,15 +563,7 @@ func GetServiceRequest(serviceType uint8) (nasPdu []byte) {
 	}
 
 	m.GmmMessage.ServiceRequest = serviceRequest
-
-	data := new(bytes.Buffer)
-	err := m.GmmMessageEncode(data)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	nasPdu = data.Bytes()
-	return
+	return nas_security.NASEncode(ue, m, true, false)
 }
 
 func BuildAuthenticationResponse(authenticationResponseParam []uint8, eapMsg string) (nasPdu []byte) {

@@ -122,5 +122,9 @@ func (c *NGController) SendNAS(ranUeNgapID int64, nasPdu []byte) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	// TODO: error handling
-	c.nasConnection[ranUeNgapID] <- nasPdu
+	if nasCh, ok := c.nasConnection[ranUeNgapID]; ok {
+		nasCh <- nasPdu
+	} else {
+		logger.NgapLog.Errorw("NAS Connection not found", "rid", ranUeNgapID)
+	}
 }

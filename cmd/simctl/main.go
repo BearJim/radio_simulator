@@ -15,7 +15,7 @@ import (
 var (
 	simulatorDBUrl   string
 	numOfUEs         int32
-	allUEs           bool
+	followOnRequest  bool
 	triggerFailCount int32
 )
 
@@ -32,6 +32,8 @@ func init() {
 	rootCmd.AddCommand(getCommand())
 	rootCmd.AddCommand(describeCommand())
 	rootCmd.AddCommand(registerCommand())
+	rootCmd.AddCommand(registerAllCommand())
+	rootCmd.AddCommand(serviceRequestCommand())
 	rootCmd.AddCommand(deregisterCommand())
 	rootCmd.AddCommand(deregisterAllCommand())
 }
@@ -126,14 +128,41 @@ func registerCommand() *cobra.Command {
 		Args:    cobra.RangeArgs(1, 2),
 		Run: func(cmd *cobra.Command, args []string) {
 			s := initSimulator(simulatorDBUrl)
-			if allUEs {
-				s.AllUeRegister(args[0], int(triggerFailCount))
-			} else {
-				s.SingleUeRegister(args[0], args[1], int(triggerFailCount))
-			}
+			s.SingleUeRegister(args[0], args[1], int(triggerFailCount), followOnRequest)
 		},
 	}
-	cmd.PersistentFlags().BoolVarP(&allUEs, "all", "a", false, "register all UEs via RanName")
+	cmd.PersistentFlags().Int32VarP(&triggerFailCount, "fail", "f", 0, "trigger AMF fail ue count")
+	cmd.PersistentFlags().BoolVarP(&followOnRequest, "for", "o", false, "follow-on request pending")
+	return cmd
+}
+
+func registerAllCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "regall <RanName>",
+		Short:   "trigger initial registration procedure for all UEs via RanName",
+		Example: "regall ran1",
+		Args:    cobra.RangeArgs(1, 2),
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.AllUeRegister(args[0], int(triggerFailCount), followOnRequest)
+		},
+	}
+	cmd.PersistentFlags().Int32VarP(&triggerFailCount, "fail", "f", 0, "trigger AMF fail ue count")
+	cmd.PersistentFlags().BoolVarP(&followOnRequest, "for", "o", false, "follow-on request pending")
+	return cmd
+}
+
+func serviceRequestCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "srvreq <SUPI>",
+		Short:   "trigger service request procedure for UE with SUPI",
+		Example: "srvreq imsi-2089300000001",
+		Args:    cobra.RangeArgs(1, 2),
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.SingleUeServiceRequest(args[0], int(triggerFailCount))
+		},
+	}
 	cmd.PersistentFlags().Int32VarP(&triggerFailCount, "fail", "f", 0, "trigger AMF fail ue count")
 	return cmd
 }

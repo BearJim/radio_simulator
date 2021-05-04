@@ -35,27 +35,31 @@ const (
 )
 
 const (
-	MsgRegisterSuccess   = "Registration success"
-	MsgRegisterFail      = "Registration fail"
-	MsgDeregisterSuccess = "Deregistration success"
-	MsgDeregisterFail    = "Deregistration fail"
+	MsgRegisterSuccess       = "Registration success"
+	MsgRegisterFail          = "Registration fail"
+	MsgServiceRequestSuccess = "ServiceRequest success"
+	MsgServiceRequestFail    = "ServiceRequest fail"
+	MsgDeregisterSuccess     = "Deregistration success"
+	MsgDeregisterFail        = "Deregistration fail"
 )
 
 type UeContext struct {
 	AMFEndpoint *sctp.SCTPAddr
 
-	ServingRan    string `bson:"servingRan"` // serving RAN name
-	Supi          string `yaml:"supi" bson:"supi"`
-	Guti          *nasType.GUTI5G
-	Gpsis         []string                            `yaml:"gpsis" bson:"gpsis"`
-	Nssai         models.Nssai                        `yaml:"nssai" bson:"nssai"`
-	UeAmbr        UeAmbr                              `yaml:"ueAmbr" bson:"ueAmbr"`
-	SmfSelData    models.SmfSelectionSubscriptionData `yaml:"smfSelData" bson:"smfSelectionSubscriptionData"`
-	AuthData      AuthData                            `yaml:"auths" bson:"authData"`
-	SubscCats     []string                            `yaml:"subscCats,omitempty" bson:"subscCats"`
-	ServingPlmnId string                              `yaml:"servingPlmn" bson:"servingPlmn"`
-	RanUeNgapId   int64
-	AmfUeNgapId   int64
+	// registration related
+	FollowOnRequest bool
+	ServingRan      string `bson:"servingRan"` // serving RAN name
+	Supi            string `yaml:"supi" bson:"supi"`
+	Guti            *nasType.GUTI5G
+	Gpsis           []string                            `yaml:"gpsis" bson:"gpsis"`
+	Nssai           models.Nssai                        `yaml:"nssai" bson:"nssai"`
+	UeAmbr          UeAmbr                              `yaml:"ueAmbr" bson:"ueAmbr"`
+	SmfSelData      models.SmfSelectionSubscriptionData `yaml:"smfSelData" bson:"smfSelectionSubscriptionData"`
+	AuthData        AuthData                            `yaml:"auths" bson:"authData"`
+	SubscCats       []string                            `yaml:"subscCats,omitempty" bson:"subscCats"`
+	ServingPlmnId   string                              `yaml:"servingPlmn" bson:"servingPlmn"`
+	RanUeNgapId     int64
+	AmfUeNgapId     int64
 	// security
 	ULCount         security.Count `bson:"nasUplinkCount"`
 	DLCount         security.Count `bson:"nasDownlinkCount"`

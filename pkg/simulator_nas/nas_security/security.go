@@ -33,7 +33,7 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 		}
 
 		// TODO: Support for ue has nas connection in both accessType
-		logger.NASLog.Debugf("Decrypt NAS message (algorithm: %+v, ULCount: 0x%0x)", ue.CipheringAlg, ue.ULCount.ToUint32())
+		logger.NASLog.Debugf("Encrypt NAS message (algorithm: %+v, ULCount: 0x%0x)", ue.CipheringAlg, ue.ULCount.ToUint32())
 		logger.NASLog.Debugf("NAS ciphering key: %0x", ue.KnasEnc)
 		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.ToUint32(), security.Bearer3GPP,
 			security.DirectionUplink, payload); err != nil {
@@ -134,7 +134,7 @@ func NASDecode(ue *simulator_context.UeContext, securityHeaderType uint8, payloa
 		// TODO: Support for ue has nas connection in both accessType
 		if securityHeaderType != nas.SecurityHeaderTypeIntegrityProtectedWithNew5gNasSecurityContext &&
 			securityHeaderType != nas.SecurityHeaderTypeIntegrityProtected {
-			logger.NASLog.Debugf("Encrypt NAS message (algorithm: %+v, DLCount: 0x%0x)", ue.CipheringAlg, ue.DLCount.ToUint32())
+			logger.NASLog.Debugf("Decrypt NAS message (algorithm: %+v, DLCount: 0x%0x)", ue.CipheringAlg, ue.DLCount.ToUint32())
 			logger.NASLog.Debugf("NAS ciphering key: %0x", ue.KnasEnc)
 			if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.DLCount.ToUint32(), security.Bearer3GPP,
 				security.DirectionDownlink, payload); err != nil {

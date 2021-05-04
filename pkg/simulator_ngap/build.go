@@ -5,7 +5,6 @@ import (
 
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
-	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap"
@@ -205,7 +204,7 @@ func BuildNGResetAcknowledge() (pdu ngapType.NGAPPDU) {
 	return
 }
 
-func BuildInitialUEMessage(ue *simulator_context.UeContext, registrationType uint8, fiveGSTmsi string) ([]byte, error) {
+func BuildInitialUEMessage(ue *simulator_context.UeContext, fiveGSTmsi string, nasPdu []byte) ([]byte, error) {
 
 	pdu := ngapType.NGAPPDU{}
 	pdu.Present = ngapType.NGAPPDUPresentInitiatingMessage
@@ -239,16 +238,7 @@ func BuildInitialUEMessage(ue *simulator_context.UeContext, registrationType uin
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
 	ie.Value.Present = ngapType.InitialUEMessageIEsPresentNASPDU
 	ie.Value.NASPDU = new(ngapType.NASPDU)
-
-	nasPdu, err := nas_packet.GetRegistrationRequestWith5GMM(ue, registrationType, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: complete NAS-PDU
-	nASPDU := ie.Value.NASPDU
-	nASPDU.Value = nasPdu
-
+	ie.Value.NASPDU.Value = nasPdu
 	initialUEMessageIEs.List = append(initialUEMessageIEs.List, ie)
 
 	// User Location Information
@@ -257,9 +247,7 @@ func BuildInitialUEMessage(ue *simulator_context.UeContext, registrationType uin
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
 	ie.Value.Present = ngapType.InitialUEMessageIEsPresentUserLocationInformation
 	ie.Value.UserLocationInformation = new(ngapType.UserLocationInformation)
-
 	*ie.Value.UserLocationInformation = ue.Ran.GetUserLocation()
-
 	initialUEMessageIEs.List = append(initialUEMessageIEs.List, ie)
 
 	// RRC Establishment Cause

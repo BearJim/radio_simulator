@@ -131,7 +131,6 @@ func (c *NASController) handleSecurityModeCommand(ue *simulator_context.UeContex
 }
 
 func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext, request *nasMessage.RegistrationAccept) error {
-
 	nasLog.Infof("UE[%s] Handle Registration Accept", ue.Supi)
 
 	ue.Guti = request.GUTI5G
@@ -148,6 +147,19 @@ func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext
 	return nil
 }
 
+func (c *NASController) handleServiceAccept(ue *simulator_context.UeContext, message *nasMessage.ServiceAccept) error {
+	nasLog.Infow("Handle Service Accept", "supi", ue.Supi, "id", ue.AmfUeNgapId)
+	ue.CmState = simulator_context.CmStateConnected
+	ue.SendAPINotification(api.StatusCode_OK, simulator_context.MsgServiceRequestSuccess)
+	ue.RestartCount = 0
+	return nil
+}
+
+func (c *NASController) handleServiceReject(ue *simulator_context.UeContext, message *nasMessage.ServiceReject) error {
+	nasLog.Infow("Handle Service Reject", "supi", ue.Supi, "id", ue.AmfUeNgapId)
+	return nil
+}
+
 func (c *NASController) handleDeregistrationAccept(ue *simulator_context.UeContext, request *nasMessage.DeregistrationAcceptUEOriginatingDeregistration) error {
 
 	nasLog.Infof("UE[%s] Handle Deregistration Accept", ue.Supi)
@@ -158,7 +170,6 @@ func (c *NASController) handleDeregistrationAccept(ue *simulator_context.UeConte
 }
 
 func (c *NASController) handleDLNASTransport(ue *simulator_context.UeContext, request *nasMessage.DLNASTransport) error {
-
 	nasLog.Infof("UE[%s] Handle DL NAS Transport", ue.Supi)
 
 	switch request.GetPayloadContainerType() {
