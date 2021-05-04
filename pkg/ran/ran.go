@@ -272,7 +272,7 @@ func (r *RanApp) StartSCTPAssociation() {
 							for {
 								addr := sctp.SockaddrToSCTPAddr(endpoint)
 								if err := r.Connect(addr); err != nil {
-									logger.NgapLog.Warnf("try to reconnect to %s...", addr)
+									logger.NgapLog.Warnf("try to reconnect to %s...(%+v)", addr, err)
 									time.Sleep(1 * time.Second)
 								} else {
 									break
