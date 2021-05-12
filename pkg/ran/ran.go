@@ -272,24 +272,6 @@ func (r *RanApp) StartSCTPAssociation() {
 				case sctp.SCTP_COMM_LOST:
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_LOST, %+v", endpoint)
 					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
-					backup := os.Getenv("THESIS_BACKUP_ENABLE")
-					if backup == "enable" {
-						logger.AppLog.Warn("backup AMF selection")
-						failAddr := sctp.SockaddrToSCTPAddr(endpoint)
-						var backupAMFAddr *sctp.SCTPAddr
-						for amfAddr := range r.ctx.AmfPool {
-							if !reflect.DeepEqual(failAddr, amfAddr) {
-								backupAMFAddr = amfAddr
-								logger.AppLog.Warnf("backup AMF: %+v", backupAMFAddr.String())
-								break
-							}
-						}
-						for _, ue := range r.ctx.UePool {
-							if reflect.DeepEqual(failAddr, ue.AMFEndpoint) {
-								ue.AMFEndpoint = backupAMFAddr
-							}
-						}
-					}
 					if reconnect == "enable" {
 						go func() {
 							for {
@@ -312,6 +294,24 @@ func (r *RanApp) StartSCTPAssociation() {
 					}
 				case sctp.SCTP_SHUTDOWN_COMP:
 					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP")
+					backup := os.Getenv("THESIS_BACKUP_ENABLE")
+					if backup == "enable" {
+						logger.AppLog.Warn("backup AMF selection")
+						failAddr := sctp.SockaddrToSCTPAddr(endpoint)
+						var backupAMFAddr *sctp.SCTPAddr
+						for amfAddr := range r.ctx.AmfPool {
+							if !reflect.DeepEqual(failAddr, amfAddr) {
+								backupAMFAddr = amfAddr
+								logger.AppLog.Warnf("backup AMF: %+v", backupAMFAddr.String())
+								break
+							}
+						}
+						for _, ue := range r.ctx.UePool {
+							if reflect.DeepEqual(failAddr, ue.AMFEndpoint) {
+								ue.AMFEndpoint = backupAMFAddr
+							}
+						}
+					}
 				case sctp.SCTP_CANT_STR_ASSOC:
 					logger.NgapLog.Infof("SCTP state is SCTP_CANT_STR_ASSOC")
 				default:
