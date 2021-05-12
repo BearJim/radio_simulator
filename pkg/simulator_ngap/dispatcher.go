@@ -30,6 +30,7 @@ func New(ranApp RanApp, nasController NASController) *NGController {
 
 type RanApp interface {
 	Context() *simulator_context.RanContext
+	NewAMF(*sctp.SCTPAddr)
 	Connect(*sctp.SCTPAddr) error
 	SendToAMF(*sctp.SCTPAddr, []byte)
 }

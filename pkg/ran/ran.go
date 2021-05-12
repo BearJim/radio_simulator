@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"os"
+	"reflect"
 	"sync"
 	"syscall"
 	"time"
@@ -52,6 +53,10 @@ func (r *RanApp) NGController() *simulator_ngap.NGController {
 
 func (r *RanApp) Context() *simulator_context.RanContext {
 	return r.ctx
+}
+
+func (r *RanApp) NewAMF(addr *sctp.SCTPAddr) {
+	r.ctx.NewAMF(addr)
 }
 
 func (r *RanApp) Initialize(c *cli.Context) error {
@@ -267,6 +272,22 @@ func (r *RanApp) StartSCTPAssociation() {
 				case sctp.SCTP_COMM_LOST:
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_LOST, %+v", endpoint)
 					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
+					backup := os.Getenv("THESIS_BACKUP_ENABLE")
+					if backup == "enable" {
+						failAddr := sctp.SockaddrToSCTPAddr(endpoint)
+						var backupAMFAddr *sctp.SCTPAddr
+						for amfAddr := range r.ctx.AmfPool {
+							if !reflect.DeepEqual(failAddr, amfAddr) {
+								backupAMFAddr = amfAddr
+								break
+							}
+						}
+						for _, ue := range r.ctx.UePool {
+							if reflect.DeepEqual(failAddr, ue.AMFEndpoint) {
+								ue.AMFEndpoint = backupAMFAddr
+							}
+						}
+					}
 					if reconnect == "enable" {
 						go func() {
 							for {

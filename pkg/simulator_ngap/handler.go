@@ -41,6 +41,7 @@ func (c *NGController) handleNGSetupResponse(endpoint *sctp.SCTPAddr, message *n
 		}
 	}
 
+	c.ran.NewAMF(endpoint)
 	// amf.Name = amfName.Value
 	// for _, item := range servedGuamiList.List {
 	// 	plmnID := ngapConvert.PlmnIdToModels(item.GUAMI.PLMNIdentity)
@@ -682,6 +683,7 @@ func (c *NGController) handleAMFConfigurationUpdate(endpoint *sctp.SCTPAddr, mes
 				},
 			}
 			amfTNLAssociationSetupList.List = append(amfTNLAssociationSetupList.List, setupItem)
+			c.ran.NewAMF(sctpAddr)
 			c.SendRanConfigurationUpdate(sctpAddr)
 		}
 	}
