@@ -274,11 +274,13 @@ func (r *RanApp) StartSCTPAssociation() {
 					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
 					backup := os.Getenv("THESIS_BACKUP_ENABLE")
 					if backup == "enable" {
+						logger.AppLog.Warn("backup AMF selection")
 						failAddr := sctp.SockaddrToSCTPAddr(endpoint)
 						var backupAMFAddr *sctp.SCTPAddr
 						for amfAddr := range r.ctx.AmfPool {
 							if !reflect.DeepEqual(failAddr, amfAddr) {
 								backupAMFAddr = amfAddr
+								logger.AppLog.Warnf("backup AMF: %+v", backupAMFAddr.String())
 								break
 							}
 						}
