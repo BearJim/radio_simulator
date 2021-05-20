@@ -300,6 +300,57 @@ func (s *Simulator) SingleUeServiceRequest(supi string, triggerFailCount int) {
 	wg.Wait()
 }
 
+func (s *Simulator) AllUeServiceRequest(ranName string, supis []string, triggerFailCount int) {
+	apiClient, err := s.connectToRan(ranName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// trigger fail
+	if triggerFailCount != 0 {
+		triggerAmfFail(triggerFailCount)
+	}
+
+	// find all UE and register
+	cur, err := s.dbClient.Database().Collection("ue").Find(context.TODO(), bson.D{})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			fmt.Println("No UE found in DB")
+		} else {
+			fmt.Printf("Find UE error: %+v\n", err)
+		}
+		return
+	}
+
+	var ues []*simulator_context.UeContext
+	defer cur.Close(context.TODO())
+	for cur.Next(context.TODO()) {
+		ue := new(simulator_context.UeContext)
+		err := cur.Decode(ue)
+		if err != nil {
+			fmt.Printf("decode ue error: %+v\n", err)
+			continue
+		}
+		for _, supi := range supis {
+			if ue.Supi == supi {
+				ues = append(ues, ue)
+				break
+			}
+		}
+	}
+
+	wg := sync.WaitGroup{}
+	for i := range ues {
+		wg.Add(1)
+		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
+			s.ueServiceRequest(ue, apiClient)
+			wg.Done()
+		}(ues[i], &wg)
+	}
+	wg.Wait()
+}
+
 func (s *Simulator) ueServiceRequest(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()

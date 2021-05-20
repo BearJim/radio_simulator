@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/jay16213/radio_simulator/pkg/simulator"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
@@ -34,6 +36,7 @@ func init() {
 	rootCmd.AddCommand(registerCommand())
 	rootCmd.AddCommand(registerAllCommand())
 	rootCmd.AddCommand(serviceRequestCommand())
+	rootCmd.AddCommand(serviceRequestAllCommand())
 	rootCmd.AddCommand(deregisterCommand())
 	rootCmd.AddCommand(deregisterAllCommand())
 }
@@ -161,6 +164,28 @@ func serviceRequestCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			s := initSimulator(simulatorDBUrl)
 			s.SingleUeServiceRequest(args[0], int(triggerFailCount))
+		},
+	}
+	cmd.PersistentFlags().Int32VarP(&triggerFailCount, "fail", "f", 0, "trigger AMF fail ue count")
+	return cmd
+}
+
+func serviceRequestAllCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "srvreqall <ranName> <SUPI range>",
+		Short:   "trigger service request procedure for UEs with SUPI in range",
+		Example: "srvreqall ran1 1-30 (imsi-2089300000001 ~ imsi-2089300000030)",
+		Args:    cobra.RangeArgs(1, 2),
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			supiRange := strings.Split(args[1], "-")
+			begin, _ := strconv.Atoi(supiRange[0])
+			end, _ := strconv.Atoi(supiRange[1])
+			var supis []string
+			for i := begin; i <= end; i++ {
+				supis = append(supis, fmt.Sprintf("imsi-20893%08d", i))
+			}
+			s.AllUeServiceRequest(args[0], supis, int(triggerFailCount))
 		},
 	}
 	cmd.PersistentFlags().Int32VarP(&triggerFailCount, "fail", "f", 0, "trigger AMF fail ue count")
