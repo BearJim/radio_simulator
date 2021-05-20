@@ -276,6 +276,10 @@ func (r *RanApp) StartSCTPAssociation() {
 					logger.NgapLog.Infof("SCTP state is SCTP_RESTART")
 				case sctp.SCTP_COMM_LOST:
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_LOST, %+v", endpoint)
+				case sctp.SCTP_SHUTDOWN_COMP:
+					addr := sctp.SockaddrToSCTPAddr(endpoint)
+					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP (%s)", addr.String())
+
 					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
 					if reconnect == "enable" {
 						r.failRecovering = true
@@ -298,28 +302,27 @@ func (r *RanApp) StartSCTPAssociation() {
 							// 	r.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 							// }
 						}()
-					}
-				case sctp.SCTP_SHUTDOWN_COMP:
-					addr := sctp.SockaddrToSCTPAddr(endpoint)
-					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP (%s)", addr.String())
-					backup := os.Getenv("THESIS_BACKUP_ENABLE")
-					if backup == "enable" {
-						logger.AppLog.Warn("backup AMF selection")
-						failAddr := sctp.SockaddrToSCTPAddr(endpoint)
-						var backupAMFAddr *sctp.SCTPAddr
-						for amfAddr := range r.ctx.AmfPool {
-							if !reflect.DeepEqual(failAddr, amfAddr) {
-								backupAMFAddr = amfAddr
-								logger.AppLog.Warnf("backup AMF: %+v", backupAMFAddr.String())
-								break
+					} else {
+						backup := os.Getenv("THESIS_BACKUP_ENABLE")
+						if backup == "enable" {
+							logger.AppLog.Warn("backup AMF selection")
+							failAddr := sctp.SockaddrToSCTPAddr(endpoint)
+							var backupAMFAddr *sctp.SCTPAddr
+							for amfAddr := range r.ctx.AmfPool {
+								if !reflect.DeepEqual(failAddr, amfAddr) {
+									backupAMFAddr = amfAddr
+									logger.AppLog.Warnf("backup AMF: %+v", backupAMFAddr.String())
+									break
+								}
 							}
-						}
-						for _, ue := range r.ctx.UePool {
-							if reflect.DeepEqual(failAddr, ue.AMFEndpoint) {
-								ue.AMFEndpoint = backupAMFAddr
+							for _, ue := range r.ctx.UePool {
+								if reflect.DeepEqual(failAddr, ue.AMFEndpoint) {
+									ue.AMFEndpoint = backupAMFAddr
+								}
 							}
 						}
 					}
+
 				case sctp.SCTP_CANT_STR_ASSOC:
 					logger.NgapLog.Infof("SCTP state is SCTP_CANT_STR_ASSOC")
 				default:
