@@ -152,7 +152,7 @@ func (a *apiService) ServiceRequestProc(ctx context.Context, req *api.ServiceReq
 		logger.ApiLog.Error(err.Error())
 		return nil, fmt.Errorf("build error: %+v", err)
 	}
-	a.ranApp.ngController.SendInitailUeMessage(ue.AMFEndpoint, ue, nasPdu)
+	a.ranApp.ngController.SendInitailUeMessage(ue.AMFEndpoint, ue, ue.GutiStr[7:], nasPdu)
 
 	// wait result
 	result := <-ue.ApiNotifyChan

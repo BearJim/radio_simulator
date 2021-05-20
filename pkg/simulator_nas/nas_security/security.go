@@ -35,9 +35,11 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 		// TODO: Support for ue has nas connection in both accessType
 		logger.NASLog.Debugf("Encrypt NAS message (algorithm: %+v, ULCount: 0x%0x)", ue.CipheringAlg, ue.ULCount.ToUint32())
 		logger.NASLog.Debugf("NAS ciphering key: %0x", ue.KnasEnc)
-		if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.ToUint32(), security.Bearer3GPP,
-			security.DirectionUplink, payload); err != nil {
-			return nil, err
+		if msg.SecurityHeaderType != nas.SecurityHeaderTypeIntegrityProtected {
+			if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.ToUint32(), security.Bearer3GPP,
+				security.DirectionUplink, payload); err != nil {
+				return nil, err
+			}
 		}
 		// add sequece number
 		payload = append([]byte{sequenceNumber}, payload[:]...)

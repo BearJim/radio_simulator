@@ -12,6 +12,7 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 
 	"github.com/free5gc/milenage"
+	"github.com/free5gc/nas/nasConvert"
 	"github.com/free5gc/nas/nasMessage"
 )
 
@@ -134,7 +135,7 @@ func (c *NASController) handleRegistrationAccept(ue *simulator_context.UeContext
 	nasLog.Infof("UE[%s] Handle Registration Accept", ue.Supi)
 
 	ue.Guti = request.GUTI5G
-
+	_, ue.GutiStr = nasConvert.GutiToString(ue.Guti.Octet[:])
 	nasPdu, err := nas_packet.GetRegistrationComplete(ue, nil)
 	if err != nil {
 		return err

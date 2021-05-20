@@ -51,6 +51,7 @@ type UeContext struct {
 	ServingRan      string `bson:"servingRan"` // serving RAN name
 	Supi            string `yaml:"supi" bson:"supi"`
 	Guti            *nasType.GUTI5G
+	GutiStr         string
 	Gpsis           []string                            `yaml:"gpsis" bson:"gpsis"`
 	Nssai           models.Nssai                        `yaml:"nssai" bson:"nssai"`
 	UeAmbr          UeAmbr                              `yaml:"ueAmbr" bson:"ueAmbr"`

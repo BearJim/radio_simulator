@@ -41,9 +41,10 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func (c *NGController) SendInitailUeMessage(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext, nasPdu []byte) {
+func (c *NGController) SendInitailUeMessage(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext,
+	fiveGTmsi string, nasPdu []byte) {
 	logger.NgapLog.Infow("Send Initail UE Message", "rid", ue.RanUeNgapId)
-	pkt, err := BuildInitialUEMessage(ue, "", nasPdu)
+	pkt, err := BuildInitialUEMessage(ue, fiveGTmsi, nasPdu)
 	if err != nil {
 		logger.NgapLog.Errorf("Build InitialUEMessage failed : %s", err.Error())
 		return

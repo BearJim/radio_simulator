@@ -534,7 +534,7 @@ func GetServiceRequest(ue *simulator_context.UeContext, serviceType uint8) ([]by
 
 	m.SecurityHeader = nas.SecurityHeader{
 		ProtocolDiscriminator: nasMessage.Epd5GSMobilityManagementMessage,
-		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
+		SecurityHeaderType:    nas.SecurityHeaderTypeIntegrityProtected,
 	}
 
 	serviceRequest := nasMessage.NewServiceRequest(0)
@@ -543,10 +543,10 @@ func GetServiceRequest(ue *simulator_context.UeContext, serviceType uint8) ([]by
 	serviceRequest.SetMessageType(nas.MsgTypeServiceRequest)
 	serviceRequest.SetServiceTypeValue(serviceType)
 	serviceRequest.SetNasKeySetIdentifiler(ue.NgKsi)
-	serviceRequest.SetAMFSetID(ue.Guti.GetAMFSetID())
-	serviceRequest.SetAMFPointer(ue.Guti.GetAMFPointer())
-	serviceRequest.SetTMSI5G(ue.Guti.GetTMSI5G())
 	serviceRequest.TMSI5GS.SetLen(7)
+	serviceRequest.TMSI5GS.SetAMFSetID(ue.Guti.GetAMFSetID())
+	serviceRequest.TMSI5GS.SetAMFPointer(ue.Guti.GetAMFPointer())
+	serviceRequest.TMSI5GS.SetTMSI5G(ue.Guti.GetTMSI5G())
 
 	switch serviceType {
 	case nasMessage.ServiceTypeMobileTerminatedServices:
