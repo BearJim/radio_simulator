@@ -160,6 +160,7 @@ func (c *NASController) handleServiceReject(ue *simulator_context.UeContext, mes
 	nasLog.Infow("Handle Service Reject", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 	if message.Cause5GMM.GetCauseValue() == nasMessage.Cause5GMMUEIdentityCannotBeDerivedByTheNetwork {
 		nasLog.Infow("Perform new initial registration procedure", "supi", ue.Supi, "id", ue.AmfUeNgapId)
+		ue.FollowOnRequest = true
 		c.ngMessager.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 	}
 	return nil
