@@ -40,6 +40,7 @@ type RanApp struct {
 	sctpConn           *sctp.SCTPConn
 
 	failRecovering bool
+	failCancel     context.CancelFunc
 	// api server provided by grpc
 	grpcServer *grpc.Server
 }
@@ -251,6 +252,7 @@ func (r *RanApp) StartSCTPAssociation() {
 					if r.failRecovering {
 						r.ngController.SendNGSetupRequest(r.primaryAMFEndpoint)
 						r.failRecovering = false
+						r.failCancel()
 					}
 					// c, err := r.sctpConn.PeelOff(int(event.AssocID()))
 					// if err != nil {
@@ -283,9 +285,16 @@ func (r *RanApp) StartSCTPAssociation() {
 					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
 					if reconnect == "enable" {
 						r.failRecovering = true
-						go func() {
+						ctx, cancel := context.WithCancel(context.TODO())
+						r.failCancel = cancel
+						go func(ctx context.Context) {
+							addr := sctp.SockaddrToSCTPAddr(endpoint)
 							for {
-								addr := sctp.SockaddrToSCTPAddr(endpoint)
+								select {
+								case <-ctx.Done():
+									return
+								default:
+								}
 								logger.NgapLog.Warnf("try to reconnect to %s...", addr)
 								if err := r.Connect(addr); err != nil {
 									logger.NgapLog.Warnf("reconnect to %s: %+v", addr, err)
@@ -301,7 +310,7 @@ func (r *RanApp) StartSCTPAssociation() {
 							// 	ue.RestartTimeStamp = time.Now()
 							// 	r.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
 							// }
-						}()
+						}(ctx)
 					} else {
 						backup := os.Getenv("THESIS_BACKUP_ENABLE")
 						if backup == "enable" {
