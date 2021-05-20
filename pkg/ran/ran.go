@@ -285,11 +285,11 @@ func (r *RanApp) StartSCTPAssociation() {
 							}
 
 							// WORKAROUND: always restart registration procedure
-							for _, ue := range r.ctx.UePool {
-								ue.RestartCount++
-								ue.RestartTimeStamp = time.Now()
-								r.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
-							}
+							// for _, ue := range r.ctx.UePool {
+							// 	ue.RestartCount++
+							// 	ue.RestartTimeStamp = time.Now()
+							// 	r.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
+							// }
 						}()
 					}
 				case sctp.SCTP_SHUTDOWN_COMP:
