@@ -39,6 +39,7 @@ type RanApp struct {
 	ctx                *simulator_context.RanContext
 	sctpConn           *sctp.SCTPConn
 
+	failRecovering bool
 	// api server provided by grpc
 	grpcServer *grpc.Server
 }
@@ -247,6 +248,10 @@ func (r *RanApp) StartSCTPAssociation() {
 				switch event.State() {
 				case sctp.SCTP_COMM_UP:
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_UP: %d", event.AssocID())
+					if r.failRecovering {
+						r.ngController.SendNGSetupRequest(r.primaryAMFEndpoint)
+						r.failRecovering = false
+					}
 					// c, err := r.sctpConn.PeelOff(int(event.AssocID()))
 					// if err != nil {
 					// 	logger.NgapLog.Errorf("PeelOff: %+v", err)
@@ -273,11 +278,13 @@ func (r *RanApp) StartSCTPAssociation() {
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_LOST, %+v", endpoint)
 					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
 					if reconnect == "enable" {
+						r.failRecovering = true
 						go func() {
 							for {
 								addr := sctp.SockaddrToSCTPAddr(endpoint)
+								logger.NgapLog.Warnf("try to reconnect to %s...", addr)
 								if err := r.Connect(addr); err != nil {
-									logger.NgapLog.Warnf("try to reconnect to %s...(%+v)", addr, err)
+									logger.NgapLog.Warnf("reconnect to %s: %+v", addr, err)
 									time.Sleep(1 * time.Second)
 								} else {
 									break
@@ -293,7 +300,8 @@ func (r *RanApp) StartSCTPAssociation() {
 						}()
 					}
 				case sctp.SCTP_SHUTDOWN_COMP:
-					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP")
+					addr := sctp.SockaddrToSCTPAddr(endpoint)
+					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP (%s)", addr.String())
 					backup := os.Getenv("THESIS_BACKUP_ENABLE")
 					if backup == "enable" {
 						logger.AppLog.Warn("backup AMF selection")
