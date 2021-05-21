@@ -369,7 +369,7 @@ func (s *Simulator) ueServiceRequest(ue *simulator_context.UeContext, apiClient 
 	if result.StatusCode == api.StatusCode_ERROR {
 		fmt.Printf("service failed %s, (supi: %s)\n", result.GetBody(), ue.Supi)
 	} else {
-		fmt.Printf("%s, %+v\n", ue.Supi, finishTime)
+		fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
 		ue.CmState = simulator_context.CmStateConnected
 	}
 	s.updateUE(ue)
