@@ -571,6 +571,10 @@ func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
 		amData := models.AccessAndMobilitySubscriptionData{
 			Gpsis: ue.Gpsis,
 			Nssai: &ue.Nssai,
+			SubscribedUeAmbr: &models.AmbrRm{
+				Uplink:   ue.UeAmbr.UpLink,
+				Downlink: ue.UeAmbr.DownLink,
+			},
 		}
 		amPolicy := models.AmPolicyData{
 			SubscCats: ue.SubscCats,

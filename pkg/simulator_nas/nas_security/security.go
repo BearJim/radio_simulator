@@ -32,10 +32,10 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 			return nil, err
 		}
 
-		// TODO: Support for ue has nas connection in both accessType
-		logger.NASLog.Debugf("Encrypt NAS message (algorithm: %+v, ULCount: 0x%0x)", ue.CipheringAlg, ue.ULCount.ToUint32())
-		logger.NASLog.Debugf("NAS ciphering key: %0x", ue.KnasEnc)
 		if msg.SecurityHeaderType != nas.SecurityHeaderTypeIntegrityProtected {
+			// TODO: Support for ue has nas connection in both accessType
+			logger.NASLog.Debugf("Encrypt NAS message (algorithm: %+v, ULCount: 0x%0x)", ue.CipheringAlg, ue.ULCount.ToUint32())
+			logger.NASLog.Debugf("NAS ciphering key: %0x", ue.KnasEnc)
 			if err = security.NASEncrypt(ue.CipheringAlg, ue.KnasEnc, ue.ULCount.ToUint32(), security.Bearer3GPP,
 				security.DirectionUplink, payload); err != nil {
 				return nil, err
@@ -44,6 +44,8 @@ func NASEncode(ue *simulator_context.UeContext, msg *nas.Message, securityContex
 		// add sequece number
 		payload = append([]byte{sequenceNumber}, payload[:]...)
 
+		logger.NASLog.Debugf("Calculate NAS MAC (algorithm: %+v, DLCount: 0x%0x)", ue.IntegrityAlg, ue.DLCount.ToUint32())
+		logger.NASLog.Debugf("NAS integrity key: %0x", ue.KnasInt)
 		mac32, err := security.NASMacCalculate(ue.IntegrityAlg, ue.KnasInt, ue.ULCount.ToUint32(), security.Bearer3GPP, security.DirectionUplink, payload)
 		if err != nil {
 			return nil, err
