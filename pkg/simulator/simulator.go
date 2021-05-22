@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -233,15 +232,30 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		triggerAmfFail(triggerFailCount)
 	}
 
-	wg := sync.WaitGroup{}
-	for i := range ues {
-		wg.Add(1)
-		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-			s.ueRegister(ue, apiClient)
-			wg.Done()
-		}(ues[i], &wg)
+	if len(ues) > 50 {
+		wg := sync.WaitGroup{}
+		for i := range ues {
+			wg.Add(1)
+			if i != 0 && i%10 == 0 {
+				time.Sleep(50 * time.Millisecond)
+			}
+			go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
+				s.ueRegister(ue, apiClient)
+				wg.Done()
+			}(ues[i], &wg)
+		}
+		wg.Wait()
+	} else {
+		wg := sync.WaitGroup{}
+		for i := range ues {
+			wg.Add(1)
+			go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
+				s.ueRegister(ue, apiClient)
+				wg.Done()
+			}(ues[i], &wg)
+		}
+		wg.Wait()
 	}
-	wg.Wait()
 }
 
 func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCount int, followOnRequest bool) {
@@ -507,38 +521,6 @@ func (s *Simulator) SingleUeDeregister(supi string) {
 	}
 
 	s.ueDeregister(ue, apiClient)
-}
-
-func (s *Simulator) SubscribeUELog(client api.APIServiceClient, ue *simulator_context.UeContext, closeMsg []string) {
-	stream, err := client.SubscribeLog(context.TODO(), &api.LogStreamingRequest{Supi: ue.Supi})
-	if err != nil {
-		fmt.Printf("subscribe ue log error: %+v\n", err)
-	}
-
-	go func() {
-		for {
-			resp, err := stream.Recv()
-			if err != nil {
-				if err == io.EOF {
-					fmt.Println("close ue log streaming")
-					return
-				} else {
-					fmt.Printf("recv ue log error: %+v\n", err)
-					return
-				}
-			}
-			fmt.Println(resp.LogMessage)
-			// for _, msg := range closeMsg {
-			// 	if resp.LogMessage == msg {
-			// 		if err := stream.CloseSend(); err != nil {
-			// 			fmt.Printf("CloseSend error: %+v\n", err)
-			// 		}
-			// 		fmt.Println("close log streaming")
-			// 		return
-			// 	}
-			// }
-		}
-	}()
 }
 
 func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
