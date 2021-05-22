@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"text/tabwriter"
 	"time"
@@ -232,6 +233,8 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		triggerAmfFail(triggerFailCount)
 	}
 
+	successCnt := uint32(0)
+	restartCnt := uint32(0)
 	if len(ues) > 50 {
 		wg := sync.WaitGroup{}
 		for i := range ues {
@@ -240,7 +243,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 				time.Sleep(50 * time.Millisecond)
 			}
 			go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-				s.ueRegister(ue, apiClient)
+				s.ueRegister(ue, apiClient, &successCnt, &restartCnt)
 				wg.Done()
 			}(ues[i], &wg)
 		}
@@ -250,12 +253,13 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		for i := range ues {
 			wg.Add(1)
 			go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-				s.ueRegister(ue, apiClient)
+				s.ueRegister(ue, apiClient, &successCnt, &restartCnt)
 				wg.Done()
 			}(ues[i], &wg)
 		}
 		wg.Wait()
 	}
+	fmt.Printf("%d, %d\n", successCnt, restartCnt)
 }
 
 func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCount int, followOnRequest bool) {
@@ -273,10 +277,12 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCou
 
 	ue.ServingRan = ranName
 	ue.FollowOnRequest = followOnRequest
+	successCnt := uint32(0)
+	restartCnt := uint32(0)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
-		s.ueRegister(ue, apiClient)
+		s.ueRegister(ue, apiClient, &successCnt, &restartCnt)
 		wg.Done()
 	}(&wg)
 
@@ -397,7 +403,7 @@ func triggerAmfFail(count int) {
 	}
 }
 
-func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
+func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient, successCnt *uint32, restartCnt *uint32) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
@@ -431,9 +437,11 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 			restartFinishTime := now.Sub(restartTime)
 			fmt.Printf("%s, %d, %d\n", ue.Supi, finishTime.Milliseconds(),
 				restartFinishTime.Milliseconds())
+			atomic.AddUint32(restartCnt, 1)
 		} else {
 			fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
 		}
+		atomic.AddUint32(successCnt, 1)
 		resultUe := regResult.GetUeContext()
 		ue.RmState = resultUe.GetRmState()
 		ue.CmState = resultUe.GetCmState()
