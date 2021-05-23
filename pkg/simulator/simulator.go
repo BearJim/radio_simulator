@@ -255,29 +255,36 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		}
 		timeSlot = time.Duration(v) * time.Millisecond
 	}
-	if len(ues) > 50 {
-		wg := sync.WaitGroup{}
-		for i := range ues {
-			wg.Add(1)
-			if i != 0 && i%uePerSecond == 0 {
-				time.Sleep(timeSlot)
+
+	wg := sync.WaitGroup{}
+	startTime := time.Now()
+	// fmt.Printf("%+v\n", startTime)
+	for i := range ues {
+		wg.Add(1)
+		if i != 0 && i%uePerSecond == 0 {
+			time.Sleep(timeSlot)
+		}
+		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
+			success, now, completeTime, redoTime := s.ueRegister(ue, apiClient)
+			if success {
+				if redoTime != nil {
+					fmt.Printf("%s, %+v, %d, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds(),
+						redoTime.Milliseconds())
+					atomic.AddUint32(&restartCnt, 1)
+				} else {
+					fmt.Printf("%s, %+v, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds())
+				}
+				atomic.AddUint32(&successCnt, 1)
 			}
-			go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-				s.ueRegister(ue, apiClient, &successCnt, &restartCnt)
-				wg.Done()
-			}(ues[i], &wg)
-		}
-		wg.Wait()
-	} else {
-		wg := sync.WaitGroup{}
-		for i := range ues {
-			wg.Add(1)
-			go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-				s.ueRegister(ue, apiClient, &successCnt, &restartCnt)
-				wg.Done()
-			}(ues[i], &wg)
-		}
-		wg.Wait()
+			wg.Done()
+		}(ues[i], &wg)
+	}
+	wg.Wait()
+
+	for _, ue := range ues {
+		// update SQN when triggering registration
+		ue.AuthDataSQNAddOne()
+		s.updateUE(ue)
 	}
 	fmt.Printf("%d, %d\n", successCnt, restartCnt)
 }
@@ -295,21 +302,34 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCou
 		return
 	}
 
+	// trigger fail
+	if triggerFailCount != 0 {
+		triggerAmfFail(triggerFailCount)
+	}
+
 	ue.ServingRan = ranName
 	ue.FollowOnRequest = followOnRequest
 	successCnt := uint32(0)
 	restartCnt := uint32(0)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	go func(wg *sync.WaitGroup) {
-		s.ueRegister(ue, apiClient, &successCnt, &restartCnt)
-		wg.Done()
-	}(&wg)
 
-	// trigger fail
-	if triggerFailCount != 0 {
-		triggerAmfFail(triggerFailCount)
-	}
+	startTime := time.Now()
+	fmt.Printf("%+v\n", startTime)
+	go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
+		success, now, completeTime, redoTime := s.ueRegister(ue, apiClient)
+		if success {
+			if redoTime != nil {
+				fmt.Printf("%s, %+v, %d, %d\n", ue.Supi, now, completeTime.Milliseconds(),
+					redoTime.Milliseconds())
+				atomic.AddUint32(&restartCnt, 1)
+			} else {
+				fmt.Printf("%s, %+v, %d\n", ue.Supi, now, completeTime.Milliseconds())
+			}
+			atomic.AddUint32(&successCnt, 1)
+		}
+		wg.Done()
+	}(ue, &wg)
 	wg.Wait()
 }
 
@@ -423,7 +443,12 @@ func triggerAmfFail(count int) {
 	}
 }
 
-func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient, successCnt *uint32, restartCnt *uint32) {
+func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) (
+	success bool,
+	nowTime time.Time,
+	completeTime time.Duration,
+	redoTime *time.Duration,
+) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
@@ -443,7 +468,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	})
 	if err != nil {
 		fmt.Printf("Registration failed: %+v (supi: %s)\n", err, ue.Supi)
-		return
+		return false, time.Now(), 0, nil
 	}
 
 	now := time.Now()
@@ -451,17 +476,8 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 
 	if regResult.GetStatusCode() == api.StatusCode_ERROR {
 		fmt.Printf("Registration failed: %s (supi: %s)\n", regResult.GetBody(), ue.Supi)
+		return false, now, 0, nil
 	} else {
-		if regResult.RestartCount != 0 {
-			restartTime := time.Unix(0, regResult.RestartTimestamp)
-			restartFinishTime := now.Sub(restartTime)
-			fmt.Printf("%s, %d, %d\n", ue.Supi, finishTime.Milliseconds(),
-				restartFinishTime.Milliseconds())
-			atomic.AddUint32(restartCnt, 1)
-		} else {
-			fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
-		}
-		atomic.AddUint32(successCnt, 1)
 		resultUe := regResult.GetUeContext()
 		ue.RmState = resultUe.GetRmState()
 		ue.CmState = resultUe.GetCmState()
@@ -469,11 +485,17 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 		ue.RanUeNgapId = resultUe.GetRanUeNgapId()
 		ue.DLCount = security.Count(resultUe.GetNasDownlinkCount())
 		ue.ULCount = security.Count(resultUe.GetNasUplinkCount())
+		if regResult.RestartCount != 0 {
+			restartTime := time.Unix(0, regResult.RestartTimestamp)
+			restartFinishTime := now.Sub(restartTime)
+			fmt.Printf("%s, %d, %d\n", ue.Supi, finishTime.Milliseconds(),
+				restartFinishTime.Milliseconds())
+			return true, now, finishTime, &restartFinishTime
+		} else {
+			// fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
+			return true, now, finishTime, nil
+		}
 	}
-
-	// update SQN when triggering registration
-	ue.AuthDataSQNAddOne()
-	s.updateUE(ue)
 }
 
 func (s *Simulator) ueDeregister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
