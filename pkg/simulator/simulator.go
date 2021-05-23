@@ -449,51 +449,53 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	completeTime time.Duration,
 	redoTime *time.Duration,
 ) {
-	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
-	defer cancel()
+	for {
+		ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second) // T3510
+		defer cancel()
+		startTime := time.Now()
+		regResult, err := apiClient.Register(ctx, &api.RegisterRequest{
+			Supi:            ue.Supi,
+			FollowOnRequest: ue.FollowOnRequest,
+			ServingPlmn:     ue.ServingPlmnId,
+			CipheringAlg:    ue.CipheringAlgStr,
+			IntegrityAlg:    ue.IntegrityAlgStr,
+			AuthMethod:      ue.AuthData.AuthMethod,
+			K:               ue.AuthData.K,
+			Opc:             ue.AuthData.Opc,
+			Op:              ue.AuthData.Op,
+			Amf:             ue.AuthData.AMF,
+			Sqn:             ue.AuthData.SQN,
+		})
+		if err != nil {
+			fmt.Printf("Registration failed: %+v (supi: %s)\n", err, ue.Supi)
+			// return false, time.Now(), 0, nil
+			continue
+		}
 
-	startTime := time.Now()
-	regResult, err := apiClient.Register(ctx, &api.RegisterRequest{
-		Supi:            ue.Supi,
-		FollowOnRequest: ue.FollowOnRequest,
-		ServingPlmn:     ue.ServingPlmnId,
-		CipheringAlg:    ue.CipheringAlgStr,
-		IntegrityAlg:    ue.IntegrityAlgStr,
-		AuthMethod:      ue.AuthData.AuthMethod,
-		K:               ue.AuthData.K,
-		Opc:             ue.AuthData.Opc,
-		Op:              ue.AuthData.Op,
-		Amf:             ue.AuthData.AMF,
-		Sqn:             ue.AuthData.SQN,
-	})
-	if err != nil {
-		fmt.Printf("Registration failed: %+v (supi: %s)\n", err, ue.Supi)
-		return false, time.Now(), 0, nil
-	}
+		now := time.Now()
+		finishTime := now.Sub(startTime)
 
-	now := time.Now()
-	finishTime := now.Sub(startTime)
-
-	if regResult.GetStatusCode() == api.StatusCode_ERROR {
-		fmt.Printf("Registration failed: %s (supi: %s)\n", regResult.GetBody(), ue.Supi)
-		return false, now, 0, nil
-	} else {
-		resultUe := regResult.GetUeContext()
-		ue.RmState = resultUe.GetRmState()
-		ue.CmState = resultUe.GetCmState()
-		ue.AmfUeNgapId = resultUe.GetAmfUeNgapId()
-		ue.RanUeNgapId = resultUe.GetRanUeNgapId()
-		ue.DLCount = security.Count(resultUe.GetNasDownlinkCount())
-		ue.ULCount = security.Count(resultUe.GetNasUplinkCount())
-		if regResult.RestartCount != 0 {
-			restartTime := time.Unix(0, regResult.RestartTimestamp)
-			restartFinishTime := now.Sub(restartTime)
-			fmt.Printf("%s, %d, %d\n", ue.Supi, finishTime.Milliseconds(),
-				restartFinishTime.Milliseconds())
-			return true, now, finishTime, &restartFinishTime
+		if regResult.GetStatusCode() == api.StatusCode_ERROR {
+			fmt.Printf("Registration failed: %s (supi: %s)\n", regResult.GetBody(), ue.Supi)
+			return false, now, 0, nil
 		} else {
-			// fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
-			return true, now, finishTime, nil
+			resultUe := regResult.GetUeContext()
+			ue.RmState = resultUe.GetRmState()
+			ue.CmState = resultUe.GetCmState()
+			ue.AmfUeNgapId = resultUe.GetAmfUeNgapId()
+			ue.RanUeNgapId = resultUe.GetRanUeNgapId()
+			ue.DLCount = security.Count(resultUe.GetNasDownlinkCount())
+			ue.ULCount = security.Count(resultUe.GetNasUplinkCount())
+			if regResult.RestartCount != 0 {
+				restartTime := time.Unix(0, regResult.RestartTimestamp)
+				restartFinishTime := now.Sub(restartTime)
+				fmt.Printf("%s, %d, %d\n", ue.Supi, finishTime.Milliseconds(),
+					restartFinishTime.Milliseconds())
+				return true, now, finishTime, &restartFinishTime
+			} else {
+				// fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
+				return true, now, finishTime, nil
+			}
 		}
 	}
 }
