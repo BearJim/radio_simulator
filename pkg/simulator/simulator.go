@@ -280,13 +280,13 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		}(ues[i], &wg)
 	}
 	wg.Wait()
+	fmt.Printf("%d, %d\n", successCnt, restartCnt)
 
 	for _, ue := range ues {
 		// update SQN when triggering registration
 		ue.AuthDataSQNAddOne()
 		s.updateUE(ue)
 	}
-	fmt.Printf("%d, %d\n", successCnt, restartCnt)
 }
 
 func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCount int, followOnRequest bool) {
@@ -372,6 +372,27 @@ func (s *Simulator) AllUeServiceRequest(ranName string, supis []string, triggerF
 		triggerAmfFail(triggerFailCount)
 	}
 
+	uePerSecond := 50
+	if val, ok := os.LookupEnv("THESIS_UE_PER_SECOND_SRV"); ok {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			fmt.Printf("Parse THESIS_UE_PER_SECOND_SRV error: %+v", err)
+			return
+		}
+		uePerSecond = v
+	}
+	timeSlot := 100 * time.Millisecond
+	if val, ok := os.LookupEnv("THESIS_REQUEST_TIME_SLOT_SRV"); ok {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			fmt.Printf("Parse THESIS_REQUEST_TIME_SLOT_SRV error: %+v", err)
+			return
+		}
+		timeSlot = time.Duration(v) * time.Millisecond
+	}
+	successCnt := uint32(0)
+	restartCnt := uint32(0)
+
 	// find all UE and register
 	cur, err := s.dbClient.Database().Collection("ue").Find(context.TODO(), bson.D{})
 	if err != nil {
@@ -401,17 +422,37 @@ func (s *Simulator) AllUeServiceRequest(ranName string, supis []string, triggerF
 	}
 
 	wg := sync.WaitGroup{}
+	startTime := time.Now()
 	for i := range ues {
 		wg.Add(1)
+		if i != 0 && i%uePerSecond == 0 {
+			time.Sleep(timeSlot)
+		}
 		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-			s.ueServiceRequest(ue, apiClient)
+			success, now, completeTime, redoTime := s.ueServiceRequest(ue, apiClient)
+			if success {
+				if redoTime != nil {
+					fmt.Printf("%s, %+v, %d, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds(),
+						redoTime.Milliseconds())
+					atomic.AddUint32(&restartCnt, 1)
+				} else {
+					fmt.Printf("%s, %+v, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds())
+				}
+				atomic.AddUint32(&successCnt, 1)
+			}
 			wg.Done()
 		}(ues[i], &wg)
 	}
 	wg.Wait()
+	fmt.Printf("%d, %d\n", successCnt, restartCnt)
+
+	for _, ue := range ues {
+		s.updateUE(ue)
+	}
 }
 
-func (s *Simulator) ueServiceRequest(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
+func (s *Simulator) ueServiceRequest(ue *simulator_context.UeContext, apiClient api.APIServiceClient) (
+	success bool, nowTime time.Time, completeTime time.Duration, redoTime *time.Duration) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
@@ -424,15 +465,17 @@ func (s *Simulator) ueServiceRequest(ue *simulator_context.UeContext, apiClient 
 		fmt.Printf("ServiceRequest failed: %+v (supi: %s)\n", err, ue.Supi)
 		return
 	}
-	finishTime := time.Since(startTime)
+
+	now := time.Now()
+	finishTime := now.Sub(startTime)
 
 	if result.StatusCode == api.StatusCode_ERROR {
 		fmt.Printf("service failed %s, (supi: %s)\n", result.GetBody(), ue.Supi)
+		return false, now, 0, nil
 	} else {
-		fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
 		ue.CmState = simulator_context.CmStateConnected
+		return true, now, finishTime, nil
 	}
-	s.updateUE(ue)
 }
 
 func triggerAmfFail(count int) {
