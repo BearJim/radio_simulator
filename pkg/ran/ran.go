@@ -278,6 +278,7 @@ func (r *RanApp) StartSCTPAssociation() {
 					logger.NgapLog.Infof("SCTP state is SCTP_RESTART")
 				case sctp.SCTP_COMM_LOST:
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_LOST, %+v", endpoint)
+					fallthrough
 				case sctp.SCTP_SHUTDOWN_COMP:
 					addr := sctp.SockaddrToSCTPAddr(endpoint)
 					logger.NgapLog.Infof("SCTP state is SCTP_SHUTDOWN_COMP (%s)", addr.String())
