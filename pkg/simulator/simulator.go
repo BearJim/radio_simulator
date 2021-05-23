@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -235,12 +236,31 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 
 	successCnt := uint32(0)
 	restartCnt := uint32(0)
+
+	uePerSecond := 30
+	if val, ok := os.LookupEnv("THESIS_UE_PER_SECOND"); ok {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			fmt.Printf("Parse THESIS_UE_PER_SECOND error: %+v", err)
+			return
+		}
+		uePerSecond = v
+	}
+	timeSlot := 100 * time.Millisecond
+	if val, ok := os.LookupEnv("THESIS_REQUEST_TIME_SLOT"); ok {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			fmt.Printf("Parse THESIS_REQUEST_TIME_SLOT error: %+v", err)
+			return
+		}
+		timeSlot = time.Duration(v) * time.Millisecond
+	}
 	if len(ues) > 50 {
 		wg := sync.WaitGroup{}
 		for i := range ues {
 			wg.Add(1)
-			if i != 0 && i%10 == 0 {
-				time.Sleep(50 * time.Millisecond)
+			if i != 0 && i%uePerSecond == 0 {
+				time.Sleep(timeSlot)
 			}
 			go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
 				s.ueRegister(ue, apiClient, &successCnt, &restartCnt)
