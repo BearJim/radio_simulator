@@ -46,7 +46,7 @@ func (c *NASController) SetNGMessager(messager NGMessager) {
 
 type NGMessager interface {
 	SendUplinkNASTransport(*sctp.SCTPAddr, *simulator_context.UeContext, []byte)
-	SendInitailUeMessage_RegistraionRequest(*sctp.SCTPAddr, *simulator_context.UeContext)
+	SendInitailUeMessage_RegistraionRequest(*simulator_context.UeContext)
 }
 
 func (c *NASController) Run() error {

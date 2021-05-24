@@ -114,7 +114,7 @@ func (c *NASController) handleRegistrationReject(ue *simulator_context.UeContext
 		logger.NASLog.Warnw("Restart Initial Registration", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 		ue.RestartCount++
 		ue.RestartTimeStamp = time.Now()
-		c.ngMessager.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
+		c.ngMessager.SendInitailUeMessage_RegistraionRequest(ue)
 	}
 	return nil
 }
@@ -161,7 +161,7 @@ func (c *NASController) handleServiceReject(ue *simulator_context.UeContext, mes
 	if message.Cause5GMM.GetCauseValue() == nasMessage.Cause5GMMUEIdentityCannotBeDerivedByTheNetwork {
 		nasLog.Infow("Perform new initial registration procedure", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 		ue.FollowOnRequest = true
-		c.ngMessager.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
+		c.ngMessager.SendInitailUeMessage_RegistraionRequest(ue)
 	}
 	return nil
 }

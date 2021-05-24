@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -39,7 +40,8 @@ type RanApp struct {
 	ctx                *simulator_context.RanContext
 	sctpConn           *sctp.SCTPConn
 
-	failRecovering bool
+	failRecovering int32
+	failAddr       *sctp.SCTPAddr
 	failCancel     context.CancelFunc
 	// api server provided by grpc
 	grpcServer *grpc.Server
@@ -55,6 +57,19 @@ func (r *RanApp) NGController() *simulator_ngap.NGController {
 
 func (r *RanApp) Context() *simulator_context.RanContext {
 	return r.ctx
+}
+
+func (r *RanApp) SetFailRecovering() {
+	atomic.StoreInt32(&r.failRecovering, 1)
+}
+
+func (r *RanApp) UnsetFailRecovering() {
+	atomic.StoreInt32(&r.failRecovering, 0)
+	r.failAddr = nil
+}
+
+func (r *RanApp) IsFailRecovering() bool {
+	return atomic.LoadInt32(&r.failRecovering) == 1
 }
 
 func (r *RanApp) NewAMF(addr *sctp.SCTPAddr) {
@@ -249,9 +264,8 @@ func (r *RanApp) StartSCTPAssociation() {
 				switch event.State() {
 				case sctp.SCTP_COMM_UP:
 					logger.NgapLog.Infof("SCTP state is SCTP_COMM_UP: %d", event.AssocID())
-					if r.failRecovering {
+					if r.IsFailRecovering() {
 						r.ngController.SendNGSetupRequest(r.primaryAMFEndpoint)
-						r.failRecovering = false
 						r.failCancel()
 					}
 					// c, err := r.sctpConn.PeelOff(int(event.AssocID()))
@@ -285,20 +299,20 @@ func (r *RanApp) StartSCTPAssociation() {
 
 					reconnect := os.Getenv("THESIS_RECONNECT_ENABLE")
 					if reconnect == "enable" {
-						r.failRecovering = true
+						r.SetFailRecovering()
+						r.failAddr = sctp.SockaddrToSCTPAddr(endpoint)
 						ctx, cancel := context.WithCancel(context.TODO())
 						r.failCancel = cancel
 						go func(ctx context.Context) {
-							addr := sctp.SockaddrToSCTPAddr(endpoint)
 							for {
 								select {
 								case <-ctx.Done():
 									return
 								default:
 								}
-								logger.NgapLog.Warnf("try to reconnect to %s...", addr)
-								if err := r.Connect(addr); err != nil {
-									logger.NgapLog.Warnf("reconnect to %s: %+v", addr, err)
+								logger.NgapLog.Warnf("try to reconnect to %s...", r.failAddr)
+								if err := r.Connect(r.failAddr); err != nil {
+									logger.NgapLog.Warnf("reconnect to %s: %+v", r.failAddr, err)
 									time.Sleep(1 * time.Second)
 								} else {
 									break

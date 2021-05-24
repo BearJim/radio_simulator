@@ -24,7 +24,7 @@ func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 	c.ran.SendToAMF(endpoint, pkt)
 }
 
-func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext) {
+func (c *NGController) SendInitailUeMessage_RegistraionRequest(ue *simulator_context.UeContext) {
 	logger.NgapLog.Infow("Send Initail UE Message (Initail Registration Request)", "rid", ue.RanUeNgapId)
 
 	nasPdu, err := nas_packet.GetRegistrationRequestWith5GMM(ue, nasMessage.RegistrationType5GSInitialRegistration, nil, nil)
@@ -38,7 +38,7 @@ func (c *NGController) SendInitailUeMessage_RegistraionRequest(endpoint *sctp.SC
 		logger.NgapLog.Errorf("Build InitialUEMessage failed: %s", err.Error())
 		return
 	}
-	c.ran.SendToAMF(endpoint, pkt)
+	c.ran.SendToAMF(ue.AMFEndpoint, pkt)
 }
 
 func (c *NGController) SendInitailUeMessage(endpoint *sctp.SCTPAddr, ue *simulator_context.UeContext,

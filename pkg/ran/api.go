@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/nas/security"
@@ -86,11 +87,23 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	case "NIA3":
 		ue.IntegrityAlg = security.AlgIntegrity128NIA3
 	}
-	// amf selection
-	ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
 	ue.FollowOnRequest = req.FollowOnRequest
 	a.ranApp.ngController.NewNASConnection(ue)
-	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue.AMFEndpoint, ue)
+
+	// amf selection
+	if a.ranApp.IsFailRecovering() {
+		for amfAddr := range a.ranApp.ctx.AmfPool {
+			if !reflect.DeepEqual(a.ranApp.failAddr, amfAddr) {
+				ue.AMFEndpoint = amfAddr
+				logger.AppLog.Warnf("backup AMF: %+v", ue.AMFEndpoint.String())
+				break
+			}
+		}
+	} else {
+		ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
+	}
+
+	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue)
 
 	// wait result
 	result := <-ue.ApiNotifyChan

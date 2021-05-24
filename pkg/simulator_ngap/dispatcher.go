@@ -31,13 +31,13 @@ func New(ranApp RanApp, nasController NASController) *NGController {
 type RanApp interface {
 	Context() *simulator_context.RanContext
 	NewAMF(*sctp.SCTPAddr)
+	UnsetFailRecovering()
 	Connect(*sctp.SCTPAddr) error
 	SendToAMF(*sctp.SCTPAddr, []byte)
 }
 
 type NASController interface {
 	NewNASConnection(*simulator_context.UeContext) chan []byte
-	// HandleNAS(*simulator_context.UeContext, []byte)
 }
 
 func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
