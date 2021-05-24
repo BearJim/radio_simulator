@@ -25,6 +25,7 @@ type APIServiceClient interface {
 	ServiceRequestProc(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*ServiceRequestResult, error)
 	Deregister(ctx context.Context, in *DeregisterRequest, opts ...grpc.CallOption) (*DeregisterResponse, error)
 	SubscribeLog(ctx context.Context, in *LogStreamingRequest, opts ...grpc.CallOption) (APIService_SubscribeLogClient, error)
+	ConnectAMF(ctx context.Context, in *ConnectAMFRequest, opts ...grpc.CallOption) (*ConnectAMFResponse, error)
 }
 
 type aPIServiceClient struct {
@@ -121,6 +122,15 @@ func (x *aPIServiceSubscribeLogClient) Recv() (*LogStreamingResponse, error) {
 	return m, nil
 }
 
+func (c *aPIServiceClient) ConnectAMF(ctx context.Context, in *ConnectAMFRequest, opts ...grpc.CallOption) (*ConnectAMFResponse, error) {
+	out := new(ConnectAMFResponse)
+	err := c.cc.Invoke(ctx, "/APIService/ConnectAMF", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APIServiceServer is the server API for APIService service.
 // All implementations must embed UnimplementedAPIServiceServer
 // for forward compatibility
@@ -132,6 +142,7 @@ type APIServiceServer interface {
 	ServiceRequestProc(context.Context, *ServiceRequest) (*ServiceRequestResult, error)
 	Deregister(context.Context, *DeregisterRequest) (*DeregisterResponse, error)
 	SubscribeLog(*LogStreamingRequest, APIService_SubscribeLogServer) error
+	ConnectAMF(context.Context, *ConnectAMFRequest) (*ConnectAMFResponse, error)
 	mustEmbedUnimplementedAPIServiceServer()
 }
 
@@ -159,6 +170,9 @@ func (UnimplementedAPIServiceServer) Deregister(context.Context, *DeregisterRequ
 }
 func (UnimplementedAPIServiceServer) SubscribeLog(*LogStreamingRequest, APIService_SubscribeLogServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeLog not implemented")
+}
+func (UnimplementedAPIServiceServer) ConnectAMF(context.Context, *ConnectAMFRequest) (*ConnectAMFResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectAMF not implemented")
 }
 func (UnimplementedAPIServiceServer) mustEmbedUnimplementedAPIServiceServer() {}
 
@@ -302,6 +316,24 @@ func (x *aPIServiceSubscribeLogServer) Send(m *LogStreamingResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _APIService_ConnectAMF_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConnectAMFRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(APIServiceServer).ConnectAMF(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/APIService/ConnectAMF",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(APIServiceServer).ConnectAMF(ctx, req.(*ConnectAMFRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // APIService_ServiceDesc is the grpc.ServiceDesc for APIService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -332,6 +364,10 @@ var APIService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Deregister",
 			Handler:    _APIService_Deregister_Handler,
+		},
+		{
+			MethodName: "ConnectAMF",
+			Handler:    _APIService_ConnectAMF_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

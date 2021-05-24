@@ -2,10 +2,11 @@ package ran
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"net"
 	"reflect"
 
+	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/nas/security"
 	"github.com/jay16213/radio_simulator/pkg/api"
@@ -57,6 +58,18 @@ func (a *apiService) DescribeUE(ctx context.Context, req *api.DescribeUERequest)
 	}}, nil
 }
 
+func (a *apiService) ConnectAMF(ctx context.Context, req *api.ConnectAMFRequest) (*api.ConnectAMFResponse, error) {
+	amfAddr := &sctp.SCTPAddr{
+		Port: a.ranApp.cfg.AmfSCTPEndpoint.Port,
+	}
+	amfAddr.IPAddrs = append(amfAddr.IPAddrs, net.IPAddr{IP: net.ParseIP(req.Address)})
+	if err := a.ranApp.Connect(amfAddr); err != nil {
+		return nil, err
+	}
+	a.ranApp.ngController.SendNGSetupRequest(amfAddr)
+	return &api.ConnectAMFResponse{}, nil
+}
+
 func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*api.RegisterResponse, error) {
 	ue := a.ranApp.Context().NewUE(req.Supi)
 	ue.Supi = req.Supi
@@ -106,6 +119,9 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 		ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
 	}
 
+	for a.ranApp.IsFailRecovering() && ue.AMFEndpoint == a.ranApp.failAddr {
+		// fuck you failover
+	}
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue)
 
 	// wait result
@@ -173,22 +189,4 @@ func (a *apiService) ServiceRequestProc(ctx context.Context, req *api.ServiceReq
 	// wait result
 	result := <-ue.ApiNotifyChan
 	return &api.ServiceRequestResult{StatusCode: result.Status, Body: result.Message}, nil
-}
-
-func (a *apiService) SubscribeLog(req *api.LogStreamingRequest, stream api.APIService_SubscribeLogServer) error {
-	supi := req.GetSupi()
-	ue := a.ranApp.Context().FindUEBySupi(supi)
-	if ue == nil {
-		return errors.New("UE not found")
-	}
-
-	// resp := &api.LogStreamingResponse{}
-	// for {
-	// 	resp.LogMessage = <-ue.ApiNotifyChan
-	// 	if err := stream.Send(""); err != nil {
-	// 		logger.ApiLog.Errorf("err: %+v", err)
-	// 		return err
-	// 	}
-	// }
-	return errors.New("Not implemented")
 }

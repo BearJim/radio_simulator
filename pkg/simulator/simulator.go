@@ -618,6 +618,18 @@ func (s *Simulator) SingleUeDeregister(supi string) {
 	s.ueDeregister(ue, apiClient)
 }
 
+func (s *Simulator) ConnectToAMF(address string, ranName string) {
+	apiClient, err := s.connectToRan(ranName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if _, err := apiClient.ConnectAMF(context.TODO(), &api.ConnectAMFRequest{Address: address}); err != nil {
+		fmt.Printf("connect AMF error: %+v", err)
+	}
+}
+
 func (s *Simulator) UploadUEProfile(dbName string, dbUrl string) {
 	// connect to free5gc DB
 	dbClient, err := MongoDBLibrary.New(dbName, dbUrl)

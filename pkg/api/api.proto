@@ -109,6 +109,12 @@ message ServiceRequestResult {
     string body = 2;
 }
 
+message ConnectAMFRequest {
+    string address = 1;
+}
+
+message ConnectAMFResponse {}
+
 service APIService {
     rpc DescribeRAN (DescribeRANRequest) returns (DescribeRANResponse);
     rpc GetUEs(GetUEsRequest) returns(GetUEsResponse);
@@ -117,6 +123,7 @@ service APIService {
     rpc ServiceRequestProc(ServiceRequest) returns(ServiceRequestResult);
     rpc Deregister(DeregisterRequest) returns(DeregisterResponse);
     rpc SubscribeLog(LogStreamingRequest) returns (stream LogStreamingResponse);
+    rpc ConnectAMF(ConnectAMFRequest) returns (ConnectAMFResponse);
     // rpc Idle();
     // rpc Connect();
     // rpc AddPduSession();

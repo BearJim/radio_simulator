@@ -30,6 +30,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().StringVar(&simulatorDBUrl, "db", "mongodb://127.0.0.1:27017", "Database URL for simulator")
 	rootCmd.AddCommand(uploadCommand())
+	rootCmd.AddCommand(connectCommand())
 	rootCmd.AddCommand(loadCommand())
 	rootCmd.AddCommand(getCommand())
 	rootCmd.AddCommand(describeCommand())
@@ -46,6 +47,25 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func connectCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "connect <ranName> <ip>",
+		Short:   "connect to another AMF",
+		Example: "connect 127.0.0.2",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 2 {
+				return errors.New("connect <ranName> <ip>")
+			}
+			return nil
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			s := initSimulator(simulatorDBUrl)
+			s.ConnectToAMF(args[1], args[0])
+		},
+	}
+	return cmd
 }
 
 func uploadCommand() *cobra.Command {
