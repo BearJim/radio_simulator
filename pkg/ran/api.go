@@ -91,6 +91,7 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	a.ranApp.ngController.NewNASConnection(ue)
 
 	// amf selection
+	ue.AMFEndpoint = nil
 	if a.ranApp.IsFailRecovering() {
 		for amfAddr := range a.ranApp.ctx.AmfPool {
 			if !reflect.DeepEqual(a.ranApp.failAddr, amfAddr) {
@@ -99,7 +100,9 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 				break
 			}
 		}
-	} else {
+	}
+
+	if ue.AMFEndpoint == nil {
 		ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
 	}
 
