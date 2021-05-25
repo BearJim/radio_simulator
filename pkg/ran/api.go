@@ -120,9 +120,14 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 		ue.AMFEndpoint = a.ranApp.primaryAMFEndpoint
 	}
 
-	for a.ranApp.IsFailRecovering() && ue.AMFEndpoint == a.ranApp.failAddr {
-		// fuck you failover
-		time.Sleep(50 * time.Millisecond)
+	for a.ranApp.IsFailRecovering() {
+		if reflect.DeepEqual(ue.AMFEndpoint, a.ranApp.failAddr) {
+			// fuck you failover
+			fmt.Printf("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\n")
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			panic("幹你娘")
+		}
 	}
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue)
 
