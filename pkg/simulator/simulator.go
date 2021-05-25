@@ -492,7 +492,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	completeTime time.Duration,
 	redoTime *time.Duration,
 ) {
-	for {
+	for i := 0; i < 3; i++ {
 		ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second) // T3510
 		defer cancel()
 		startTime := time.Now()
@@ -539,6 +539,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 			}
 		}
 	}
+	return false, time.Now(), 0, nil
 }
 
 func (s *Simulator) ueDeregister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) {
