@@ -110,7 +110,7 @@ func (c *NASController) handleAuthenticationReject(ue *simulator_context.UeConte
 
 func (c *NASController) handleRegistrationReject(ue *simulator_context.UeContext, message *nasMessage.RegistrationReject) error {
 	logger.NASLog.Warnw("Handle Registration Reject", "supi", ue.Supi, "id", ue.AmfUeNgapId)
-	if message.Cause5GMM.GetCauseValue() == nasMessage.Cause5GMMCongestion {
+	if message.Cause5GMM.GetCauseValue() == nasMessage.Cause5GMMRestartRegistration {
 		logger.NASLog.Warnw("Restart Initial Registration", "supi", ue.Supi, "id", ue.AmfUeNgapId)
 		ue.RestartCount++
 		ue.RestartTimeStamp = time.Now()

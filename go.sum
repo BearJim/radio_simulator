@@ -253,6 +253,8 @@ github.com/jay16213/MongoDBLibrary v1.2.0 h1:qe3Lp2I5tkv73TZ34ZHgwzyyNOGNIUX8Sf6
 github.com/jay16213/MongoDBLibrary v1.2.0/go.mod h1:H5iRviTZcJvULt2aYBdmC+jSHZB8QzTFc2dZJKY30cM=
 github.com/jay16213/nas v1.0.1 h1:6+HmaW49LK4maIovxd3eBv4XC0ZtDH3aohuDEagVu98=
 github.com/jay16213/nas v1.0.1/go.mod h1:XYUq6xLU3iuDxZHZI6vz5MMTBewmOWpJLCtevWW6JfA=
+github.com/jay16213/nas v1.0.2 h1:IYJxatnHs5ojBugwhBnf9NojmC2ydWYEfBQZg28E0qM=
+github.com/jay16213/nas v1.0.2/go.mod h1:XYUq6xLU3iuDxZHZI6vz5MMTBewmOWpJLCtevWW6JfA=
 github.com/jay16213/sctp v1.1.0 h1:f8VzwIvFGEWTCO57lyeUXduaOhkTlvVASwaP0pgPMrU=
 github.com/jay16213/sctp v1.1.0/go.mod h1:NeOuBXO1iJBtldmNhkfSH8yFbnxlhI8eEJdUd7DZvws=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
