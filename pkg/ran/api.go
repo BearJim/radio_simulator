@@ -2,6 +2,7 @@ package ran
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"reflect"
@@ -121,33 +122,37 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	}
 
 	for a.ranApp.IsFailRecovering() {
-		if reflect.DeepEqual(ue.AMFEndpoint, a.ranApp.failAddr) {
+		if ue.AMFEndpoint.String() == a.ranApp.failAddr.String() {
 			// fuck you failover
-			fmt.Printf("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\n")
 			time.Sleep(50 * time.Millisecond)
-		} else {
-			panic("幹你娘")
+			continue
 		}
+		break
 	}
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue)
 
 	// wait result
-	result := <-ue.ApiNotifyChan
-	return &api.RegisterResponse{
-		StatusCode: result.Status,
-		Body:       result.Message,
-		UeContext: &api.UEContext{
-			Supi:             ue.Supi,
-			RmState:          ue.RmState,
-			CmState:          ue.CmState,
-			NasUplinkCount:   ue.ULCount.ToUint32(),
-			NasDownlinkCount: ue.DLCount.ToUint32(),
-			AmfUeNgapId:      ue.AmfUeNgapId,
-			RanUeNgapId:      ue.RanUeNgapId,
-		},
-		RestartCount:     int32(result.RestartCount),
-		RestartTimestamp: result.RestartTimeStamp.UnixNano(),
-	}, nil
+	select {
+	case <-ctx.Done():
+		logger.ApiLog.Errorf("registration timeout (supi: %s, ran_ue_ngap_id: %d)", ue.Supi, ue.RanUeNgapId)
+		return nil, errors.New("registration timeout")
+	case result := <-ue.ApiNotifyChan:
+		return &api.RegisterResponse{
+			StatusCode: result.Status,
+			Body:       result.Message,
+			UeContext: &api.UEContext{
+				Supi:             ue.Supi,
+				RmState:          ue.RmState,
+				CmState:          ue.CmState,
+				NasUplinkCount:   ue.ULCount.ToUint32(),
+				NasDownlinkCount: ue.DLCount.ToUint32(),
+				AmfUeNgapId:      ue.AmfUeNgapId,
+				RanUeNgapId:      ue.RanUeNgapId,
+			},
+			RestartCount:     int32(result.RestartCount),
+			RestartTimestamp: result.RestartTimeStamp.UnixNano(),
+		}, nil
+	}
 }
 
 func (a *apiService) Deregister(ctx context.Context, req *api.DeregisterRequest) (*api.DeregisterResponse, error) {

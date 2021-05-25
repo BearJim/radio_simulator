@@ -256,6 +256,16 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		timeSlot = time.Duration(v) * time.Millisecond
 	}
 
+	registrationAttempt := 3
+	if val, ok := os.LookupEnv("THESIS_REGIS_ATTEMPT"); ok {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			fmt.Printf("Parse THESIS_REGIS_ATTEMPT error: %+v", err)
+			return
+		}
+		registrationAttempt = v
+	}
+
 	wg := sync.WaitGroup{}
 	startTime := time.Now()
 	// fmt.Printf("%+v\n", startTime)
@@ -265,7 +275,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 			time.Sleep(timeSlot)
 		}
 		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-			success, now, completeTime, redoTime := s.ueRegister(ue, apiClient)
+			success, now, completeTime, redoTime := s.ueRegister(ue, apiClient, registrationAttempt)
 			if success {
 				if redoTime != nil {
 					fmt.Printf("%s, %+v, %d, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds(),
@@ -317,7 +327,7 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCou
 	startTime := time.Now()
 	fmt.Printf("%+v\n", startTime)
 	go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-		success, now, completeTime, redoTime := s.ueRegister(ue, apiClient)
+		success, now, completeTime, redoTime := s.ueRegister(ue, apiClient, 0)
 		if success {
 			if redoTime != nil {
 				fmt.Printf("%s, %+v, %d, %d\n", ue.Supi, now, completeTime.Milliseconds(),
@@ -486,13 +496,13 @@ func triggerAmfFail(count int) {
 	}
 }
 
-func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient) (
+func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.APIServiceClient, registrationAttempt int) (
 	success bool,
 	nowTime time.Time,
 	completeTime time.Duration,
 	redoTime *time.Duration,
 ) {
-	for i := 0; i < 3; i++ {
+	for i := 0; i < registrationAttempt; i++ {
 		ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second) // T3510
 		defer cancel()
 		startTime := time.Now()
