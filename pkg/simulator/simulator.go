@@ -532,8 +532,6 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 			if regResult.RestartCount != 0 {
 				restartTime := time.Unix(0, regResult.RestartTimestamp)
 				restartFinishTime := now.Sub(restartTime)
-				fmt.Printf("%s, %d, %d\n", ue.Supi, finishTime.Milliseconds(),
-					restartFinishTime.Milliseconds())
 				return true, now, finishTime, &restartFinishTime
 			} else {
 				// fmt.Printf("%s, %d\n", ue.Supi, finishTime.Milliseconds())
