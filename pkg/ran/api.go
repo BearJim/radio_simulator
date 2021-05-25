@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/free5gc/nas/nasMessage"
@@ -121,6 +122,7 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 
 	for a.ranApp.IsFailRecovering() && ue.AMFEndpoint == a.ranApp.failAddr {
 		// fuck you failover
+		time.Sleep(50 * time.Millisecond)
 	}
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue)
 

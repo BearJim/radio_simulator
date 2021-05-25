@@ -40,8 +40,8 @@ func (c *NGController) handleNGSetupResponse(endpoint *sctp.SCTPAddr, message *n
 			logger.NgapLog.Debug("Decode IE PLMNSupportList")
 		}
 	}
-	c.ran.UnsetFailRecovering()
 	c.ran.NewAMF(endpoint)
+	c.ran.UnsetFailRecovering()
 	// amf.Name = amfName.Value
 	// for _, item := range servedGuamiList.List {
 	// 	plmnID := ngapConvert.PlmnIdToModels(item.GUAMI.PLMNIdentity)
