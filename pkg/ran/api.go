@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"reflect"
 	"time"
@@ -124,7 +125,7 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	for a.ranApp.IsFailRecovering() {
 		if ue.AMFEndpoint.String() == a.ranApp.failAddr.String() {
 			// fuck you failover
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 			continue
 		}
 		break
