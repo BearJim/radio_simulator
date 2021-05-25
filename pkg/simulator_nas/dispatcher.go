@@ -2,6 +2,8 @@ package simulator_nas
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/logger"
@@ -32,11 +34,15 @@ type NASController struct {
 	n1ConnectionsQueue chan Routine
 	ngMessager         NGMessager
 	cancelCtx          context.CancelFunc
+
+	mu            sync.RWMutex // protect the following fields
+	n1Connections map[int64]*NASRoutine
 }
 
 func New() *NASController {
 	return &NASController{
 		n1ConnectionsQueue: make(chan Routine, 512),
+		n1Connections:      make(map[int64]*NASRoutine),
 	}
 }
 
@@ -74,15 +80,41 @@ func (c *NASController) Stop() {
 	c.cancelCtx()
 }
 
-func (c *NASController) NewNASConnection(ue *simulator_context.UeContext) chan []byte {
-	nasCh := make(chan []byte, 16)
-	c.n1ConnectionsQueue <- &NASRoutine{
-		rid:           int(ue.RanUeNgapId),
-		ue:            ue,
-		NASController: c,
-		nasPduCh:      nasCh,
+func (c *NASController) NewNASConnection(ue *simulator_context.UeContext) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if _, ok := c.n1Connections[ue.RanUeNgapId]; ok {
+		return fmt.Errorf("NAS connection (ran_ue_ngap_id: %d) has exists", ue.RanUeNgapId)
+	} else {
+		r := &NASRoutine{
+			rid:           int(ue.RanUeNgapId),
+			ue:            ue,
+			NASController: c,
+			nasPduCh:      make(chan []byte, 4),
+		}
+		c.n1Connections[ue.RanUeNgapId] = r
+		c.n1ConnectionsQueue <- r
 	}
-	return nasCh
+	return nil
+}
+
+func (c *NASController) SendToNAS(ranUeNgapID int64, nasPdu []byte) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if routine, ok := c.n1Connections[ranUeNgapID]; ok {
+		routine.nasPduCh <- nasPdu
+	} else {
+		logger.NASLog.Error("Forward NAS message failed (ran_ue_ngap_id: %d)", ranUeNgapID)
+	}
+}
+
+func (c *NASController) CloseNASConnection(ranUeNgapID int64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if routine, ok := c.n1Connections[ranUeNgapID]; ok {
+		close(routine.nasPduCh)
+		delete(c.n1Connections, ranUeNgapID)
+	}
 }
 
 func (c *NASController) handleGmmMessage(ue *simulator_context.UeContext, nasPdu []byte) {

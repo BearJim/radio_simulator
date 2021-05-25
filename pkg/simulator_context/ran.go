@@ -133,15 +133,19 @@ func NewRanContext() *RanContext {
 }
 
 func (ran *RanContext) NewUE(supi string) *UeContext {
-	ue := NewUeContext()
-	ue.Ran = ran
-	ran.uePoolMu.Lock()
-	ran.UePool[ran.RanUeIDGenerator] = ue
-	ran.uePoolMu.Unlock()
-	ue.RanUeNgapId = ran.RanUeIDGenerator
-	ran.RanUeIDGenerator++
-	ue.CmState = CmStateConnected
-	return ue
+	if ue := ran.FindUEBySupi(supi); ue != nil {
+		return ue
+	} else {
+		ue = NewUeContext()
+		ue.Ran = ran
+		ran.uePoolMu.Lock()
+		ran.UePool[ran.RanUeIDGenerator] = ue
+		ran.uePoolMu.Unlock()
+		ue.RanUeNgapId = ran.RanUeIDGenerator
+		ran.RanUeIDGenerator++
+		ue.CmState = CmStateConnected
+		return ue
+	}
 }
 
 func (ran *RanContext) FindUEBySupi(supi string) *UeContext {

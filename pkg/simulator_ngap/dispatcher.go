@@ -1,8 +1,6 @@
 package simulator_ngap
 
 import (
-	"sync"
-
 	"git.cs.nctu.edu.tw/calee/sctp"
 	"github.com/jay16213/radio_simulator/pkg/logger"
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
@@ -14,16 +12,12 @@ import (
 type NGController struct {
 	ran           RanApp
 	nasController NASController
-
-	mu            sync.RWMutex          // protect the following fields
-	nasConnection map[int64]chan []byte // map[RanUeNgapID]chan []byte
 }
 
 func New(ranApp RanApp, nasController NASController) *NGController {
 	c := &NGController{
 		ran:           ranApp,
 		nasController: nasController,
-		nasConnection: make(map[int64]chan []byte),
 	}
 	return c
 }
@@ -37,7 +31,9 @@ type RanApp interface {
 }
 
 type NASController interface {
-	NewNASConnection(*simulator_context.UeContext) chan []byte
+	NewNASConnection(*simulator_context.UeContext) error
+	SendToNAS(ranUeNgapID int64, nasPdu []byte)
+	CloseNASConnection(ranUeNgapID int64)
 }
 
 func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
@@ -106,26 +102,15 @@ func (c *NGController) Dispatch(endpoint *sctp.SCTPAddr, msg []byte) {
 }
 
 func (c *NGController) NewNASConnection(ue *simulator_context.UeContext) {
-	ch := c.nasController.NewNASConnection(ue)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.nasConnection[ue.RanUeNgapId] = ch
+	if err := c.nasController.NewNASConnection(ue); err != nil {
+		logger.NgapLog.Error(err)
+	}
 }
 
 func (c *NGController) CloseNASConnection(ranUeNgapID int64) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	close(c.nasConnection[ranUeNgapID])
-	delete(c.nasConnection, ranUeNgapID)
+	c.nasController.CloseNASConnection(ranUeNgapID)
 }
 
 func (c *NGController) SendNAS(ranUeNgapID int64, nasPdu []byte) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	// TODO: error handling
-	if nasCh, ok := c.nasConnection[ranUeNgapID]; ok {
-		nasCh <- nasPdu
-	} else {
-		logger.NgapLog.Errorw("NAS Connection not found", "rid", ranUeNgapID)
-	}
+	c.nasController.SendToNAS(ranUeNgapID, nasPdu)
 }
