@@ -522,6 +522,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 		if err != nil {
 			fmt.Printf("Registration failed: %+v (supi: %s)\n", err, ue.Supi)
 			// return false, time.Now(), 0, nil
+			time.Sleep(10 * time.Millisecond)
 			continue
 		}
 

@@ -135,6 +135,7 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 	select {
 	case <-ctx.Done():
 		logger.ApiLog.Errorf("registration timeout (supi: %s, ran_ue_ngap_id: %d)", ue.Supi, ue.RanUeNgapId)
+		a.ranApp.ngController.CloseNASConnection(ue.RanUeNgapId)
 		return nil, errors.New("registration timeout")
 	case result := <-ue.ApiNotifyChan:
 		return &api.RegisterResponse{
