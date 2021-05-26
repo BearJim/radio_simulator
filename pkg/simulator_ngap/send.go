@@ -25,7 +25,7 @@ func (c *NGController) SendNGSetupRequest(endpoint *sctp.SCTPAddr) {
 }
 
 func (c *NGController) SendInitailUeMessage_RegistraionRequest(ue *simulator_context.UeContext) {
-	logger.NgapLog.Infow("Send Initail UE Message (Initail Registration Request)", "rid", ue.RanUeNgapId)
+	logger.NgapLog.Infow("Send Initail UE Message (Registration Request)", "rid", ue.RanUeNgapId, "amf", ue.AMFEndpoint.String())
 
 	nasPdu, err := nas_packet.GetRegistrationRequestWith5GMM(ue, nasMessage.RegistrationType5GSInitialRegistration, nil, nil)
 	if err != nil {

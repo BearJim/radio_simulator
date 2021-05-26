@@ -129,6 +129,8 @@ func (a *apiService) Register(ctx context.Context, req *api.RegisterRequest) (*a
 		}
 		break
 	}
+
+	logger.AppLog.Warnf("select AMF: %+v", ue.AMFEndpoint.String())
 	a.ranApp.ngController.SendInitailUeMessage_RegistraionRequest(ue)
 
 	// wait result
