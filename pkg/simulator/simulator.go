@@ -282,6 +282,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 						redoTime.Milliseconds())
 					atomic.AddUint32(&restartCnt, 1)
 				} else {
+					// supi, time from system first reg, time from first reg this UE sent
 					fmt.Printf("%s, %+v, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds())
 				}
 				atomic.AddUint32(&successCnt, 1)
@@ -502,10 +503,10 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 	completeTime time.Duration,
 	redoTime *time.Duration,
 ) {
+	startTime := time.Now()
 	for i := 0; i < registrationAttempt; i++ {
 		ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second) // T3510
 		defer cancel()
-		startTime := time.Now()
 		regResult, err := apiClient.Register(ctx, &api.RegisterRequest{
 			Supi:            ue.Supi,
 			FollowOnRequest: ue.FollowOnRequest,

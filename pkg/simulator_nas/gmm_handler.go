@@ -127,7 +127,7 @@ func (c *NASController) handleSecurityModeCommand(ue *simulator_context.UeContex
 	if err != nil {
 		return err
 	}
-	c.SendSecurityModeCommand(ue, nasContent)
+	c.SendSecurityModeComplete(ue, nasContent)
 	return nil
 }
 
