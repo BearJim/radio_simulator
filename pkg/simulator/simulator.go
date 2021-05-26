@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -523,7 +524,7 @@ func (s *Simulator) ueRegister(ue *simulator_context.UeContext, apiClient api.AP
 		if err != nil {
 			fmt.Printf("Registration failed: %+v (supi: %s)\n", err, ue.Supi)
 			// return false, time.Now(), 0, nil
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 			continue
 		}
 
