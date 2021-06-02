@@ -160,8 +160,10 @@ func (c *NGController) handleDownlinkNASTransport(endpoint *sctp.SCTPAddr, messa
 			oldID := ue.AmfUeNgapId
 			ue.AmfUeNgapId = aMFUENGAPID.Value
 			ue.AMFEndpoint = endpoint
-			logger.NgapLog.Infow("AMF UE NGAP ID has changed",
-				"supi", ue.Supi, "newid", ue.AmfUeNgapId, "oldid", oldID, "amf", ue.AMFEndpoint.String())
+			if oldID != ue.AmfUeNgapId {
+				logger.NgapLog.Infow("AMF UE NGAP ID has changed",
+					"supi", ue.Supi, "newid", ue.AmfUeNgapId, "oldid", oldID, "amf", ue.AMFEndpoint.String())
+			}
 		}
 	}
 
@@ -341,8 +343,10 @@ func (c *NGController) handleInitialContextSetupRequest(endpoint *sctp.SCTPAddr,
 			oldID := ue.AmfUeNgapId
 			ue.AmfUeNgapId = aMFUENGAPID.Value
 			ue.AMFEndpoint = endpoint
-			logger.NgapLog.Infow("AMF UE NGAP ID has changed",
-				"supi", ue.Supi, "newid", ue.AmfUeNgapId, "oldid", oldID, "amf", ue.AMFEndpoint.String())
+			if oldID != ue.AmfUeNgapId {
+				logger.NgapLog.Infow("AMF UE NGAP ID has changed",
+					"supi", ue.Supi, "newid", ue.AmfUeNgapId, "oldid", oldID, "amf", ue.AMFEndpoint.String())
+			}
 		}
 	}
 	c.SendIntialContextSetupResponse(endpoint, ue, nil)
