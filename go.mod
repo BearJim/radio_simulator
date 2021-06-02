@@ -14,7 +14,6 @@ require (
 	github.com/free5gc/version v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
-	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.3.0

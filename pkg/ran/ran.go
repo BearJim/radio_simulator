@@ -20,10 +20,10 @@ import (
 	"github.com/jay16213/radio_simulator/pkg/simulator_context"
 	"github.com/jay16213/radio_simulator/pkg/simulator_nas"
 	"github.com/jay16213/radio_simulator/pkg/simulator_ngap"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -417,11 +417,8 @@ func (r *RanApp) Terminate() {
 }
 
 func (r *RanApp) setLogLevel() {
-	if r.cfg.Logger.DebugLevel != "" {
-		level, err := logrus.ParseLevel(r.cfg.Logger.DebugLevel)
-		if err == nil {
-			logger.SetLogLevel(level)
-		}
+	if r.cfg.Logger.DebugLevel == "debug" {
+		logger.SetLogLevel(zap.DebugLevel)
 	}
 	logger.SetReportCaller(r.cfg.Logger.ReportCaller)
 }

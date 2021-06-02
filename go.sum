@@ -251,8 +251,6 @@ github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NH
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/jay16213/MongoDBLibrary v1.2.0 h1:qe3Lp2I5tkv73TZ34ZHgwzyyNOGNIUX8Sf6KWjp4Ftw=
 github.com/jay16213/MongoDBLibrary v1.2.0/go.mod h1:H5iRviTZcJvULt2aYBdmC+jSHZB8QzTFc2dZJKY30cM=
-github.com/jay16213/nas v1.0.1 h1:6+HmaW49LK4maIovxd3eBv4XC0ZtDH3aohuDEagVu98=
-github.com/jay16213/nas v1.0.1/go.mod h1:XYUq6xLU3iuDxZHZI6vz5MMTBewmOWpJLCtevWW6JfA=
 github.com/jay16213/nas v1.0.2 h1:IYJxatnHs5ojBugwhBnf9NojmC2ydWYEfBQZg28E0qM=
 github.com/jay16213/nas v1.0.2/go.mod h1:XYUq6xLU3iuDxZHZI6vz5MMTBewmOWpJLCtevWW6JfA=
 github.com/jay16213/sctp v1.1.0 h1:f8VzwIvFGEWTCO57lyeUXduaOhkTlvVASwaP0pgPMrU=

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -52,8 +51,8 @@ func init() {
 	NASLog = zapLog.With(zap.String("RAN", "NAS")).Sugar()
 }
 
-func SetLogLevel(level logrus.Level) {
-	zapCfg.Level.SetLevel(zap.DebugLevel)
+func SetLogLevel(level zapcore.Level) {
+	zapCfg.Level.SetLevel(level)
 }
 
 func SetReportCaller(bool bool) {
