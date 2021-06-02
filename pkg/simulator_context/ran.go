@@ -140,9 +140,9 @@ func (ran *RanContext) NewUE(supi string) *UeContext {
 		ue.Ran = ran
 		ran.uePoolMu.Lock()
 		ran.UePool[ran.RanUeIDGenerator] = ue
-		ran.uePoolMu.Unlock()
 		ue.RanUeNgapId = ran.RanUeIDGenerator
 		ran.RanUeIDGenerator++
+		ran.uePoolMu.Unlock()
 		ue.AMFEndpoint = nil
 		ue.CmState = CmStateConnected
 		return ue
