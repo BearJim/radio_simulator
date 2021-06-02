@@ -202,6 +202,12 @@ func (a *apiService) ServiceRequestProc(ctx context.Context, req *api.ServiceReq
 	a.ranApp.ngController.SendInitailUeMessage(ue.AMFEndpoint, ue, ue.GutiStr[7:], nasPdu)
 
 	// wait result
-	result := <-ue.ApiNotifyChan
-	return &api.ServiceRequestResult{StatusCode: result.Status, Body: result.Message}, nil
+	select {
+	case <-ctx.Done():
+		logger.ApiLog.Errorf("service request timeout (supi: %s, ran_ue_ngap_id: %d)", ue.Supi, ue.RanUeNgapId)
+		a.ranApp.ngController.CloseNASConnection(ue.RanUeNgapId)
+		return nil, errors.New("service request timeout")
+	case result := <-ue.ApiNotifyChan:
+		return &api.ServiceRequestResult{StatusCode: result.Status, Body: result.Message}, nil
+	}
 }

@@ -465,7 +465,7 @@ func (s *Simulator) AllUeServiceRequest(ranName string, supis []string, triggerF
 
 func (s *Simulator) ueServiceRequest(ue *simulator_context.UeContext, apiClient api.APIServiceClient) (
 	success bool, nowTime time.Time, completeTime time.Duration, redoTime *time.Duration) {
-	ctx, cancel := context.WithTimeout(context.TODO(), 20*time.Minute) // FUCK YOU TIMEOUT
+	ctx, cancel := context.WithTimeout(context.TODO(), 30*time.Second) // FUCK YOU TIMEOUT
 	defer cancel()
 
 	startTime := time.Now()
