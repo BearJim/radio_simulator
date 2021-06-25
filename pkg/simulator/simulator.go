@@ -327,16 +327,16 @@ func (s *Simulator) SingleUeRegister(supi string, ranName string, triggerFailCou
 	wg.Add(1)
 
 	startTime := time.Now()
-	fmt.Printf("%+v\n", startTime)
+	// fmt.Printf("%+v\n", startTime)
 	go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
-		success, now, completeTime, redoTime := s.ueRegister(ue, apiClient, 0)
+		success, now, completeTime, redoTime := s.ueRegister(ue, apiClient, 1)
 		if success {
 			if redoTime != nil {
-				fmt.Printf("%s, %+v, %d, %d\n", ue.Supi, now, completeTime.Milliseconds(),
+				fmt.Printf("%s, %+v, %d, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds(),
 					redoTime.Milliseconds())
 				atomic.AddUint32(&restartCnt, 1)
 			} else {
-				fmt.Printf("%s, %+v, %d\n", ue.Supi, now, completeTime.Milliseconds())
+				fmt.Printf("%s, %+v, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds())
 			}
 			atomic.AddUint32(&successCnt, 1)
 		}
