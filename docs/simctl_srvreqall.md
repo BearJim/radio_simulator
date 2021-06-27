@@ -1,21 +1,22 @@
-## simctl upload
+## simctl srvreqall
 
-upload all UEs to free5gc DB
+trigger service request procedure for UEs with SUPI in range
 
 ```
-simctl upload [flags]
+simctl srvreqall <ranName> <SUPI range> [flags]
 ```
 
 ### Examples
 
 ```
-upload mongodb://127.0.0.1:27017
+srvreqall ran1 1-30 (imsi-2089300000001 ~ imsi-2089300000030)
 ```
 
 ### Options
 
 ```
-  -h, --help   help for upload
+  -f, --fail int32   trigger AMF fail ue count
+  -h, --help         help for srvreqall
 ```
 
 ### Options inherited from parent commands

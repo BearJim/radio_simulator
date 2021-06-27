@@ -1,21 +1,21 @@
-## simctl upload
+## simctl connect
 
-upload all UEs to free5gc DB
+connect to another AMF
 
 ```
-simctl upload [flags]
+simctl connect <ranName> <ip> [flags]
 ```
 
 ### Examples
 
 ```
-upload mongodb://127.0.0.1:27017
+connect 127.0.0.2
 ```
 
 ### Options
 
 ```
-  -h, --help   help for upload
+  -h, --help   help for connect
 ```
 
 ### Options inherited from parent commands

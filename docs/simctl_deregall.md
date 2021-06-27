@@ -1,21 +1,21 @@
-## simctl upload
+## simctl deregall
 
-upload all UEs to free5gc DB
+trigger deregistration procedure for all UEs in RanName
 
 ```
-simctl upload [flags]
+simctl deregall <RanName> [flags]
 ```
 
 ### Examples
 
 ```
-upload mongodb://127.0.0.1:27017
+deregall ran1
 ```
 
 ### Options
 
 ```
-  -h, --help   help for upload
+  -h, --help   help for deregall
 ```
 
 ### Options inherited from parent commands

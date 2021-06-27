@@ -1,21 +1,22 @@
-## simctl upload
+## simctl srvreq
 
-upload all UEs to free5gc DB
+trigger service request procedure for UE with SUPI
 
 ```
-simctl upload [flags]
+simctl srvreq <SUPI> [flags]
 ```
 
 ### Examples
 
 ```
-upload mongodb://127.0.0.1:27017
+srvreq imsi-2089300000001
 ```
 
 ### Options
 
 ```
-  -h, --help   help for upload
+  -f, --fail int32   trigger AMF fail ue count
+  -h, --help         help for srvreq
 ```
 
 ### Options inherited from parent commands

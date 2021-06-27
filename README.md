@@ -1,68 +1,66 @@
 # Radio Simulator
-
-Created by WeiTing
-
-Now only support free5GC v3.0.2. On v3.0.3, the nas decode will failed on RAN side due to some modify in CN between v3.0.2 and v3.0.3.
+> Originally created by WeiTing, modified by YanJie.
+>
+> In this version, only support registration /deregistration procedure & service request procedure (without any PDU session)
 
 ## Requirement
-
-gtp5g module
-
-```bash
-git clone https://github.com/PrinzOwO/gtp5g.git
-cd gtp5g
-make -j8
-sudo make install
+To use this simulator, you need to run a MongoDB and modify `configs/rancfg.yaml`
+```yaml
+dbName: simulator
+dbUrl: mongodb://127.0.0.1:27017 # your mongo url
+.....
 ```
 
-Can build on RPI 4 4GB with Ubuntu Server & Linux kernel 5.3.0-1017-raspi2
+And for CLI tool, you can use `--db` option to config the url
+```bash
+./bin/simctl --db <Mongo URL> [command]
 
-Cannot build on 5.3.0-1023-raspi2
+# example
+./bin/simctl --db mongodb://127.0.0.1:27017 get ues
+```
 
+For more information, please use `--help` option
 
 ## Build
 
 ```bash
-# install go1.14.4
-wget https://golang.org/dl/go1.14.4.linux-arm64.tar.gz
-sudo tar -C /usr/local -zxvf ./go1.14.4.linux-arm64.tar.gz
-echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-echo 'export GOROOT=/usr/local/go' >> ~/.bashrc
-echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> ~/.bashrc
-source ~/.bashrc
-
-# build simulator
+# build simulator & simctl
 make
-
-# build gtp tools
-git submodule update --init
-sudo apt -y install gcc cmake libmnl-dev autoconf libtool pkg-config
-cd lib/libgtp5gnl
-autoreconf -iv
-./configure
-make -j8
 ```
 
 ## Run
 
-Run RAN
-
+### 1. Run RAN simulator
 ```bash
-sudo ./run.sh
+./bin/simulator
+```
+It will create a RAN and connect to AMF, remember to run AMF first before running this simulator.
+
+### 2. Run CLI to connect to RAN simulator
+After running the RAN simulator, please open another terminal to run the cli command to control the RAN simulator
+```bash
+./bin/simctl --help # print the help message
 ```
 
-In another tty (terminal)
+For more information about how to use the command, please read the documents in `docs/`
 
-UE registrator
+## Generate documents for simctl
+> reference: https://github.com/spf13/cobra/blob/master/doc/md_docs.md
 
-```bash
-nc -v localhost 9999
+1. Uncomment `doc.GenMarkdownTree` function call in main function of `cmd/simctl/main.go`, and comment `rootCmd.Execute()` function call
+```go
+func main() {
+	// Generate command document
+	if err := doc.GenMarkdownTree(rootCmd, "./docs"); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
-imsi-2089300000003
-reg # registrator
-sess 1 add # add session
-
-sess 1 del # delete session
-dereg # de-registration
+	// if err := rootCmd.Execute(); err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
+}
 ```
 
+2. In project root folder, run `go run cmd/simctl/main.go`

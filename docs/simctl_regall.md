@@ -1,21 +1,23 @@
-## simctl upload
+## simctl regall
 
-upload all UEs to free5gc DB
+trigger initial registration procedure for all UEs via RanName
 
 ```
-simctl upload [flags]
+simctl regall <RanName> [flags]
 ```
 
 ### Examples
 
 ```
-upload mongodb://127.0.0.1:27017
+regall ran1
 ```
 
 ### Options
 
 ```
-  -h, --help   help for upload
+  -f, --fail int32   trigger AMF fail ue count
+  -o, --for          follow-on request pending
+  -h, --help         help for regall
 ```
 
 ### Options inherited from parent commands
