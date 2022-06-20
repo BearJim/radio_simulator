@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
+	"github.com/BearJim/radio_simulator/pkg/factory"
+	"github.com/BearJim/radio_simulator/pkg/simulator_util"
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap/ngapConvert"
 	"github.com/free5gc/ngap/ngapType"
-	"github.com/jay16213/radio_simulator/pkg/factory"
-	"github.com/jay16213/radio_simulator/pkg/simulator_util"
 )
 
 const (

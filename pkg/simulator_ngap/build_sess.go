@@ -3,7 +3,7 @@ package simulator_ngap
 import (
 	"encoding/binary"
 
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
 
 	"github.com/free5gc/aper"
 	"github.com/free5gc/ngap/ngapConvert"

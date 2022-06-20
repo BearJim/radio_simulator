@@ -3,8 +3,8 @@ package simulator_nas
 import (
 	"context"
 
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
 )
 
 type NASRoutine struct {

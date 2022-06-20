@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jay16213/radio_simulator/pkg/simulator"
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/simulator"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
 	"github.com/mohae/deepcopy"
 	"github.com/spf13/cobra"
 )

@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
+	"github.com/BearJim/radio_simulator/pkg/api"
+	"github.com/BearJim/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/simulator_nas/nas_packet"
 	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/nas/security"
-	"github.com/jay16213/radio_simulator/pkg/api"
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
 )
 
 type apiService struct {

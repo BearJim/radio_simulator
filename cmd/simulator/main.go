@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/BearJim/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/ran"
 	"github.com/free5gc/version"
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/ran"
 	"github.com/urfave/cli/v2"
 )
 

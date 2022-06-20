@@ -1,9 +1,9 @@
 package simulator_nas
 
 import (
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
-	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
+	"github.com/BearJim/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/simulator_nas/nas_packet"
 )
 
 func (c *NASController) SendAuthenticationResponse(ue *simulator_context.UeContext, resStar []byte) {

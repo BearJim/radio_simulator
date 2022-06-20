@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
 
 	"github.com/free5gc/nas"
 	"github.com/free5gc/nas/security"

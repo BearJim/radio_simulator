@@ -1,4 +1,4 @@
-module github.com/jay16213/radio_simulator
+module github.com/BearJim/radio_simulator
 
 go 1.14
 
@@ -26,7 +26,7 @@ require (
 )
 
 replace (
-	git.cs.nctu.edu.tw/calee/sctp => github.com/jay16213/sctp v1.1.0
-	github.com/free5gc/MongoDBLibrary => github.com/jay16213/MongoDBLibrary v1.2.0
-	github.com/free5gc/nas v1.0.0 => github.com/jay16213/nas v1.0.2
+	git.cs.nctu.edu.tw/calee/sctp => github.com/BearJim/sctp v1.0.0
+	github.com/free5gc/MongoDBLibrary => github.com/BearJim/MongoDBLibrary v1.0.0
+	github.com/free5gc/nas v1.0.0 => github.com/BearJim/nas v1.0.0
 )

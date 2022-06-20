@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jay16213/radio_simulator/pkg/api"
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
-	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_packet"
+	"github.com/BearJim/radio_simulator/pkg/api"
+	"github.com/BearJim/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/simulator_nas/nas_packet"
 
 	"github.com/free5gc/milenage"
 	"github.com/free5gc/nas/nasConvert"

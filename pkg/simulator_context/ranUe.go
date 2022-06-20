@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"git.cs.nctu.edu.tw/calee/sctp"
-	"github.com/jay16213/radio_simulator/pkg/api"
-	"github.com/jay16213/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/api"
+	"github.com/BearJim/radio_simulator/pkg/logger"
 
 	"github.com/free5gc/UeauCommon"
 	"github.com/free5gc/nas/nasType"

@@ -6,9 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
-	"github.com/jay16213/radio_simulator/pkg/simulator_nas/nas_security"
-	"github.com/jay16213/radio_simulator/pkg/type_convert"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/simulator_nas/nas_security"
+	"github.com/BearJim/radio_simulator/pkg/type_convert"
 
 	"github.com/free5gc/nas"
 	"github.com/free5gc/nas/nasMessage"

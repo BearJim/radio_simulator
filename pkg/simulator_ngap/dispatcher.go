@@ -2,8 +2,8 @@ package simulator_ngap
 
 import (
 	"git.cs.nctu.edu.tw/calee/sctp"
-	"github.com/jay16213/radio_simulator/pkg/logger"
-	"github.com/jay16213/radio_simulator/pkg/simulator_context"
+	"github.com/BearJim/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/simulator_context"
 
 	"github.com/free5gc/ngap"
 	"github.com/free5gc/ngap/ngapType"

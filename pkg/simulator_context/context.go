@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/jay16213/radio_simulator/pkg/logger"
+	"github.com/BearJim/radio_simulator/pkg/logger"
 )
 
 var simContext = Simulator{}

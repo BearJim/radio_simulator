@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/jay16213/radio_simulator/pkg/api";
+option go_package = "github.com/BearJim/radio_simulator/pkg/api";
 
 message UEContext {
     string supi = 1;
