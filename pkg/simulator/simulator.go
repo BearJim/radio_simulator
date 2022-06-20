@@ -269,11 +269,17 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 
 	wg := sync.WaitGroup{}
 	startTime := time.Now()
+	addUePerSecond := 10
 	// fmt.Printf("%+v\n", startTime)
 	for i := range ues {
 		wg.Add(1)
 		if i != 0 && i%uePerSecond == 0 {
 			time.Sleep(timeSlot)
+			if i > len(ues)/2 {
+				uePerSecond -= addUePerSecond
+			} else {
+				uePerSecond += addUePerSecond
+			}
 		}
 		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
 			success, now, completeTime, redoTime := s.ueRegister(ue, apiClient, registrationAttempt)
