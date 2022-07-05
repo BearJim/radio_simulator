@@ -238,24 +238,24 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 	successCnt := uint32(0)
 	restartCnt := uint32(0)
 
-	uePerSecond := 30
-	if val, ok := os.LookupEnv("THESIS_UE_PER_SECOND"); ok {
-		v, err := strconv.Atoi(val)
-		if err != nil {
-			fmt.Printf("Parse THESIS_UE_PER_SECOND error: %+v", err)
-			return
-		}
-		uePerSecond = v
-	}
-	timeSlot := 100 * time.Millisecond
-	if val, ok := os.LookupEnv("THESIS_REQUEST_TIME_SLOT"); ok {
-		v, err := strconv.Atoi(val)
-		if err != nil {
-			fmt.Printf("Parse THESIS_REQUEST_TIME_SLOT error: %+v", err)
-			return
-		}
-		timeSlot = time.Duration(v) * time.Millisecond
-	}
+	uePerSecond := 3
+	// if val, ok := os.LookupEnv("THESIS_UE_PER_SECOND"); ok {
+	// 	v, err := strconv.Atoi(val)
+	// 	if err != nil {
+	// 		fmt.Printf("Parse THESIS_UE_PER_SECOND error: %+v", err)
+	// 		return
+	// 	}
+	// 	uePerSecond = v
+	// }
+	timeSlot := 1000 * time.Millisecond
+	// if val, ok := os.LookupEnv("THESIS_REQUEST_TIME_SLOT"); ok {
+	// 	v, err := strconv.Atoi(val)
+	// 	if err != nil {
+	// 		fmt.Printf("Parse THESIS_REQUEST_TIME_SLOT error: %+v", err)
+	// 		return
+	// 	}
+	// 	timeSlot = time.Duration(v) * time.Millisecond
+	// }
 
 	registrationAttempt := 3
 	if val, ok := os.LookupEnv("THESIS_REGIS_ATTEMPT"); ok {
@@ -269,18 +269,21 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 
 	wg := sync.WaitGroup{}
 	startTime := time.Now()
-	addUePerSecond := 10
+	// addUePerSecond := 2
 	// fmt.Printf("%+v\n", startTime)
 	for i := range ues {
 		wg.Add(1)
 		if i != 0 && i%uePerSecond == 0 {
 			time.Sleep(timeSlot)
-			if i > len(ues)/2 {
-				uePerSecond -= addUePerSecond
+			if i > len(ues)/3 && i < len(ues)*2/3 {
+				uePerSecond = 5
 			} else {
-				uePerSecond += addUePerSecond
+				uePerSecond = 3
 			}
 		}
+		// if i != 0 && i%uePerSecond == 0 {
+		// 	time.Sleep(timeSlot)
+		// }
 		go func(ue *simulator_context.UeContext, wg *sync.WaitGroup) {
 			success, now, completeTime, redoTime := s.ueRegister(ue, apiClient, registrationAttempt)
 			if success {

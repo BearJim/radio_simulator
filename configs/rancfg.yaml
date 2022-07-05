@@ -50,5 +50,5 @@ listenIp: 127.0.0.2
 #trace
 logger:
 # network function
-  debugLevel: debug
+  debugLevel: info
   ReportCaller: false
