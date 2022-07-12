@@ -238,7 +238,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 	successCnt := uint32(0)
 	restartCnt := uint32(0)
 
-	uePerSecond := 3
+	uePerSecond := 10
 	// if val, ok := os.LookupEnv("THESIS_UE_PER_SECOND"); ok {
 	// 	v, err := strconv.Atoi(val)
 	// 	if err != nil {
@@ -276,7 +276,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		if i != 0 && i%uePerSecond == 0 {
 			time.Sleep(timeSlot)
 			if i > len(ues)/3 && i < len(ues)*2/3 {
-				uePerSecond = 5
+				uePerSecond = 10
 			} else {
 				uePerSecond = 3
 			}
