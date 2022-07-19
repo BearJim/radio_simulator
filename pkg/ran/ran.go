@@ -178,7 +178,7 @@ func (r *RanApp) connectToAmf() (*sctp.SCTPConn, error) {
 	ranAddr := &sctp.SCTPAddr{
 		Port: r.cfg.RanSctpEndpoint.Port,
 	}
-	for _, ip := range r.cfg.AmfSCTPEndpoint.IPs {
+	for _, ip := range r.cfg.RanSctpEndpoint.IPs {
 		ranAddr.IPAddrs = append(ranAddr.IPAddrs, net.IPAddr{IP: ip})
 	}
 
