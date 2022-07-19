@@ -39,6 +39,8 @@ type Simulator struct {
 	dbClient *MongoDBLibrary.Client
 }
 
+var ueTime uint32
+
 func New(dbName string, dbUrl string) (*Simulator, error) {
 	client, err := MongoDBLibrary.New(dbName, dbUrl)
 	if err != nil {
@@ -278,7 +280,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 			if i > len(ues)/3 && i < len(ues)*2/3 {
 				uePerSecond = 10
 			} else {
-				uePerSecond = 3
+				uePerSecond = 5
 			}
 		}
 		// if i != 0 && i%uePerSecond == 0 {
@@ -294,6 +296,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 				} else {
 					// supi, time from system first reg, time from first reg this UE sent
 					fmt.Printf("%s, %+v, %d\n", ue.Supi, now.Sub(startTime).Milliseconds(), completeTime.Milliseconds())
+					ueTime += uint32(completeTime.Milliseconds())
 				}
 				atomic.AddUint32(&successCnt, 1)
 			}
@@ -301,7 +304,7 @@ func (s *Simulator) AllUeRegister(ranName string, triggerFailCount int, followOn
 		}(ues[i], &wg)
 	}
 	wg.Wait()
-	fmt.Printf("%d, %d\n", successCnt, restartCnt)
+	fmt.Printf("success: %d, UE avg time: %d\n", successCnt, ueTime/successCnt)
 
 	for _, ue := range ues {
 		// update SQN when triggering registration

@@ -5,17 +5,17 @@ gtp5gTunnelInfo:
   path: ./lib/libgtp5gnl/tools
 amfSctpEndpoint:
   ips:
-    - 127.0.0.21
+    - 192.168.2.114
   port: 38415
 ranSctpEndpoint:
   ips:
-    - 127.0.0.1
+    - 192.168.2.62
   port: 8088
 ranGtpUri:
-  ip: 127.0.0.1
+  ip: 192.168.2.62
   port: 2152
 upfUriList:
-- ip: 127.0.0.8
+- ip: 192.168.2.111
   port: 2152
 ranName: ran1
 gnbId:
@@ -35,11 +35,11 @@ taiList:
         sd: 010203
       - sst: 1
         sd: 112233
-apiServerAddr: 127.0.0.1:9999
+apiServerAddr: 192.168.2.62:9999
 ueInfoFile:
   - uecfg.conf
 tunDev: uetun
-listenIp: 127.0.0.2
+listenIp: 192.168.2.62
 #all logging levels
 #panic
 #fatal
